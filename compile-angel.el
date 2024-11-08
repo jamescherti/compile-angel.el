@@ -230,13 +230,21 @@ Use `load-file-rep-suffixes' when NOSUFFIX is non-nil."
                  (mapcar (lambda (s) (concat ".el" s))
                          load-file-rep-suffixes))))
 
+(defun compile-angel--guess-el-file (el-file &optional feature nosuffix)
+  "Guess the el-file path."
+  (compile-angel--locate-library (or el-file (cond ((stringp feature)
+                                                    feature)
+                                                   (feature
+                                                    (symbol-name feature))
+                                                   (t nil)))
+                                 nosuffix))
+
 (defun compile-angel--compile-before-loading (el-file
                                               &optional feature nosuffix)
   "This function is called by the :before advices.
 EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
   (when (or el-file feature)
-    (let ((el-file (compile-angel--locate-library
-                    (or el-file (symbol-name feature)) nosuffix)))
+    (let ((el-file (compile-angel--guess-el-file el-file feature nosuffix)))
       (compile-angel-compile-elisp el-file))))
 
 (defun compile-angel--advice-before-require (feature
