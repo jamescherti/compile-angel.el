@@ -44,12 +44,12 @@
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-enable-byte-compile nil
+(defcustom compile-angel-enable-byte-compile t
   "Non-nil to enable byte compilation of Emacs Lisp (.el) files."
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-enable-native-compile nil
+(defcustom compile-angel-enable-native-compile t
   "Non-nil to enable native compilation of Emacs Lisp (.el) files."
   :type 'boolean
   :group 'compile-angel)
