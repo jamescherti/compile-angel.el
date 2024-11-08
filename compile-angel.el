@@ -231,7 +231,7 @@ Use `load-file-rep-suffixes' when NOSUFFIX is non-nil."
                          load-file-rep-suffixes))))
 
 (defun compile-angel--guess-el-file (el-file &optional feature nosuffix)
-  "Guess the el-file path."
+  "Guess the EL-FILE or FEATURE path. NOSUFFIX is similar to `load'."
   (compile-angel--locate-library (or el-file (cond ((stringp feature)
                                                     feature)
                                                    (feature
