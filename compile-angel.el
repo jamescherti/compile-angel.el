@@ -143,30 +143,44 @@ For example, .el in the case of .el and .el.gz files."
             ;; Return t
             t)))))))
 
+(defvar-local compile-angel--compiling nil)
+
 (defun compile-angel-compile-elisp (el-file)
   "Byte compile and Native compile the .el file EL-FILE."
-  (when (or compile-angel-enable-byte-compile
-            compile-angel-enable-native-compile)
-    (let* ((el-file-sans-suffix (compile-angel--file-ends-with-load-file-suffix
-                                 el-file ".el")))
-      (cond
-       ((not (file-exists-p el-file))
-        (message "[compile-angel] Warning: The file does not exist: %s"
-                 el-file))
+  (when (and el-file
+             (or (not compile-angel-on-load-mode-compile-once)
+                 (not (gethash el-file compile-angel--list-compiled-files)))
+             (not compile-angel--compiling)
+             (or compile-angel-enable-byte-compile
+                 compile-angel-enable-native-compile))
+    (puthash el-file t compile-angel--list-compiled-files)
+    (setq-local compile-angel--compiling t)
+    (unwind-protect
+        (let* ((elc-file (byte-compile-dest-file el-file))
+               (el-file-sans-suffix
+                (compile-angel--file-ends-with-load-file-suffix el-file ".el")))
+          (cond
+           ((not (file-exists-p el-file))
+            (message "[compile-angel] Warning: The file does not exist: %s"
+                     el-file))
 
-       ((not el-file-sans-suffix)
-        (message "[compile-angel] Warning: The file is not an .el file: %s"
-                 el-file))
+           ((not elc-file)
+            (message "[compile-angel] Warning: The file is not an .el file: %s"
+                     el-file))
 
-       (t
-        ;; 1. Byte compile
-        (let* ((elc-file (concat el-file-sans-suffix "c")))
-          (when compile-angel-enable-byte-compile
-            (compile-angel--byte-compile el-file elc-file)))
+           ((not el-file-sans-suffix)
+            (message "[compile-angel] Warning: The file is not an .el file: %s"
+                     el-file))
 
-        ;; 2. Native compile
-        (when compile-angel-enable-native-compile
-          (compile-angel--native-compile el-file)))))))
+           (t
+            ;; 1. Byte compile
+            (when compile-angel-enable-byte-compile
+              (compile-angel--byte-compile el-file elc-file))
+
+            ;; 2. Native compile
+            (when compile-angel-enable-native-compile
+              (compile-angel--native-compile el-file)))))
+      (setq-local compile-angel--compiling nil))))
 
 (defun compile-angel--compile-current-buffer ()
   "Compile the current buffer."
@@ -191,11 +205,7 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
   (when (or el-file feature)
     (let ((el-file (compile-angel--locate-library
                     (or el-file (symbol-name feature)) nosuffix)))
-      (when (and el-file
-                 (or (not compile-angel-on-load-mode-compile-once)
-                     (not (gethash el-file compile-angel--list-compiled-files))))
-        (puthash el-file t compile-angel--list-compiled-files)
-        (compile-angel-compile-elisp el-file)))))
+      (compile-angel-compile-elisp el-file))))
 
 (defun compile-angel--advice-before-require (feature
                                              &optional filename _noerror)
