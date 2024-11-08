@@ -266,11 +266,12 @@ FEATURE and FILENAME are the same arguments as the `require' function."
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
-  "Toggle `compile-angel-mode'."
+  "Toggle `compile-angel-mode' then compiles .el files before they are loaded."
   :global t
   :lighter " CompAngelLd"
   :group 'compile-angel
   (compile-angel--check-native-comp-available)
+
   (if compile-angel-on-load-mode
       (progn
         (when compile-angel-on-load-mode-advise-autoload
@@ -285,7 +286,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-save-mode
-  "Toggle `compile-angel-mode'."
+  "Toggle `compile-angel-mode'that compiles .el file when saved."
   :global t
   :lighter " CompAngelSv"
   :group 'compile-angel
