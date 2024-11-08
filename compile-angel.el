@@ -184,7 +184,8 @@ its source."
                  (not (gethash el-file compile-angel--list-compiled-files)))
              (or compile-angel-enable-byte-compile
                  compile-angel-enable-native-compile)
-             (not (compile-angel--el-file-excluded-p el-file)))
+             (not (compile-angel--el-file-excluded-p el-file))
+             (not compile-angel--currently-compiling))
     (puthash el-file t compile-angel--list-compiled-files)
     (setq compile-angel--currently-compiling t)
     (unwind-protect
