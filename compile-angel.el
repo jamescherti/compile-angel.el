@@ -93,14 +93,19 @@ For example, .el in the case of .el and .el.gz files."
               (throw 'found stripped-filename))))))
     nil))
 
+(defun compile-angel--elisp-native-compiled-p (el-file)
+  "Return t if EL-FILE is native compiled."
+  (let ((eln-file (comp-el-to-eln-filename el-file)))
+    (when (and eln-file (file-newer-than-file-p el-file eln-file))
+      eln-file)))
+
 (defun compile-angel--native-compile (el-file)
   "Native compile EL-FILE."
   (when compile-angel--native-comp-available
-    (let ((warning-minimum-level (if compile-angel-display-buffer
-                                     :warning
-                                   :error))
-          (eln-file (comp-el-to-eln-filename el-file)))
-      (when (and eln-file (file-newer-than-file-p el-file eln-file))
+    (unless (compile-angel--elisp-native-compiled-p el-file)
+      (let ((warning-minimum-level (if compile-angel-display-buffer
+                                       :warning
+                                     :error)))
         (when compile-angel-verbose
           (message "[compile-angel] Native compile: %s" el-file))
         (native-compile-async el-file)))))
