@@ -129,7 +129,6 @@ For example, .el in the case of .el and .el.gz files."
 
 (defun compile-angel-compile-elisp (el-file)
   "Byte compile and Native compile the .el file EL-FILE."
-  (interactive)
   (let* ((el-file-sans-suffix (compile-angel--file-ends-with-load-file-suffix
                                el-file ".el")))
     (cond
