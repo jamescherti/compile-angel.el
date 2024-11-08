@@ -33,6 +33,7 @@ To install `compile-angel` using `straight.el`:
 ```emacs-lisp
 (use-package compile-angel
   :ensure t
+  :demand t
   :straight (compile-angel
              :type git
              :host github
