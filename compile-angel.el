@@ -105,7 +105,8 @@ For example, .el in the case of .el and .el.gz files."
           (when compile-angel-verbose
             (message "[compile-angel] Byte compile ignored (not writable): %s"
                      elc-file)
-            nil)
+            ;; Return t: We can native compile
+            t)
         ;; Byte-compile
         (let ((byte-compile-verbose compile-angel-verbose)
               (warning-minimum-level (if compile-angel-display-buffer
@@ -126,21 +127,21 @@ For example, .el in the case of .el and .el.gz files."
             (when compile-angel-verbose
               (message "[compile-angel] Ignore (no-byte-compile): %s"
                        el-file))
-            ;; Return nil
-            nil)
+            ;; Return t: We can native compile
+            t)
 
            ;; Ignore: Byte compilation error
            ((not byte-compile-result)
             (when compile-angel-verbose
               (message "[compile-angel] Compilation error: %s" el-file))
-            ;; Return nil
+            ;; Return nil (No native compile)
             nil)
 
            ;; Success
            (byte-compile-result
             (when compile-angel-verbose
               (message "[compile-angel] Compile: %s" el-file))
-            ;; Return t
+            ;; Return t: We can native compile
             t)))))))
 
 (defvar-local compile-angel--compiling nil)
@@ -173,13 +174,15 @@ For example, .el in the case of .el and .el.gz files."
                      el-file))
 
            (t
-            ;; 1. Byte compile
-            (when compile-angel-enable-byte-compile
-              (compile-angel--byte-compile el-file elc-file))
-
-            ;; 2. Native compile
-            (when compile-angel-enable-native-compile
-              (compile-angel--native-compile el-file)))))
+            (if compile-angel-enable-byte-compile
+                ;; Byte-compile and native-compile
+                (when (compile-angel--byte-compile el-file elc-file)
+                  ;; Native-compile if byte-compile succeeds
+                  (when compile-angel-enable-native-compile
+                    (compile-angel--native-compile el-file)))
+              ;; 2. Native compile only
+              (when compile-angel-enable-native-compile
+                (compile-angel--native-compile el-file))))))
       (setq-local compile-angel--compiling nil))))
 
 (defun compile-angel--compile-current-buffer ()
