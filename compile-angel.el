@@ -184,6 +184,18 @@ Use `load-file-rep-suffixes' when NOSUFFIX is non-nil."
                  (mapcar (lambda (s) (concat ".el" s))
                          load-file-rep-suffixes))))
 
+(defun compile-angel--compile-before-loading (el-file
+                                              &optional nosuffix)
+  "This function is called by the :before advices.
+EL-FILE and NOSUFFIX are the same arguments as `load'."
+  (when el-file
+    (let ((el-file (compile-angel--locate-library el-file nosuffix)))
+      (when (and el-file
+                 (or (not compile-angel-on-load-mode-compile-once)
+                     (not (gethash el-file compile-angel--list-compiled-files))))
+        (puthash el-file t compile-angel--list-compiled-files)
+        (compile-angel-compile-elisp el-file)))))
+
 (defun compile-angel--advice-before-require (feature
                                              &optional filename _noerror)
   "Recompile the library before `require'.
@@ -192,25 +204,14 @@ FEATURE and FILENAME are the same arguments as the `require' function."
     (let* ((el-file (compile-angel--locate-library
                      (or filename (symbol-name feature))
                      nil)))
-      (when (and el-file
-                 (or (not compile-angel-on-load-mode-compile-once)
-                     (not (gethash el-file compile-angel--list-compiled-files))))
-        (puthash el-file t compile-angel--list-compiled-files)
-        (compile-angel-compile-elisp el-file)))))
+      (compile-angel--compile-before-loading el-file))))
 
 (defun compile-angel--advice-before-load (el-file &optional _noerror
                                                   _nomessage nosuffix
                                                   _must-suffix)
   "Recompile before `load'.
 EL-FILE and NOSUFFIX are the same arguments as `load'."
-  (when el-file
-    (let ((el-file (compile-angel--locate-library el-file
-                                                  nosuffix)))
-      (when (and el-file
-                 (or (not compile-angel-on-load-mode-compile-once)
-                     (not (gethash el-file compile-angel--list-compiled-files))))
-        (puthash el-file t compile-angel--list-compiled-files)
-        (compile-angel-compile-elisp el-file)))))
+  (compile-angel--compile-before-loading el-file nosuffix))
 
 (defun compile-angel--advice-before-autoload (_function
                                               file-or-feature
@@ -218,13 +219,7 @@ EL-FILE and NOSUFFIX are the same arguments as `load'."
                                               _docstring _interactive _type)
   "Recompile before `autoload'.
 FILE-OR-FEATURE is the file or the feature."
-  (when file-or-feature
-    (let ((el-file (compile-angel--locate-library file-or-feature nil)))
-      (when (and el-file
-                 (or (not compile-angel-on-load-mode-compile-once)
-                     (not (gethash el-file compile-angel--list-compiled-files))))
-        (puthash el-file t compile-angel--list-compiled-files)
-        (compile-angel-compile-elisp el-file)))))
+  (compile-angel--compile-before-loading file-or-feature))
 
 (defun compile-angel--check-native-comp-available ()
   "Determine if native compilation is available and set a flag accordingly.
