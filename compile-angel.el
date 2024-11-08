@@ -27,6 +27,9 @@
 
 ;;; Code:
 
+(require 'bytecomp)
+(require 'cl-lib)
+
 ;;; Variables
 
 (defgroup compile-angel nil
@@ -62,6 +65,11 @@ the mode will recompile on each load."
   :type 'boolean
   :group 'compile-angel)
 
+(defcustom compile-angel-excluded-files-regexps nil
+  "A list of regular expressions to exclude certain .el files from compilation."
+  :type '(repeat string)
+  :group 'compile-angel)
+
 (defvar compile-angel-on-load-mode-advise-load t
   "When non-nil, automatically compile .el files loaded using `load'.")
 
@@ -76,8 +84,20 @@ the mode will recompile on each load."
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
 (defvar compile-angel--native-comp-available nil)
 (defvar warning-minimum-level)
+(defvar compile-angel--currently-compiling nil)
 
 ;;; Functions
+
+(defun compile-angel--el-file-excluded-p (el-file)
+  "Check if EL-FILE matches any regex in `compile-angel-excluded-files-regexps'.
+Return t if the file should be ignored, nil otherwise."
+  (when (and compile-angel-excluded-files-regexps
+             (cl-some (lambda (regex)
+                        (string-match-p regex el-file))
+                      compile-angel-excluded-files-regexps))
+    (when compile-angel-verbose
+      (message "[compile-angel] File excluded: %s" el-file))
+    t))
 
 (defun compile-angel--file-ends-with-load-file-suffix (filename base-extension)
   "Return FILENAME without suffix if it matches one of `load-file-rep-suffixes'.
@@ -113,17 +133,16 @@ its source."
         (native-compile-async el-file)))))
 
 (defun compile-angel--byte-compile (el-file elc-file)
-  "Byte compile EL-FILE into ELC-FILE."
+  "Byte-compile EL-FILE into ELC-FILE."
   (let* ((elc-file-exists (file-exists-p elc-file)))
     (when (or (not elc-file-exists)
               (file-newer-than-file-p el-file elc-file))
       (if (not (file-writable-p elc-file))
           (when compile-angel-verbose
-            (message "[compile-angel] Byte compile ignored (not writable): %s"
-                     elc-file)
-            ;; Return t: We can native compile
-            t)
-        ;; Byte-compile
+            (message
+             "[compile-angel] Byte-compilation ignored (not writable): %s"
+             elc-file)
+            t) ; Return t: We can native compile
         (let ((byte-compile-verbose compile-angel-verbose)
               (warning-minimum-level (if compile-angel-display-buffer
                                          :warning
@@ -141,37 +160,33 @@ its source."
            ;; Ignore (no-byte-compile)
            ((eq byte-compile-result 'no-byte-compile)
             (when compile-angel-verbose
-              (message "[compile-angel] Ignore (no-byte-compile): %s"
-                       el-file))
-            ;; Return t: We can native compile
-            t)
+              (message
+               "[compile-angel] Byte-compilation Ignore (no-byte-compile): %s"
+               el-file))
+            t) ; Return t: We can native compile
 
-           ;; Ignore: Byte compilation error
+           ;; Ignore: Byte-compilation error
            ((not byte-compile-result)
             (when compile-angel-verbose
-              (message "[compile-angel] Compilation error: %s" el-file))
-            ;; Return nil (No native compile)
-            nil)
+              (message "[compile-angel] Byte-compilation error: %s" el-file))
+            nil) ; Return nil (No native compile)
 
            ;; Success
            (byte-compile-result
             (when compile-angel-verbose
-              (message "[compile-angel] Compile: %s" el-file))
-            ;; Return t: We can native compile
-            t)))))))
-
-(defvar-local compile-angel--compiling nil)
+              (message "[compile-angel] Byte-compilation: %s" el-file))
+            t))))))) ; Return t: We can native compile
 
 (defun compile-angel-compile-elisp (el-file)
-  "Byte compile and Native compile the .el file EL-FILE."
+  "Byte-compile and Native-compile the .el file EL-FILE."
   (when (and el-file
              (or (not compile-angel-on-load-mode-compile-once)
                  (not (gethash el-file compile-angel--list-compiled-files)))
-             (not compile-angel--compiling)
              (or compile-angel-enable-byte-compile
-                 compile-angel-enable-native-compile))
+                 compile-angel-enable-native-compile)
+             (not (compile-angel--el-file-excluded-p el-file)))
     (puthash el-file t compile-angel--list-compiled-files)
-    (setq-local compile-angel--compiling t)
+    (setq compile-angel--currently-compiling t)
     (unwind-protect
         (let* ((elc-file (byte-compile-dest-file el-file))
                (el-file-sans-suffix
@@ -191,15 +206,12 @@ its source."
 
            (t
             (if compile-angel-enable-byte-compile
-                ;; Byte-compile and native-compile
                 (when (compile-angel--byte-compile el-file elc-file)
-                  ;; Native-compile if byte-compile succeeds
                   (when compile-angel-enable-native-compile
                     (compile-angel--native-compile el-file)))
-              ;; 2. Native compile only
               (when compile-angel-enable-native-compile
                 (compile-angel--native-compile el-file))))))
-      (setq-local compile-angel--compiling nil))))
+      (setq compile-angel--currently-compiling nil))))
 
 (defun compile-angel--compile-current-buffer ()
   "Compile the current buffer."
