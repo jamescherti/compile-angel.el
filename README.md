@@ -7,7 +7,7 @@ The **compile-angel** package automatically byte-compiles and native-compiles Em
 - `(compile-angel-on-save-mode)`: Compiles when an .el file is modified and saved.
 - `(compile-angel-on-load-mode)`: Compiles an .el file before it is loaded.
 
-These modes ensure speeds up Emacs by ensuring all libraries are byte-compiled and native-compiled. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
+These modes speed up Emacs by ensuring all libraries are byte-compiled and native-compiled. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
 
 NOTE: It is recommended to set `load-prefer-newer` to `t`, ensuring that Emacs loads the most recent version of byte-compiled or source files. Additionally, ensure that native compilation is enabled; this should return t: `(native-comp-available-p)`.
 
