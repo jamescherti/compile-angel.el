@@ -1,4 +1,4 @@
-;;; compile-angel.el --- Compile Emacs Lisp libraries automatically.  -*- lexical-binding: t; -*-
+;;; compile-angel.el --- Compile Emacs Lisp libraries automatically -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2024 James Cherti | https://www.jamescherti.com/contact/
 
