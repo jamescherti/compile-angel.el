@@ -1,4 +1,4 @@
-# compile-angel.el - Automatically Byte-compile and native-compile Emacs Lisp libraries
+# compile-angel.el - Byte-compile and native-compile Emacs Lisp libraries Automatically
 ![Build Status](https://github.com/jamescherti/compile-angel.el/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/github/license/jamescherti/compile-angel.el)
 ![](https://raw.githubusercontent.com/jamescherti/compile-angel.el/main/.images/made-for-gnu-emacs.svg)
@@ -7,9 +7,9 @@ The **compile-angel** package automatically byte-compiles and native-compiles Em
 - `(compile-angel-on-save-mode)`: Compiles when an .el file is modified and saved.
 - `(compile-angel-on-load-mode)`: Compiles an .el file before it is loaded.
 
-These modes ensure that Emacs always has up-to-date byte-compiled and native-compiled files.
+These modes ensure speeds up Emacs by ensuring all libraries are byte-compiled and native-compiled. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
 
-NOTE: It is recommended to set `load-prefer-newer` to `t`, ensuring that Emacs loads the most recent version of byte-compiled or source files. Additionally, ensure that native compilation is enabled; this should return `t`: `(native-comp-available-p)`.
+NOTE: It is recommended to set `load-prefer-newer` to `t`, ensuring that Emacs loads the most recent version of byte-compiled or source files. Additionally, ensure that native compilation is enabled; this should return t: `(native-comp-available-p)`.
 
 ## What is the difference between auto-compile and compile-angel?
 
@@ -67,6 +67,7 @@ This program is free software: you can redistribute it and/or modify it under th
 ## Links
 
 - [compile-angel.el @GitHub](https://github.com/jamescherti/compile-angel.el)
+- If users who prefer compiling .el files from the command line: [elispcomp](https://github.com/jamescherti/elispcomp)
 
 Other Emacs packages by the same author:
 - [minimal-emacs.d](https://github.com/jamescherti/minimal-emacs.d): This repository hosts a minimal Emacs configuration designed to serve as a foundation for your vanilla Emacs setup and provide a solid base for an enhanced Emacs experience.
