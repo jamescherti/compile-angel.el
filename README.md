@@ -24,7 +24,7 @@ NOTE: It is recommended to set `load-prefer-newer` to `t` to ensure that Emacs l
 To install `compile-angel` using `straight.el`:
 
 1. It if hasn't already been done, [add the straight.el bootstrap code](https://github.com/radian-software/straight.el?tab=readme-ov-file#getting-started) to your init file.
-2. Add the following code to the Emacs init file:
+2. Add the following code **at the very beginning of your Emacs init file, before anything else**:
 ```emacs-lisp
 (use-package compile-angel
   :ensure t
