@@ -39,6 +39,8 @@ To install `compile-angel` using `straight.el`:
   (compile-angel-verbose nil)
   ;; Set compile-angel-display-buffer to t to display the *Compile-Log* buffer.
   (compile-angel-display-buffer nil)
+  ;; Perform byte/native compilation of .el files only once during initial loading
+  (compile-angel-on-load-mode-compile-once t)
 
   :config
   (compile-angel-on-save-mode)

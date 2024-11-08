@@ -54,6 +54,14 @@
   :type 'boolean
   :group 'compile-angel)
 
+(defcustom compile-angel-on-load-mode-compile-once t
+  "If non-nil, enable single compilation for `compile-angel-on-load-mode'.
+This setting causes the `compile-angel-on-load-mode' to perform byte and native
+compilation of .el files only once during initial loading. When disabled (nil),
+the mode will recompile on each load."
+  :type 'boolean
+  :group 'compile-angel)
+
 ;;; Internal variables
 
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
@@ -185,7 +193,8 @@ FEATURE and FILENAME are the same arguments as the `require' function."
                      (or filename (symbol-name feature))
                      nil)))
       (when (and el-file
-                 (not (gethash el-file compile-angel--list-compiled-files)))
+                 (and compile-angel-on-load-mode-compile-once
+                      (not (gethash el-file compile-angel--list-compiled-files))))
         (puthash el-file t compile-angel--list-compiled-files)
         (compile-angel-compile-elisp el-file)))))
 
@@ -198,7 +207,8 @@ EL-FILE and NOSUFFIX are the same arguments as `load'."
     (let ((el-file (compile-angel--locate-library el-file
                                                   nosuffix)))
       (when (and el-file
-                 (not (gethash el-file compile-angel--list-compiled-files)))
+                 (and compile-angel-on-load-mode-compile-once
+                      (not (gethash el-file compile-angel--list-compiled-files))))
         (puthash el-file t compile-angel--list-compiled-files)
         (compile-angel-compile-elisp el-file)))))
 
@@ -211,7 +221,8 @@ FILE-OR-FEATURE is the file or the feature."
   (when file-or-feature
     (let ((el-file (compile-angel--locate-library file-or-feature nil)))
       (when (and el-file
-                 (not (gethash el-file compile-angel--list-compiled-files)))
+                 (and compile-angel-on-load-mode-compile-once
+                      (not (gethash el-file compile-angel--list-compiled-files))))
         (puthash el-file t compile-angel--list-compiled-files)
         (compile-angel-compile-elisp el-file)))))
 
