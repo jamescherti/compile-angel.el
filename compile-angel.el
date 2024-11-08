@@ -62,6 +62,15 @@ the mode will recompile on each load."
   :type 'boolean
   :group 'compile-angel)
 
+(defvar compile-angel-on-load-mode-advise-load t
+  "When non-nil, automatically compile .el files loaded using `load'.")
+
+(defvar compile-angel-on-load-mode-advise-require t
+  "When non-nil, automatically compile .el files loaded using `require'.")
+
+(defvar compile-angel-on-load-mode-advise-autoload t
+  "When non-nil, automatically compile .el files loaded using `autoload'.")
+
 ;;; Internal variables
 
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
@@ -245,9 +254,12 @@ FEATURE and FILENAME are the same arguments as the `require' function."
   (compile-angel--check-native-comp-available)
   (if compile-angel-on-load-mode
       (progn
-        (advice-add 'autoload :before #'compile-angel--advice-before-autoload)
-        (advice-add 'require :before #'compile-angel--advice-before-require)
-        (advice-add 'load :before #'compile-angel--advice-before-load))
+        (when compile-angel-on-load-mode-advise-autoload
+          (advice-add 'autoload :before #'compile-angel--advice-before-autoload))
+        (when compile-angel-on-load-mode-advise-require
+          (advice-add 'require :before #'compile-angel--advice-before-require))
+        (when compile-angel-on-load-mode-advise-load
+          (advice-add 'load :before #'compile-angel--advice-before-load)))
     (advice-remove 'autoload #'compile-angel--advice-before-autoload)
     (advice-remove 'require 'compile-angel--advice-before-require)
     (advice-remove 'load 'compile-angel--advice-before-load)))
