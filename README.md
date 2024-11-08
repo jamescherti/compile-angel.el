@@ -1,4 +1,4 @@
-# compile-angel.el
+# compile-angel.el - Automatically Byte-compile and native-compile Emacs Lisp libraries
 ![Build Status](https://github.com/jamescherti/compile-angel.el/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/github/license/jamescherti/compile-angel.el)
 ![](https://raw.githubusercontent.com/jamescherti/compile-angel.el/main/.images/made-for-gnu-emacs.svg)
