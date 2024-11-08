@@ -47,7 +47,6 @@
 ;;; Internal variables
 
 (defvar compile-angel--list-compiled-files nil)
-(defvar compile-angel--status-byte-compile-skip nil)
 (defvar warning-minimum-level)
 
 ;;; Functions
@@ -87,50 +86,46 @@ For example, .el in the case of .el and .el.gz files."
 
 (defun compile-angel--byte-compile (el-file elc-file)
   "Byte compile EL-FILE into ELC-FILE."
-  (unless (member el-file compile-angel--status-byte-compile-skip)
-    (if (not (file-writable-p elc-file))
+  (if (not (file-writable-p elc-file))
+      (when compile-angel-verbose
+        (message "[compile-angel] Byte compile ignored (not writable): %s"
+                 elc-file)
+        nil)
+    ;; Byte-compile
+    (let ((byte-compile-verbose compile-angel-verbose)
+          (warning-minimum-level (if compile-angel-display-buffer
+                                     :warning
+                                   :error))
+          (byte-compile-result
+           (let ((after-change-major-mode-hook
+                  (and (fboundp 'global-font-lock-mode-enable-in-buffer)
+                       (list 'global-font-lock-mode-enable-in-buffer)))
+                 (inhibit-message (not compile-angel-verbose))
+                 (prog-mode-hook nil)
+                 (emacs-lisp-mode-hook nil))
+             (byte-compile-file el-file))))
+      (cond
+       ;; Ignore (no-byte-compile)
+       ((eq byte-compile-result 'no-byte-compile)
         (when compile-angel-verbose
-          (message "[compile-angel] Byte compile ignored (not writable): %s"
-                   elc-file)
-          nil)
-      ;; Byte-compile
-      (let ((byte-compile-verbose compile-angel-verbose)
-            (warning-minimum-level (if compile-angel-display-buffer
-                                       :warning
-                                     :error))
-            (byte-compile-result
-             (let ((after-change-major-mode-hook
-                    (and (fboundp 'global-font-lock-mode-enable-in-buffer)
-                         (list 'global-font-lock-mode-enable-in-buffer)))
-                   (inhibit-message (not compile-angel-verbose))
-                   (prog-mode-hook nil)
-                   (emacs-lisp-mode-hook nil))
-               (byte-compile-file el-file))))
-        (cond
-         ;; Ignore (no-byte-compile)
-         ((eq byte-compile-result 'no-byte-compile)
-          (when compile-angel-verbose
-            (message "[compile-angel] Ignore (no-byte-compile): %s"
-                     el-file))
-          (push el-file compile-angel--status-byte-compile-skip)
-          ;; Return nil
-          nil)
+          (message "[compile-angel] Ignore (no-byte-compile): %s"
+                   el-file))
+        ;; Return nil
+        nil)
 
-         ;; Ignore: Byte compilation error
-         ((not byte-compile-result)
-          (when compile-angel-verbose
-            (message "[compile-angel] Compilation error: %s" el-file))
-          (push el-file compile-angel--status-byte-compile-skip)
-          ;; Return nil
-          nil)
+       ;; Ignore: Byte compilation error
+       ((not byte-compile-result)
+        (when compile-angel-verbose
+          (message "[compile-angel] Compilation error: %s" el-file))
+        ;; Return nil
+        nil)
 
-         ;; Success
-         (byte-compile-result
-          (progn
-            (when compile-angel-verbose
-              (message "[compile-angel] Compile: %s" el-file))
-            ;; Compiled. Return t
-            t)))))))
+       ;; Success
+       (byte-compile-result
+        (when compile-angel-verbose
+          (message "[compile-angel] Compile: %s" el-file))
+        ;; Return t
+        t)))))
 
 (defun compile-angel-compile-elisp (el-file)
   "Byte compile and Native compile the .el file EL-FILE."
@@ -155,7 +150,7 @@ For example, .el in the case of .el and .el.gz files."
                       (file-newer-than-file-p el-file elc-file))
               (compile-angel--byte-compile el-file
                                            elc-file)))
-        ;; 2. Always native compile
+        ;; 2. Native compile
         (compile-angel--native-compile el-file))))))
 
 (defun compile-angel--compile-current-buffer ()
@@ -182,20 +177,21 @@ FEATURE and FILENAME are the same arguments as the `require' function."
     (let* ((el-file (compile-angel--locate-library
                      (or filename (symbol-name feature))
                      nil)))
-      (when el-file
-        (when (not (member el-file compile-angel--list-compiled-files))
-          (push el-file compile-angel--list-compiled-files)
-          (compile-angel-compile-elisp el-file))))))
+      (when (and el-file
+                 (not (member el-file compile-angel--list-compiled-files)))
+        (push el-file compile-angel--list-compiled-files)
+        (compile-angel-compile-elisp el-file)))))
 
 (defun compile-angel--advice-before-load (el-file &optional _noerror
                                                   _nomessage nosuffix
                                                   _must-suffix)
   "Recompile before `load'.
 EL-FILE and NOSUFFIX are the same arguments as `load'."
-  (let ((el-file (compile-angel--locate-library el-file
-                                                nosuffix)))
-    (when el-file
-      (when (not (member el-file compile-angel--list-compiled-files))
+  (when el-file
+    (let ((el-file (compile-angel--locate-library el-file
+                                                  nosuffix)))
+      (when (and el-file
+                 (not (member el-file compile-angel--list-compiled-files)))
         (push el-file compile-angel--list-compiled-files)
         (compile-angel-compile-elisp el-file)))))
 
@@ -205,11 +201,12 @@ EL-FILE and NOSUFFIX are the same arguments as `load'."
                                               _docstring _interactive _type)
   "Recompile before `autoload'.
 FILE-OR-FEATURE is the file or the feature."
-  (let ((el-file (compile-angel--locate-library file-or-feature nil)))
-    (when (and el-file (not (member el-file
-                                    compile-angel--list-compiled-files)))
-      (push el-file compile-angel--list-compiled-files)
-      (compile-angel-compile-elisp el-file))))
+  (when file-or-feature
+    (let ((el-file (compile-angel--locate-library file-or-feature nil)))
+      (when (and el-file
+                 (not (member el-file compile-angel--list-compiled-files)))
+        (push el-file compile-angel--list-compiled-files)
+        (compile-angel-compile-elisp el-file)))))
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
