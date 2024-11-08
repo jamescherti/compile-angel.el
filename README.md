@@ -14,8 +14,8 @@ NOTE: It is recommended to set `load-prefer-newer` to `t`, ensuring that Emacs l
 ## What is the difference between auto-compile and compile-angel?
 
 This package is an alternative to the auto-compile Emacs package. Here are the main differences:
-- The compile-angel package is lightweight, with one-third the lines of code of auto-compile.
-- The compile-angel package, in addition to compiling the elisp files that are loaded using `load` and `require`, **also handles files that auto-compile misses**, such as those that are deferred (e.g., with `:defer t` and `use-package`) or `autoload`.
+- **Lightweight**: The compile-angel package is lightweight, with one-third the lines of code of auto-compile.
+- **Compile more .el files**: The compile-angel package, in addition to compiling the elisp files that are loaded using `load` and `require`, **also handles files that auto-compile misses**, such as those that are deferred (e.g., with `:defer t` and `use-package`) or `autoload`.
 
 *(Special thanks to Jonas Bernoulli, the creator of the auto-compile package, whose work inspired the development of compile-angel. This package was created to offer a lightweight alternative to auto-compile that also compiles deferred/autoloaded .el files.)*
 
