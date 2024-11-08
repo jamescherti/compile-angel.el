@@ -32,6 +32,14 @@ To install `compile-angel` using `straight.el`:
              :type git
              :host github
              :repo "jamescherti/compile-angel.el")
+
+  :custom
+  (compile-angel-enable-byte-compile t)
+  (compile-angel-enable-native-compile t)
+  (compile-angel-verbose nil)
+  ;; Set compile-angel-display-buffer to t to display the *Compile-Log* buffer.
+  (compile-angel-display-buffer nil)
+
   :config
   (compile-angel-on-save-mode)
   (compile-angel-on-load-mode))

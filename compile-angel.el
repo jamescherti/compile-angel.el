@@ -44,12 +44,12 @@
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-byte-compile nil
+(defcustom compile-angel-enable-byte-compile nil
   "Non-nil to enable byte compilation of Emacs Lisp (.el) files."
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-native-compile nil
+(defcustom compile-angel-enable-native-compile nil
   "Non-nil to enable native compilation of Emacs Lisp (.el) files."
   :type 'boolean
   :group 'compile-angel)
@@ -137,7 +137,8 @@ For example, .el in the case of .el and .el.gz files."
 
 (defun compile-angel-compile-elisp (el-file)
   "Byte compile and Native compile the .el file EL-FILE."
-  (when (or compile-angel-byte-compile compile-angel-native-compile)
+  (when (or compile-angel-enable-byte-compile
+            compile-angel-enable-native-compile)
     (let* ((el-file-sans-suffix (compile-angel--file-ends-with-load-file-suffix
                                  el-file ".el")))
       (cond
@@ -152,11 +153,11 @@ For example, .el in the case of .el and .el.gz files."
        (t
         ;; 1. Byte compile
         (let* ((elc-file (concat el-file-sans-suffix "c")))
-          (when compile-angel-byte-compile
+          (when compile-angel-enable-byte-compile
             (compile-angel--byte-compile el-file elc-file)))
 
         ;; 2. Native compile
-        (when compile-angel-native-compile
+        (when compile-angel-enable-native-compile
           (compile-angel--native-compile el-file)))))))
 
 (defun compile-angel--compile-current-buffer ()
