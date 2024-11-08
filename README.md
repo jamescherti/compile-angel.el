@@ -32,19 +32,26 @@ To install `compile-angel` using `straight.el`:
              :type git
              :host github
              :repo "jamescherti/compile-angel.el")
-
-  :custom
-  (compile-angel-enable-byte-compile t)
-  (compile-angel-enable-native-compile t)
-  (compile-angel-verbose nil)
-  ;; Set compile-angel-display-buffer to t to display the *Compile-Log* buffer.
-  (compile-angel-display-buffer nil)
-  ;; Perform byte/native compilation of .el files only once during initial loading
-  (compile-angel-on-load-mode-compile-once t)
-
   :config
   (compile-angel-on-save-mode)
   (compile-angel-on-load-mode))
+```
+
+## Customizations
+
+``` emacs-lisp
+;; Enable/Disable byte compilation and native compilation
+(setq compile-angel-enable-byte-compile t)
+(setq compile-angel-enable-native-compile t)
+
+;; Enable verbose (Set it to t while debugging)
+(setq compile-angel-verbose nil)
+
+;; Display the *Compile-Log* buffer (Set it to t while writing elisp)
+(setq compile-angel-display-buffer nil)
+
+;; Perform byte/native compilation of .el files only once during initial loading
+(setq compile-angel-on-load-mode-compile-once t)
 ```
 
 ## Author and License
