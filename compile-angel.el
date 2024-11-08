@@ -216,8 +216,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
   (compile-angel--compile-before-loading file-or-feature))
 
 (defun compile-angel--check-native-comp-available ()
-  "Determine if native compilation is available and set a flag accordingly.
-It sets the flag: `compile-angel--native-comp-available'."
+  "Determine if native compilation is available and set a flag accordingly."
   (unless compile-angel--native-comp-available
     (when (and (featurep 'native-compile)
                (fboundp 'native-comp-available-p)

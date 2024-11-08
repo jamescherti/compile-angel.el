@@ -15,7 +15,7 @@ This package is an alternative to the auto-compile Emacs package. Here are the m
 
 *(Special thanks to Jonas Bernoulli, the creator of the auto-compile package, whose work inspired the development of compile-angel. This package was created to offer a lightweight alternative to auto-compile that also compiles deferred/autoloaded .el files.)*
 
-NOTE: It is recommended to set `load-prefer-newer` to `t` to ensure that Emacs loads the most recent version of byte-compiled or source files.
+NOTE: It is recommended to set `load-prefer-newer` to `t`, ensuring that Emacs loads the most recent version of byte-compiled or source files. Additionally, ensure that native compilation is enabled; this should return `t`: `(native-comp-available-p)`.
 
 ## Installation
 
