@@ -94,7 +94,9 @@ For example, .el in the case of .el and .el.gz files."
     nil))
 
 (defun compile-angel--elisp-native-compiled-p (el-file)
-  "Return t if EL-FILE is native compiled."
+  "Return t if EL-FILE is native compiled and up to date.
+The return value is non-nil only when the corresponding .eln file is newer than
+its source."
   (let ((eln-file (comp-el-to-eln-filename el-file)))
     (when (and eln-file (file-newer-than-file-p el-file eln-file))
       eln-file)))
