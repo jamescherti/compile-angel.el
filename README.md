@@ -5,13 +5,13 @@
 
 The **compile-angel** package automatically byte-compiles and native-compiles Emacs Lisp libraries. It offers two modes:
 - `(compile-angel-on-save-mode)`: Compiles when an .el file is modified and saved.
-- `(compile-angel-on-load-mode)`: Compiles the .el file before it is loaded.
+- `(compile-angel-on-load-mode)`: Compiles an .el file before it is loaded.
 
-This package is an alternative to auto-compile. Here are the main differences:
+This package is an alternative to the auto-compile Emacs package. Here are the main differences:
 - The compile-angel package is lightweight, with one-third the lines of code of auto-compile.
-- The auto-compile package handles compiling the elisp files that are loaded using `load` and `require` only.  The compile-angel package, in addition to load and require, also handles files that auto-compile misses, such as those that are deferred (e.g., with `:defer t` and `use-package`) or `autoload`.
+- The compile-angel package, in addition to compiling the elisp files that are loaded using `load` and `require`, also handles files that auto-compile misses, such as those that are deferred (e.g., with `:defer t` and `use-package`) or `autoload`.
 
-(Special thanks to Jonas Bernoulli, the creator of the auto-compile package, whose work inspired the development of compile-angel. This package was created to offer a lightweight alternative to auto-compile that misses fewer deferred/autoloaded files.)
+*(Special thanks to Jonas Bernoulli, the creator of the auto-compile package, whose work inspired the development of compile-angel. This package was created to offer a lightweight alternative to auto-compile that also compiles deferred/autoloaded .el files.)*
 
 ## Installation
 
