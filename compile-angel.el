@@ -81,7 +81,7 @@ the mode will recompile on each load."
   "When non-nil, automatically compile .el files loaded using `autoload'.")
 
 (defvar compile-angel-on-load-mode-advise-eval-after-load t
-  "When non-nil, advise `eval-after-load'.")
+  "When non-nil, compile .el files before `eval-after-load'.")
 
 ;;; Internal variables
 
@@ -181,7 +181,7 @@ its source."
               (message "[compile-angel] Byte-compilation: %s" el-file))
             t))))))) ; Return t: We can native compile
 
-(defun compile-angel-compile-elisp (el-file)
+(defun compile-angel--compile-elisp (el-file)
   "Byte-compile and Native-compile the .el file EL-FILE."
   (when (and el-file
              (or (not compile-angel-on-load-mode-compile-once)
@@ -222,7 +222,7 @@ its source."
   "Compile the current buffer."
   (when (derived-mode-p 'emacs-lisp-mode)
     (let ((el-file (buffer-file-name (buffer-base-buffer))))
-      (compile-angel-compile-elisp el-file))))
+      (compile-angel--compile-elisp el-file))))
 
 (defun compile-angel--locate-library (library nosuffix)
   "Return the path to the LIBRARY el file.
@@ -249,7 +249,7 @@ Use `load-file-rep-suffixes' when NOSUFFIX is non-nil."
 EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
   (when (or el-file feature)
     (let ((el-file (compile-angel--guess-el-file el-file feature nosuffix)))
-      (compile-angel-compile-elisp el-file))))
+      (compile-angel--compile-elisp el-file))))
 
 (defun compile-angel--advice-before-require (feature
                                              &optional filename _noerror)
@@ -294,7 +294,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
 (define-minor-mode compile-angel-on-load-mode
   "Toggle `compile-angel-mode' then compiles .el files before they are loaded."
   :global t
-  :lighter " CompAngelLd"
+  :lighter " CompAngelL"
   :group 'compile-angel
   (compile-angel--check-native-comp-available)
 
@@ -317,7 +317,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
 (define-minor-mode compile-angel-on-save-mode
   "Toggle `compile-angel-mode'that compiles .el file when saved."
   :global t
-  :lighter " CompAngelSv"
+  :lighter " CompAngelS"
   :group 'compile-angel
   (compile-angel--check-native-comp-available)
   (if compile-angel-on-save-mode
