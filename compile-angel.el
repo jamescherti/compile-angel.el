@@ -29,6 +29,7 @@
 
 (require 'bytecomp)
 (require 'cl-lib)
+(eval-when-compile (require 'subr-x))
 
 ;;; Variables
 
@@ -78,6 +79,9 @@ the mode will recompile on each load."
 
 (defvar compile-angel-on-load-mode-advise-autoload t
   "When non-nil, automatically compile .el files loaded using `autoload'.")
+
+(defvar compile-angel-on-load-mode-advise-eval-after-load t
+  "When non-nil, advise `eval-after-load'.")
 
 ;;; Internal variables
 
@@ -278,6 +282,14 @@ FEATURE and FILENAME are the same arguments as the `require' function."
                (native-comp-available-p))
       (setq compile-angel--native-comp-available t))))
 
+(defun compile-angel--advice-eval-after-load (el-file _form)
+  "Advice to track what EL-FILE eval-after-load try to load."
+  (cond ((and el-file (stringp el-file))
+         (compile-angel--compile-before-loading el-file nil))
+        ((symbolp el-file)
+         (let ((feature (symbol-name el-file)))
+           (compile-angel--compile-before-loading nil feature)))))
+
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
   "Toggle `compile-angel-mode' then compiles .el files before they are loaded."
@@ -293,10 +305,13 @@ FEATURE and FILENAME are the same arguments as the `require' function."
         (when compile-angel-on-load-mode-advise-require
           (advice-add 'require :before #'compile-angel--advice-before-require))
         (when compile-angel-on-load-mode-advise-load
-          (advice-add 'load :before #'compile-angel--advice-before-load)))
+          (advice-add 'load :before #'compile-angel--advice-before-load))
+        (when compile-angel-on-load-mode-advise-eval-after-load
+          (advice-add 'eval-after-load :before #'compile-angel--advice-eval-after-load)))
     (advice-remove 'autoload #'compile-angel--advice-before-autoload)
     (advice-remove 'require 'compile-angel--advice-before-require)
-    (advice-remove 'load 'compile-angel--advice-before-load)))
+    (advice-remove 'load 'compile-angel--advice-before-load)
+    (advice-remove 'eval-after-load #'compile-angel--advice-eval-after-load)))
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-save-mode
