@@ -103,20 +103,6 @@ Return t if the file should be ignored, nil otherwise."
       (message "[compile-angel] File excluded: %s" el-file))
     t))
 
-(defun compile-angel--file-ends-with-load-file-suffix (filename base-extension)
-  "Return FILENAME without suffix if it matches one of `load-file-rep-suffixes'.
-BASE-EXTENSION is the extension before one of the `load-file-rep-suffixes'.
-For example, .el in the case of .el and .el.gz files."
-  (catch 'found
-    (dolist (suffix load-file-rep-suffixes)
-      (let ((full-suffix (concat base-extension suffix)))
-        (when (string-suffix-p full-suffix filename)
-          (let ((stripped-filename (substring filename 0 (- (length filename)
-                                                            (length suffix)))))
-            (when (string-suffix-p base-extension stripped-filename)
-              (throw 'found stripped-filename))))))
-    nil))
-
 (defun compile-angel--elisp-native-compiled-p (el-file)
   "Return t if EL-FILE is native compiled and up to date.
 The return value is non-nil only when the corresponding .eln file is newer than
@@ -191,19 +177,13 @@ its source."
     (puthash el-file t compile-angel--list-compiled-files)
     (setq compile-angel--currently-compiling t)
     (unwind-protect
-        (let* ((elc-file (byte-compile-dest-file el-file))
-               (el-file-sans-suffix
-                (compile-angel--file-ends-with-load-file-suffix el-file ".el")))
+        (let* ((elc-file (byte-compile-dest-file el-file)))
           (cond
            ((not (file-exists-p el-file))
             (message "[compile-angel] Warning: The file does not exist: %s"
                      el-file))
 
            ((not elc-file)
-            (message "[compile-angel] Warning: The file is not an .el file: %s"
-                     el-file))
-
-           ((not el-file-sans-suffix)
             (message "[compile-angel] Warning: The file is not an .el file: %s"
                      el-file))
 
