@@ -129,13 +129,10 @@ its source."
   "Native compile EL-FILE."
   (when compile-angel--native-comp-available
     (unless (compile-angel--elisp-native-compiled-p el-file)
-      (let ((warning-minimum-level (if compile-angel-display-buffer
-                                       :warning
-                                     :error)))
+      (let ((warning-minimum-level :error))
         (when compile-angel-verbose
           (message "[compile-angel] Native compile: %s" el-file))
-        (let ((warning-minimum-level :error))
-          (native-compile-async el-file))))))
+        (native-compile-async el-file)))))
 
 (defun compile-angel--byte-compile (el-file elc-file)
   "Byte-compile EL-FILE into ELC-FILE."
@@ -285,7 +282,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
       (setq compile-angel--native-comp-available t))))
 
 (defun compile-angel--advice-eval-after-load (el-file _form)
-  "Advice to track what EL-FILE eval-after-load try to load."
+  "Advice to track what EL-FILE eval-after-load tries to load."
   (cond ((and el-file (stringp el-file))
          (compile-angel--compile-before-loading el-file nil))
         ((symbolp el-file)
