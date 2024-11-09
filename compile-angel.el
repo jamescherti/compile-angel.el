@@ -184,7 +184,9 @@ its source."
              (not (compile-angel--el-file-excluded-p el-file))
              (if compile-angel-predicate-function
                  (funcall compile-angel-predicate-function el-file)
-               t))
+               t)
+             (string-match-p
+              (format "\\.el%s\\'" (regexp-opt load-file-rep-suffixes)) el-file))
     (puthash el-file t compile-angel--list-compiled-files)
     (setq compile-angel--currently-compiling t)
     (unwind-protect
