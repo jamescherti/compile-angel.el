@@ -61,6 +61,17 @@ To install `compile-angel` using `straight.el`:
 
 ;; Ignore certain files, for example, for users of the `dir-config` package:
 (setq compile-angel-excluded-files-regexps '("/\\.dir-config\\.el$"))
+
+;; Function that determines if an .el file should be compiled. It takes one
+;; argument (an EL file) and returns t if the file should be compiled,
+;; (By default, `compile-angel-predicate-function` is set to nil, which
+;; means that the predicate function is not called.)
+(setq compile-angel-predicate-function
+   #'(lambda(el-file)
+       ;; Show a message
+       (message "PREDICATE: %s" el-file)
+       ;; Return t (Compile all)
+       t))
 ```
 
 ## Author and License

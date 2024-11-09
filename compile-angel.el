@@ -71,6 +71,14 @@ the mode will recompile on each load."
   :type '(repeat string)
   :group 'compile-angel)
 
+(defcustom compile-angel-predicate-function nil
+  "Function that determines if an .el file should be compiled.
+It takes one argument (an EL file) and returns t if the file should be compiled,
+or nil if the file should not be compiled."
+  :group 'compile-angel
+  :type '(choice (const nil)
+                 (function)))
+
 (defvar compile-angel-on-load-mode-advise-load t
   "When non-nil, automatically compile .el files loaded using `load'.")
 
@@ -168,12 +176,15 @@ its source."
 (defun compile-angel--compile-elisp (el-file)
   "Byte-compile and Native-compile the .el file EL-FILE."
   (when (and el-file
-             (or (not compile-angel-on-load-mode-compile-once)
-                 (not (gethash el-file compile-angel--list-compiled-files)))
+             (not compile-angel--currently-compiling)
              (or compile-angel-enable-byte-compile
                  compile-angel-enable-native-compile)
+             (or (not compile-angel-on-load-mode-compile-once)
+                 (not (gethash el-file compile-angel--list-compiled-files)))
              (not (compile-angel--el-file-excluded-p el-file))
-             (not compile-angel--currently-compiling))
+             (if compile-angel-predicate-function
+                 (funcall compile-angel-predicate-function el-file)
+               t))
     (puthash el-file t compile-angel--list-compiled-files)
     (setq compile-angel--currently-compiling t)
     (unwind-protect
