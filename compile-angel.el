@@ -262,7 +262,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
       (setq compile-angel--native-comp-available t))))
 
 (defun compile-angel--advice-eval-after-load (el-file _form)
-  "Advice to track what EL-FILE eval-after-load tries to load."
+  "Advice to track what EL-FILE is passed to `eval-after-load'."
   (cond ((and el-file (stringp el-file))
          (compile-angel--compile-before-loading el-file nil))
         ((symbolp el-file)
