@@ -134,7 +134,8 @@ its source."
                                      :error)))
         (when compile-angel-verbose
           (message "[compile-angel] Native compile: %s" el-file))
-        (native-compile-async el-file)))))
+        (let ((warning-minimum-level :error))
+          (native-compile-async el-file))))))
 
 (defun compile-angel--byte-compile (el-file elc-file)
   "Byte-compile EL-FILE into ELC-FILE."
@@ -279,6 +280,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
   (unless compile-angel--native-comp-available
     (when (and (featurep 'native-compile)
                (fboundp 'native-comp-available-p)
+               (fboundp 'native-compile-async)
                (native-comp-available-p))
       (setq compile-angel--native-comp-available t))))
 
