@@ -139,19 +139,20 @@ its source."
              "[compile-angel] Byte-compilation ignored (not writable): %s"
              elc-file)
             t) ; Return t: We can native compile
-        (let ((byte-compile-verbose compile-angel-verbose)
-              (warning-minimum-level (if compile-angel-display-buffer
-                                         :warning
-                                       :error))
-              (byte-compile-result
-               (let ((after-change-major-mode-hook
-                      (and (fboundp 'global-font-lock-mode-enable-in-buffer)
-                           (list 'global-font-lock-mode-enable-in-buffer)))
-                     (inhibit-message (not compile-angel-verbose))
-                     (prog-mode-hook nil)
-                     (emacs-lisp-mode-hook nil))
+        (let* ((byte-compile-verbose compile-angel-verbose)
+               (warning-minimum-level (if compile-angel-display-buffer
+                                          :warning
+                                        :error))
+               (save-silently t)
+               (byte-compile-result
+                (let ((after-change-major-mode-hook
+                       (and (fboundp 'global-font-lock-mode-enable-in-buffer)
+                            (list 'global-font-lock-mode-enable-in-buffer)))
+                      (inhibit-message (not compile-angel-verbose))
+                      (prog-mode-hook nil)
+                      (emacs-lisp-mode-hook nil))
 
-                 (byte-compile-file el-file))))
+                  (byte-compile-file el-file))))
           (cond
            ;; Ignore (no-byte-compile)
            ((eq byte-compile-result 'no-byte-compile)
