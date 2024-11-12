@@ -85,7 +85,7 @@ This program is free software: you can redistribute it and/or modify it under th
 ## Links
 
 - [compile-angel.el @GitHub](https://github.com/jamescherti/compile-angel.el)
-- If users who prefer compiling .el files from the command line: [elispcomp](https://github.com/jamescherti/elispcomp)
+- For users who prefer compiling .el files from the command line: [elispcomp](https://github.com/jamescherti/elispcomp)
 
 Other Emacs packages by the same author:
 - [minimal-emacs.d](https://github.com/jamescherti/minimal-emacs.d): This repository hosts a minimal Emacs configuration designed to serve as a foundation for your vanilla Emacs setup and provide a solid base for an enhanced Emacs experience.
