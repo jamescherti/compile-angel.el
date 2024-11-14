@@ -13,7 +13,7 @@ NOTE: It is recommended to set `load-prefer-newer` to `t` to ensure that Emacs l
 
 ## Installation
 
-### Install with straight (Emacs version <= 29)
+### Install with straight (Emacs version < 30)
 
 To install `compile-angel` with `straight.el`:
 
