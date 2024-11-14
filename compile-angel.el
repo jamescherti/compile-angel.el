@@ -109,7 +109,7 @@ listed in the `features' variable are compiled.")
 (defvar compile-angel--list-compiled-features (make-hash-table :test 'equal))
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
 (defvar warning-minimum-level)
-(defvar compile-angel--currently-compiling nil)
+(defvar compile-angel--currently-compiling (make-hash-table :test 'equal))
 
 ;;; Functions
 
@@ -296,18 +296,20 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
                  "compile-angel--compile-before-loading: %s (%s)")
          feature (type-of feature)))
 
-      (when compile-angel--currently-compiling
+      (when (gethash el-file
+                     compile-angel--currently-compiling)
         (compile-angel--debug-message
-         (concat "Already compiling %s while trying to compile: "
+         (concat "Already compiling while trying to compile: "
                  "compile-angel--compile-before-loading: %s | %s")
-         compile-angel--currently-compiling feature el-file)))
+         feature el-file)))
 
     (let* ((el-file (compile-angel--guess-el-file el-file feature nosuffix))
            (feature-name (when feature
                            (compile-angel--feature-to-feature-name feature))))
       (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
                                     el-file feature-name)
-      (if (and (not compile-angel--currently-compiling)
+      (if (and (not (gethash el-file
+                             compile-angel--currently-compiling))
                (compile-angel--need-compilation-p el-file feature-name))
           (progn
             (when feature-name
@@ -315,9 +317,9 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
             (puthash el-file t compile-angel--list-compiled-files)
             (unwind-protect
                 (progn
-                  (setq compile-angel--currently-compiling el-file)
+                  (puthash el-file t compile-angel--currently-compiling)
                   (compile-angel--compile-elisp el-file))
-              (setq compile-angel--currently-compiling nil)))
+              (remhash el-file compile-angel--currently-compiling)))
         (compile-angel--debug-message
          "IGNORE compilation: %s | %s" el-file feature)))))
 
