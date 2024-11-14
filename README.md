@@ -46,6 +46,19 @@ To install `compile-angel` using `straight.el`:
   (compile-angel-on-load-mode))
 ```
 
+### Install using use-package and VC (built-in)
+
+``` emacs-lisp
+(use-package compile-angel
+  :ensure t
+  :demand t
+  :vc (:url "https://github.com/jamescherti/compile-angel.el.git"
+       :branch "main")
+  :config
+  (compile-angel-on-save-mode)
+  (compile-angel-on-load-mode))
+```
+
 ## Customizations
 
 ``` emacs-lisp
