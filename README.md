@@ -85,6 +85,7 @@ This package is an alternative to the auto-compile Emacs package. Here are the m
 - Compile-angel provides options to allow enabling and disabling specific functions that should be advised (load, require, etc.).
 - Compile-angel allows enabling debug mode, which allows knowing exactly what compile-angel does. Additionally, compiled files and features are stored in variables that help identify what was compiled.
 - compile-angel-on-save-mode supports compiling indirect buffers (clones).
+- compile-angel-on-load-mode compiles features that have already been loaded to make sure that they are compiled.
 
 I experimented for an extended period to understand why auto-compile wasn't compiling many of the `.el` files in my configuration. Because many of my files weren’t compiled by auto-compile, Emacs was slow due to a lack of native compilation.
 
