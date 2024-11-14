@@ -32,7 +32,7 @@ To install `compile-angel` with `straight.el`:
   (compile-angel-on-load-mode))
 ```
 
-### Installing with use-package and :vc (Built-in feature in Emacs version >= 30)
+### Install with use-package and :vc (Built-in feature in Emacs version >= 30)
 
 To install `compile-angel` with `use-package` and `:vc`, add the following code **at the very beginning of your Emacs init file, before all other packages**:
 
