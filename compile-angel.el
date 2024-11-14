@@ -177,7 +177,6 @@ its source."
                       (inhibit-message (not compile-angel-verbose))
                       (prog-mode-hook nil)
                       (emacs-lisp-mode-hook nil))
-
                   (byte-compile-file el-file))))
           (cond
            ;; Ignore (no-byte-compile)
