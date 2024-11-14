@@ -364,6 +364,13 @@ FEATURE and FILENAME are the same arguments as the `require' function."
              "compile-angel--advice-eval-after-load: %s (%s)")
      feature-or-file (type-of feature-or-file)))))
 
+(defun compile-angel--compile-features ()
+  "Loop over all loaded features and show each one."
+  (dolist (feature features)
+    (compile-angel--debug-message
+     "compile-angel--compile-features: %s" feature)
+    (compile-angel--compile-before-loading nil feature)))
+
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
   "Toggle `compile-angel-mode' then compiles .el files before they are loaded."
@@ -372,6 +379,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
   :group 'compile-angel
   (if compile-angel-on-load-mode
       (progn
+        (compile-angel--compile-features)
         (when compile-angel-on-load-mode-advise-autoload
           (advice-add 'autoload :before #'compile-angel--advice-before-autoload))
         (when compile-angel-on-load-mode-advise-require
