@@ -38,8 +38,8 @@ To install `compile-angel` using `straight.el`:
 (use-package compile-angel
   :ensure t
   :demand t
-  :vc (:url "https://github.com/jamescherti/compile-angel.el.git"
-       :branch "main")
+  :vc (:url "https://github.com/jamescherti/compile-angel.el"
+       :rev :newest)
   :config
   (compile-angel-on-save-mode)
   (compile-angel-on-load-mode))
