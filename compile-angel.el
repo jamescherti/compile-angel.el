@@ -252,11 +252,11 @@ FEATURE and FILENAME are the same arguments as the `require' function."
 (defun compile-angel--advice-before-load (el-file &optional _noerror _nomessage
                                                   nosuffix _must-suffix)
   "Recompile before `load'. EL-FILE and NOSUFFIX are the same args as `load'."
-  (if user-init-file t
-    (let ((user-init-file nil))
-      ;; Temporarily unset the special init-file status to prevent recursive
-      ;; loads from being treated as init-file loads.
-      (compile-angel--compile-before-loading el-file nil nosuffix))
+  (if (eq user-init-file t)
+      (let ((user-init-file nil))
+        ;; Temporarily unset the special init-file status to prevent recursive
+        ;; loads from being treated as init-file loads.
+        (compile-angel--compile-before-loading el-file nil nosuffix))
     (compile-angel--compile-before-loading el-file nil nosuffix)))
 
 (defun compile-angel--advice-before-autoload (_function
