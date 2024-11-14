@@ -108,11 +108,6 @@ or nil if the file should not be compiled."
 
 ;;; Functions
 
-(defmacro compile-angel--message (&rest args)
-  "Display a message with [compile-angel] prepended.
-The message is formatted with the provided arguments ARGS."
-  `(message (concat "[compile-angel] " ,(car args)) ,@(cdr args)))
-
 (defmacro compile-angel--verbose-message (&rest args)
   "Display a verbose message with [compile-angel] prepended.
 The message is formatted with the provided arguments ARGS."
@@ -227,12 +222,11 @@ FEATURE-NAME is a string representing the feature name being loaded."
   (let* ((elc-file (byte-compile-dest-file el-file)))
     (cond
      ((not (file-exists-p el-file))
-      (compile-angel--message "Warning: The file does not exist: %s"
-                              el-file))
+      (message "[compile-angel] Warning: The file does not exist: %s" el-file))
 
      ((not elc-file)
-      (compile-angel--message "Warning: The file is not an .el file: %s"
-                              el-file))
+      (message "[compile-angel] Warning: The file is not an .el file: %s"
+               el-file))
 
      (t
       (if compile-angel-enable-byte-compile
