@@ -13,7 +13,7 @@ NOTE: It is recommended to set `load-prefer-newer` to `t` to ensure that Emacs l
 
 ## Installation
 
-### Install using straight
+### Install using straight (Emacs version <= 29)
 
 To install `compile-angel` using `straight.el`:
 
@@ -32,7 +32,9 @@ To install `compile-angel` using `straight.el`:
   (compile-angel-on-load-mode))
 ```
 
-### Installing with use-package and :vc (built-in feature in Emacs 30 or newer)
+### Installing with use-package and :vc (built-in feature in Emacs version >= 30)
+
+To install `compile-angel` using `use-package` and `:vc` (Emacs >= 30):
 
 ``` emacs-lisp
 (use-package compile-angel
