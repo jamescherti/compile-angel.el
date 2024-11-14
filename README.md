@@ -9,13 +9,16 @@ The **compile-angel** package automatically byte-compiles and native-compiles Em
 
 These modes speed up Emacs by ensuring all libraries are byte-compiled and native-compiled. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
 
-NOTE: It is recommended to set `load-prefer-newer` to `t`, ensuring that Emacs loads the most recent version of byte-compiled or source files. Additionally, ensure that native compilation is enabled; this should return t: `(native-comp-available-p)`.
+NOTE: It is recommended to set `load-prefer-newer` to `t` to ensure that Emacs loads the most recent version of byte-compiled or source files. Additionally, ensure that native compilation is enabled; this should return t: `(native-comp-available-p)`.
 
 ## What is the difference between auto-compile and compile-angel?
 
 This package is an alternative to the auto-compile Emacs package. Here are the main differences:
 - **Compile-angel ensures more .el files are compiled**: The compile-angel package, in addition to compiling the elisp files that are loaded using `load` and `require`, **also handles files that auto-compile misses**, such as packages that are deferred (e.g., `:defer t` in `use-package`) and the `use-package` dependencies using, for example,`:after package-name`.
 - Excluding files from compilation using regular expressions in `compile-angel-excluded-files-regexps`.
+- Options to allow enabling and disabling specific functions that should be advised.
+- Debug mode, which allows knowing exactly what compile-angel does. Additionally, compiled files and features are stored in variables that help identify what was compiled.
+- compile-angel-on-save-mode supports compiling indirect buffers (clones).
 
 I experimented for an extended period to understand why auto-compile wasn't compiling many of the `.el` files in my configuration. Because many of my files weren’t compiled by auto-compile, Emacs was slow due to a lack of native compilation.
 
