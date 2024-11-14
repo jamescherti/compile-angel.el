@@ -81,9 +81,9 @@ To install `compile-angel` using `straight.el`:
 
 This package is an alternative to the auto-compile Emacs package. Here are the main differences:
 - **Compile-angel ensures more .el files are compiled**: The compile-angel package, in addition to compiling the elisp files that are loaded using `load` and `require`, **also handles files that auto-compile misses**, such as packages that are deferred (e.g., `:defer t` in `use-package`) and the `use-package` dependencies using, for example,`:after package-name`.
-- Excluding files from compilation using regular expressions in `compile-angel-excluded-files-regexps`.
-- Options to allow enabling and disabling specific functions that should be advised.
-- Debug mode, which allows knowing exactly what compile-angel does. Additionally, compiled files and features are stored in variables that help identify what was compiled.
+- Compile-angel can exclude files from compilation using regular expressions in `compile-angel-excluded-files-regexps`.
+- Compile-angel provides options to allow enabling and disabling specific functions that should be advised (load, require, etc.).
+- Compile-angel allows enabling debug mode, which allows knowing exactly what compile-angel does. Additionally, compiled files and features are stored in variables that help identify what was compiled.
 - compile-angel-on-save-mode supports compiling indirect buffers (clones).
 
 I experimented for an extended period to understand why auto-compile wasn't compiling many of the `.el` files in my configuration. Because many of my files weren’t compiled by auto-compile, Emacs was slow due to a lack of native compilation.
