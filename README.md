@@ -32,7 +32,7 @@ To install `compile-angel` using `straight.el`:
   (compile-angel-on-load-mode))
 ```
 
-### Install using use-package and VC (built-in)
+### Install using use-package and :vc (built-in)
 
 ``` emacs-lisp
 (use-package compile-angel
