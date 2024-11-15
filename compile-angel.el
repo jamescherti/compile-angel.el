@@ -123,7 +123,7 @@ Return t if the file should be ignored, nil otherwise."
              (cl-some (lambda (regex)
                         (string-match-p regex el-file))
                       compile-angel-excluded-files-regexps))
-    (compile-angel--verbose-message "File excluded: %s" el-file)
+    (compile-angel--verbose-message "Skipped: %s" el-file)
     t))
 
 (defun compile-angel--elisp-native-compiled-p (el-file)
@@ -142,9 +142,7 @@ its source."
                  (fboundp 'native-comp-available-p)
                  (fboundp 'native-compile-async)
                  (native-comp-available-p))
-            (progn (compile-angel--verbose-message "Native-compilation: %s"
-                                                   el-file)
-                   (native-compile-async el-file))
+            (native-compile-async el-file)
           (compile-angel--debug-message
            "Native-compilation ignored (native-comp unavailable): %s" el-file))
       (compile-angel--debug-message "Native-compilation ignored (up-to-date): %s"
@@ -175,12 +173,13 @@ its source."
 
            ;; Ignore: Byte-compilation error
            ((not byte-compile-result)
-            (compile-angel--verbose-message "Byte-compilation error: %s" el-file)
+            (compile-angel--debug-message "Byte-compilation error: %s" el-file)
             nil) ; Return nil (No native-compile)
 
            ;; Success
            (byte-compile-result
-            (compile-angel--verbose-message "Byte-compilation: %s" el-file)
+            (compile-angel--debug-message
+             "Byte-compilation successful: %s" el-file)
             t))))))) ; Return t: We can native-compile
 
 (defun compile-angel--need-compilation-p (el-file feature-name)
@@ -217,8 +216,12 @@ FEATURE-NAME is a string representing the feature name being loaded."
 
      (t
       (if compile-angel-enable-byte-compile
-          (when (compile-angel--byte-compile el-file elc-file)
-            (compile-angel--native-compile el-file))
+          (progn
+            (compile-angel--verbose-message
+             "Byte and Native compilation: %s" el-file)
+            (when (compile-angel--byte-compile el-file elc-file)
+              (compile-angel--native-compile el-file)))
+        (compile-angel--verbose-message "Native-compilation only: %s" el-file)
         (compile-angel--native-compile el-file))))))
 
 (defun compile-angel--compile-current-buffer ()
