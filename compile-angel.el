@@ -295,8 +295,7 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
                  "compile-angel--compile-before-loading: %s (%s)")
          feature (type-of feature)))
 
-      (when (gethash el-file
-                     compile-angel--currently-compiling)
+      (when (gethash el-file compile-angel--currently-compiling)
         (compile-angel--debug-message
          (concat "Already compiling while trying to compile: "
                  "compile-angel--compile-before-loading: %s | %s")
@@ -336,10 +335,10 @@ FEATURE and FILENAME are the same arguments as the `require' function."
   "Recompile before `load'. EL-FILE and NOSUFFIX are the same args as `load'."
   (compile-angel--debug-message "LOAD: %s (%s)" el-file (type-of el-file))
   (if (stringp el-file)
-      (if (eq user-init-file t)
-          (let ((user-init-file nil))
-            ;; Unset the special init-file status to prevent recursive loads
-            (compile-angel--compile-before-loading el-file nil nosuffix))
+      ;; Unset the special init-file status to prevent recursive loads
+      (let ((user-init-file (if (eq user-init-file t)
+                                nil
+                              user-init-file)))
         (compile-angel--compile-before-loading el-file nil nosuffix))
     (compile-angel--debug-message
      (concat "ISSUE: Wrong type passed to "
@@ -371,9 +370,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
      feature-or-file (type-of feature-or-file)))))
 
 (defun compile-angel--compile-features ()
-  "Compile all loaded features that are in the `features' variable.
-This function ensures that all features listed in the `features' variable are
-compiled."
+  "Compile all loaded features that are in the `features' variable."
   (dolist (feature features)
     (compile-angel--debug-message
      "compile-angel--compile-features: %s" feature)
@@ -410,8 +407,7 @@ compiled."
   :lighter " CompAngelS"
   :group 'compile-angel
   (if compile-angel-on-save-mode
-      (progn
-        (add-hook 'after-save-hook #'compile-angel--compile-current-buffer))
+      (add-hook 'after-save-hook #'compile-angel--compile-current-buffer)
     (remove-hook 'after-save-hook #'compile-angel--compile-current-buffer)))
 
 (provide 'compile-angel)
