@@ -50,15 +50,16 @@ To install `compile-angel` with `use-package` and `:vc`, add the following code 
 ## Customizations
 
 ``` emacs-lisp
+;; Emacs options: Show buffer when there is a warning
+(setq warning-minimum-level :warning)
+(setq native-comp-async-report-warnings-errors t)
+
 ;; Enable/Disable byte compilation and native compilation
 (setq compile-angel-enable-byte-compile t)
 (setq compile-angel-enable-native-compile t)
 
 ;; Enable verbose (Set it to t while debugging)
 (setq compile-angel-verbose nil)
-
-;; Display the *Compile-Log* buffer (Set it to t while writing elisp)
-(setq compile-angel-display-buffer nil)
 
 ;; Perform byte/native compilation of .el files only once during initial loading
 ;; (Setting this to nil will try to compile each time an .el file is loaded)
@@ -96,6 +97,20 @@ Here are the main differences:
 - Compile-angel allows enabling debug mode, which allows knowing exactly what compile-angel does. Additionally, compiled files and features are stored in variables that help identify what was compiled.
 - compile-angel-on-save-mode supports compiling indirect buffers (clones).
 - compile-angel-on-load-mode compiles features that have already been loaded to make sure that they are compiled.
+
+## How to make compile-angel behave like auto-compile?
+
+Execute the following setq **before** activating `compile-angel-on-load-mode`:
+
+```emacs-lisp
+(setq compile-angel-on-load-advise-load t)
+(setq compile-angel-on-load-advise-require t)
+(setq compile-angel-on-load-advise-eval-after-load nil)
+(setq compile-angel-on-load-advise-autoload nil)
+(setq compile-angel-on-load-compile-features nil)
+```
+
+This will make `compile-angel` behave like auto-compile. It will only compile required and loaded packages.
 
 ## Author and License
 

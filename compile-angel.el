@@ -38,14 +38,6 @@
   :group 'compile-angel
   :prefix "compile-angel-")
 
-(defcustom compile-angel-display-buffer nil
-  "When non-nil, display compilation messages in a separate buffer.
-When enabled, warning and error messages during compilation will be shown in the
-*Compile-Log* buffer.
-When disabled, the buffer is only displayed when there is an error."
-  :type 'boolean
-  :group 'compile-angel)
-
 (defcustom compile-angel-enable-byte-compile t
   "Non-nil to enable byte compilation of Emacs Lisp (.el) files."
   :type 'boolean
@@ -87,19 +79,19 @@ or nil if the file should not be compiled."
   :type '(choice (const nil)
                  (function)))
 
-(defvar compile-angel-on-load-mode-advise-load t
+(defvar compile-angel-on-load-advise-load t
   "When non-nil, automatically compile .el files loaded using `load'.")
 
-(defvar compile-angel-on-load-mode-advise-require t
+(defvar compile-angel-on-load-advise-require t
   "When non-nil, automatically compile .el files loaded using `require'.")
 
-(defvar compile-angel-on-load-mode-advise-autoload t
+(defvar compile-angel-on-load-advise-autoload t
   "When non-nil, automatically compile .el files loaded using `autoload'.")
 
-(defvar compile-angel-on-load-mode-advise-eval-after-load t
+(defvar compile-angel-on-load-advise-eval-after-load t
   "When non-nil, compile .el files before `eval-after-load'.")
 
-(defvar compile-angel-on-load-mode-compile-loaded-features t
+(defvar compile-angel-on-load-compile-features t
   "Non-nil to compile features listed in the `features' variable.
 When `compile-angel-on-load-mode' is activated, this ensures that all features
 listed in the `features' variable are compiled.")
@@ -108,7 +100,6 @@ listed in the `features' variable are compiled.")
 
 (defvar compile-angel--list-compiled-features (make-hash-table :test 'equal))
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
-(defvar warning-minimum-level)
 (defvar compile-angel--currently-compiling (make-hash-table :test 'equal))
 
 ;;; Functions
@@ -151,11 +142,9 @@ its source."
                  (fboundp 'native-comp-available-p)
                  (fboundp 'native-compile-async)
                  (native-comp-available-p))
-            (let ((warning-minimum-level (if compile-angel-display-buffer
-                                             :warning
-                                           :error)))
-              (compile-angel--verbose-message "Native-compilation: %s" el-file)
-              (native-compile-async el-file))
+            (progn (compile-angel--verbose-message "Native-compilation: %s"
+                                                   el-file)
+                   (native-compile-async el-file))
           (compile-angel--debug-message
            "Native-compilation ignored (native-comp unavailable): %s" el-file))
       (compile-angel--debug-message "Native-compilation ignored (up-to-date): %s"
@@ -167,25 +156,20 @@ its source."
     (when (or (not elc-file-exists)
               (file-newer-than-file-p el-file elc-file))
       (if (not (file-writable-p elc-file))
-          (compile-angel--verbose-message
+          (compile-angel--debug-message
            "Byte-compilation ignored (not writable): %s" elc-file)
-        (let* ((byte-compile-verbose compile-angel-verbose)
-               (warning-minimum-level (if compile-angel-display-buffer
-                                          :warning
-                                        :error))
-               (save-silently t)
+        (let* ((after-change-major-mode-hook
+                (and (fboundp 'global-font-lock-mode-enable-in-buffer)
+                     (list 'global-font-lock-mode-enable-in-buffer)))
+               (inhibit-message (not compile-angel-verbose))
+               (prog-mode-hook nil)
+               (emacs-lisp-mode-hook nil)
                (byte-compile-result
-                (let ((after-change-major-mode-hook
-                       (and (fboundp 'global-font-lock-mode-enable-in-buffer)
-                            (list 'global-font-lock-mode-enable-in-buffer)))
-                      (inhibit-message (not compile-angel-verbose))
-                      (prog-mode-hook nil)
-                      (emacs-lisp-mode-hook nil))
-                  (byte-compile-file el-file))))
+                (byte-compile-file el-file)))
           (cond
            ;; Ignore (no-byte-compile)
            ((eq byte-compile-result 'no-byte-compile)
-            (compile-angel--verbose-message
+            (compile-angel--debug-message
              "Byte-compilation Ignore (no-byte-compile): %s" el-file)
             t) ; Return t: We can native-compile
 
@@ -240,8 +224,7 @@ FEATURE-NAME is a string representing the feature name being loaded."
 (defun compile-angel--compile-current-buffer ()
   "Compile the current buffer."
   (when (derived-mode-p 'emacs-lisp-mode)
-    (let ((el-file (buffer-file-name (buffer-base-buffer))))
-      (compile-angel--compile-elisp el-file))))
+    (compile-angel--compile-elisp (buffer-file-name (buffer-base-buffer)))))
 
 (defun compile-angel--guess-el-file (el-file &optional feature nosuffix)
   "Guess the EL-FILE or FEATURE path. NOSUFFIX is similar to `load'."
@@ -384,15 +367,15 @@ FEATURE and FILENAME are the same arguments as the `require' function."
   :group 'compile-angel
   (if compile-angel-on-load-mode
       (progn
-        (when compile-angel-on-load-mode-compile-loaded-features
+        (when compile-angel-on-load-compile-features
           (compile-angel--compile-features))
-        (when compile-angel-on-load-mode-advise-autoload
+        (when compile-angel-on-load-advise-autoload
           (advice-add 'autoload :before #'compile-angel--advice-before-autoload))
-        (when compile-angel-on-load-mode-advise-require
+        (when compile-angel-on-load-advise-require
           (advice-add 'require :before #'compile-angel--advice-before-require))
-        (when compile-angel-on-load-mode-advise-load
+        (when compile-angel-on-load-advise-load
           (advice-add 'load :before #'compile-angel--advice-before-load))
-        (when compile-angel-on-load-mode-advise-eval-after-load
+        (when compile-angel-on-load-advise-eval-after-load
           (advice-add 'eval-after-load
                       :before #'compile-angel--advice-eval-after-load)))
     (advice-remove 'autoload #'compile-angel--advice-before-autoload)
