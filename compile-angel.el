@@ -162,7 +162,7 @@ Return non-nil to allow native compilation."
   (cond
    ((and (not (file-newer-than-file-p el-file elc-file)))
     (compile-angel--debug-message
-     "Byte-compilation Ignored: Up to date: %s" el-file)
+     "Byte-compilation Ignored (up-to-date): %s" el-file)
     t)
 
    ((not (file-writable-p elc-file))
@@ -181,18 +181,15 @@ Return non-nil to allow native compilation."
            (byte-compile-result
             (byte-compile-file el-file)))
       (cond
-       ;; Ignore (no-byte-compile)
        ((eq byte-compile-result 'no-byte-compile)
         (compile-angel--debug-message
          "Byte-compilation Ignore (no-byte-compile): %s" el-file)
         t)
 
-       ;; Ignore: Byte-compilation error
        ((not byte-compile-result)
         (compile-angel--debug-message "Byte-compilation error: %s" el-file)
         nil)
 
-       ;; Success
        (byte-compile-result
         (compile-angel--debug-message
          "Byte-compilation successful: %s" el-file)
