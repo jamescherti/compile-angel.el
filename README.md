@@ -73,12 +73,8 @@ To install `compile-angel` with `use-package` and `:vc`, add the following code 
 (setq compile-angel-enable-byte-compile t)
 (setq compile-angel-enable-native-compile t)
 
-;; Enable verbose (Set it to t while debugging)
-(setq compile-angel-verbose nil)
-
-;; Perform byte/native compilation of .el files only once during initial loading
-;; (Setting this to nil will try to compile each time an .el file is loaded)
-(setq compile-angel-on-load-mode-compile-once t)
+;; Enable displaying messages (e.g., when files are compiled)
+(setq compile-angel-verbose t)
 
 ;; Ignore certain files, for example, for users of the `dir-config` package:
 (setq compile-angel-excluded-files-regexps '("/\\.dir-config\\.el$"))
@@ -91,7 +87,7 @@ To install `compile-angel` with `use-package` and `:vc`, add the following code 
    #'(lambda(el-file)
        ;; Show a message
        (message "PREDICATE: %s" el-file)
-       ;; Return t (Compile all)
+       ;; Return t to compile the file
        t))
 ```
 
