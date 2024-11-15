@@ -91,7 +91,7 @@ or nil if the file should not be compiled."
 (defvar compile-angel-on-load-advise-eval-after-load t
   "When non-nil, compile .el files before `eval-after-load'.")
 
-(defvar compile-angel-on-load-compile-features t
+(defvar compile-angel-on-load-compile-features nil
   "Non-nil to compile features listed in the `features' variable.
 When `compile-angel-on-load-mode' is activated, this ensures that all features
 listed in the `features' variable are compiled.")
