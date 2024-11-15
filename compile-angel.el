@@ -302,25 +302,6 @@ FEATURE-NAME is a string representing the feature name being loaded."
 EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
   (when (or compile-angel-enable-byte-compile
             compile-angel-enable-native-compile)
-    (when compile-angel-debug
-      (when (and el-file (not (stringp el-file)))
-        (compile-angel--debug-message
-         (concat "ISSUE: Wrong el-file type passed to "
-                 "compile-angel--compile-before-loading: %s (%s)")
-         el-file (type-of el-file)))
-
-      (when (and feature (not (stringp feature)) (not (symbolp feature)))
-        (compile-angel--debug-message
-         (concat "ISSUE: Wrong feature type passed to "
-                 "compile-angel--compile-before-loading: %s (%s)")
-         feature (type-of feature)))
-
-      (when (gethash el-file compile-angel--currently-compiling)
-        (compile-angel--debug-message
-         (concat "Already compiling while trying to compile: "
-                 "compile-angel--compile-before-loading: %s | %s")
-         feature el-file)))
-
     (let* ((el-file (compile-angel--guess-el-file el-file feature nosuffix))
            (feature-name (when feature
                            (compile-angel--feature-to-feature-name feature))))
