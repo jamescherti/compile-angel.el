@@ -199,22 +199,41 @@ Return non-nil to allow native compilation."
   "Return non-nil if EL-FILE or FEATURE-NAME need compilation.
 EL-FILE is a String representing the path to the Elisp source file.
 FEATURE-NAME is a string representing the feature name being loaded."
-  (and el-file
-       ;; Predicate function
-       (if compile-angel-predicate-function
-           (funcall compile-angel-predicate-function el-file)
-         t)
-       ;; El files
-       (string-match-p
-        (format "\\.el%s\\'" (regexp-opt load-file-rep-suffixes)) el-file)
-       ;; Compile when compile-once mode is off or file/feature not compiled yet
-       (or (not compile-angel-on-load-mode-compile-once)
-           (and
-            (not (gethash el-file compile-angel--list-compiled-files))
-            (or (not feature-name)
-                (not (gethash feature-name
-                              compile-angel--list-compiled-features)))))
-       (not (compile-angel--el-file-excluded-p el-file))))
+  (cond
+   ((not el-file)
+    (compile-angel--debug-message
+     "SKIP (el-file is nil): %s | %s" el-file feature-name)
+    nil)
+
+   ((not (if compile-angel-predicate-function
+             (funcall compile-angel-predicate-function el-file)
+           t))
+    (compile-angel--debug-message
+     "SKIP (Predicate function returned nil): %s | %s" el-file feature-name)
+    nil)
+
+   ((not (string-match-p
+          (format "\\.el%s\\'" (regexp-opt load-file-rep-suffixes)) el-file))
+    (compile-angel--debug-message
+     "SKIP (Does not end with the .el): %s | %s" el-file feature-name)
+    nil)
+
+   ((not (or (not compile-angel-on-load-mode-compile-once)
+             (and
+              (not (gethash el-file compile-angel--list-compiled-files))
+              (or (not feature-name)
+                  (not (gethash feature-name
+                                compile-angel--list-compiled-features))))))
+    (compile-angel--debug-message
+     "SKIP (In skip hash list): %s | %s" el-file feature-name)
+    nil)
+
+   ((not (not (compile-angel--el-file-excluded-p el-file)))
+    (compile-angel--debug-message
+     "SKIP (.el file excluded with a regex): %s | %s" el-file feature-name)
+    nil)
+
+   (t t)))
 
 (defun compile-angel--compile-elisp (el-file)
   "Byte-compile and Native-compile the .el file EL-FILE."
@@ -307,20 +326,25 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
                            (compile-angel--feature-to-feature-name feature))))
       (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
                                     el-file feature-name)
-      (if (and (not (gethash el-file
-                             compile-angel--currently-compiling))
-               (compile-angel--need-compilation-p el-file feature-name))
-          (progn
-            (when feature-name
-              (puthash feature-name t compile-angel--list-compiled-features))
-            (puthash el-file t compile-angel--list-compiled-files)
-            (unwind-protect
-                (progn
-                  (puthash el-file t compile-angel--currently-compiling)
-                  (compile-angel--compile-elisp el-file))
-              (remhash el-file compile-angel--currently-compiling)))
+      (cond
+       ((gethash el-file compile-angel--currently-compiling)
         (compile-angel--debug-message
-         "IGNORE compilation: %s | %s" el-file feature)))))
+         "SKIP (To prevent recursive compilation): %s | %s" el-file feature))
+
+       ((not (compile-angel--need-compilation-p el-file feature-name))
+        (compile-angel--debug-message
+         "SKIP (Does not need compilation): %s | %s" el-file feature))
+
+       (t
+        (when feature-name
+          (puthash feature-name t compile-angel--list-compiled-features))
+        (puthash el-file t compile-angel--list-compiled-files)
+
+        (unwind-protect
+            (progn
+              (puthash el-file t compile-angel--currently-compiling)
+              (compile-angel--compile-elisp el-file))
+          (remhash el-file compile-angel--currently-compiling)))))))
 
 (defun compile-angel--advice-before-require (feature
                                              &optional filename _noerror)
