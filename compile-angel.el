@@ -142,7 +142,9 @@ its source."
                  (fboundp 'native-comp-available-p)
                  (fboundp 'native-compile-async)
                  (native-comp-available-p))
-            (native-compile-async el-file)
+            (let ((inhibit-message (not (or compile-angel-verbose
+                                            compile-angel-debug))))
+              (native-compile-async el-file))
           (compile-angel--debug-message
            "Native-compilation ignored (native-comp unavailable): %s" el-file))
       (compile-angel--debug-message "Native-compilation ignored (up-to-date): %s"
@@ -159,7 +161,8 @@ its source."
         (let* ((after-change-major-mode-hook
                 (and (fboundp 'global-font-lock-mode-enable-in-buffer)
                      (list 'global-font-lock-mode-enable-in-buffer)))
-               (inhibit-message (not compile-angel-verbose))
+               (inhibit-message (not (or compile-angel-verbose
+                                         compile-angel-debug)))
                (prog-mode-hook nil)
                (emacs-lisp-mode-hook nil)
                (byte-compile-result
