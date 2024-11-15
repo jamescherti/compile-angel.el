@@ -27,6 +27,8 @@ To install `compile-angel` with `straight.el`:
              :type git
              :host github
              :repo "jamescherti/compile-angel.el")
+  :custom
+  (compile-angel-verbose nil)
   :config
   (compile-angel-on-save-mode)
   (compile-angel-on-load-mode))
@@ -42,6 +44,8 @@ To install `compile-angel` with `use-package` and `:vc`, add the following code 
   :demand t
   :vc (:url "https://github.com/jamescherti/compile-angel.el"
        :rev :newest)
+  :custom
+  (compile-angel-verbose nil)
   :config
   (compile-angel-on-save-mode)
   (compile-angel-on-load-mode))
