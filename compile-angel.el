@@ -169,7 +169,6 @@ its source."
       (if (not (file-writable-p elc-file))
           (compile-angel--verbose-message
            "Byte-compilation ignored (not writable): %s" elc-file)
-        t ; Return t: We can native-compile
         (let* ((byte-compile-verbose compile-angel-verbose)
                (warning-minimum-level (if compile-angel-display-buffer
                                           :warning
