@@ -9,7 +9,22 @@ The **compile-angel** package automatically byte-compiles and native-compiles Em
 
 These modes speed up Emacs by ensuring all libraries are byte-compiled and native-compiled. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
 
-NOTE: It is recommended to set `load-prefer-newer` to `t` to ensure that Emacs loads the most recent version of byte-compiled or source files. Additionally, ensure that native compilation is enabled; this should return t: `(native-comp-available-p)`.
+## Before installing
+
+It is recommended to set the following variables:
+
+``` emacs-lisp
+;; Set `load-prefer-newer` to `t` to ensure that Emacs loads the most recent
+;; version of byte-compiled or source files.
+;;
+;; (Additionally, ensure that native compilation is enabled; this should
+;; return t: `(native-comp-available-p)`.)
+(setq load-prefer-newer t)
+
+;; Show buffer when there is a warning
+(setq warning-minimum-level :warning)
+(setq native-comp-async-report-warnings-errors t)
+```
 
 ## Installation
 
@@ -54,10 +69,6 @@ To install `compile-angel` with `use-package` and `:vc`, add the following code 
 ## Customizations
 
 ``` emacs-lisp
-;; Emacs options: Show buffer when there is a warning
-(setq warning-minimum-level :warning)
-(setq native-comp-async-report-warnings-errors t)
-
 ;; Enable/Disable byte compilation and native compilation
 (setq compile-angel-enable-byte-compile t)
 (setq compile-angel-enable-native-compile t)
