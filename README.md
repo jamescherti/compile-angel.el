@@ -23,19 +23,6 @@ It is highly recommended to set the following variables in your init file:
 (setq native-comp-deferred-compilation t) ;; Obsolete in Emacs > 29.1
 ```
 
-The following ones are optional:
-
-```elisp
-;; Show buffer when there is a warning (Not recommended, except during development).
-(setq warning-minimum-level :warning)
-(setq native-comp-async-report-warnings-errors t)
-
-;; Ensure that quitting only occurs once Emacs finishes native compiling,
-;; preventing incomplete or leftover compilation files in `/tmp`.
-(setq native-comp-async-query-on-exit t)
-(setq confirm-kill-processes t)
-```
-
 Additionally, ensure that native compilation is enabled; this should return t: `(native-comp-available-p)`.
 
 ## Installation
@@ -87,6 +74,22 @@ To install *compile-angel* with `straight.el`:
 ```
 
 ## Frequently Asked Questions
+
+## What are some interesting Emacs customizations to consider alongside compile-angel?
+
+Below are a few interesting options:
+
+```elisp
+;; Ensure that quitting only occurs once Emacs finishes native compiling,
+;; preventing incomplete or leftover compilation files in `/tmp`.
+(setq native-comp-async-query-on-exit t)
+(setq confirm-kill-processes t)
+
+;; Show buffer when there is a warning (Not recommended, except during development).
+(setq warning-minimum-level :warning)
+(setq native-comp-async-report-warnings-errors t)
+```
+
 
 ## Why did the author develop compile-angel?
 
