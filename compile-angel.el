@@ -284,17 +284,15 @@ FEATURE-NAME is a string representing the feature name being loaded."
 (defun compile-angel--feature-to-feature-name (feature)
   "Convert a FEATURE symbol into a feature name and return it."
   (cond
-   ((and (not (stringp feature))
-         (not (symbolp feature)))
-    (setq feature nil)
+   ((and (not (stringp feature)) (not (symbolp feature)))
     (compile-angel--debug-message
      "ISSUE: UNSUPPORTED Feature: Not a symbol: %s (type: %s)"
-     feature (type-of feature)))
-   (t
-    (setq feature (cond ((stringp feature)
-                         feature)
-                        ((symbolp feature)
-                         (symbol-name feature)))))))
+     feature (type-of feature))
+    nil)
+   ((stringp feature)
+    feature)
+   ((symbolp feature)
+    (symbol-name feature))))
 
 (defun compile-angel--compile-before-loading (el-file
                                               &optional feature nosuffix)

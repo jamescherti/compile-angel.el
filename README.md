@@ -24,6 +24,11 @@ It is recommended to set the following variables:
 ;; Show buffer when there is a warning
 (setq warning-minimum-level :warning)
 (setq native-comp-async-report-warnings-errors t)
+
+;; Ensure that quitting only occurs once Emacs finishes native compiling,
+;; preventing incomplete or leftover compilation files in `/tmp`.
+(setq native-comp-async-query-on-exit t)
+(setq confirm-kill-processes t)
 ```
 
 ## Installation
