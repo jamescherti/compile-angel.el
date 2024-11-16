@@ -93,7 +93,7 @@ compiled, or nil if the file should not be compiled."
 (defvar compile-angel-on-load-advise-eval-after-load t
   "When non-nil, compile .el files before `eval-after-load'.")
 
-(defvar compile-angel-on-load-compile-features nil
+(defvar compile-angel-on-load-compile-features t
   "Non-nil to compile features listed in the `features' variable.
 When `compile-angel-on-load-mode' is activated, this ensures that all features
 listed in the `features' variable are compiled.")
@@ -381,11 +381,11 @@ FEATURE and FILENAME are the same arguments as the `require' function."
              "compile-angel--advice-eval-after-load: %s (%s)")
      feature-or-file (type-of feature-or-file)))))
 
-(defun compile-angel--compile-features ()
+(defun compile-angel-compile-features ()
   "Compile all loaded features that are in the `features' variable."
   (dolist (feature features)
     (compile-angel--debug-message
-     "compile-angel--compile-features: %s" feature)
+     "compile-angel-compile-features: %s" feature)
     (compile-angel--compile-before-loading nil feature)))
 
 ;;;###autoload
@@ -397,7 +397,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
   (if compile-angel-on-load-mode
       (progn
         (when compile-angel-on-load-compile-features
-          (compile-angel--compile-features))
+          (compile-angel-compile-features))
         (when compile-angel-on-load-advise-autoload
           (advice-add 'autoload :before #'compile-angel--advice-before-autoload))
         (when compile-angel-on-load-advise-require
