@@ -123,7 +123,7 @@ Execute the following setq **before** activating `compile-angel-on-load-mode`:
 (setq compile-angel-on-load-compile-features nil)
 ```
 
-This will make `compile-angel` behave like auto-compile. It will only compile required and loaded packages.
+This will make `compile-angel` behave similarly to auto-compile. It will only compile required and loaded packages. However, if you disable the 'compile features' mode, autoload, or eval-after-load features, certain packages may be missed, especially for heavy users of delaying package loading (e.g., via `:defer t`) and package dependencies (e.g., via `:after`), as well as those whose configuration frequently evaluate ELisp code after load.
 
 ## Author and License
 
