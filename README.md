@@ -16,9 +16,6 @@ It is recommended to set the following variables:
 ``` emacs-lisp
 ;; Set `load-prefer-newer` to `t` to ensure that Emacs loads the most recent
 ;; version of byte-compiled or source files.
-;;
-;; (Additionally, ensure that native compilation is enabled; this should
-;; return t: `(native-comp-available-p)`.)
 (setq load-prefer-newer t)
 
 ;; Show buffer when there is a warning
@@ -29,11 +26,17 @@ It is recommended to set the following variables:
 ;; preventing incomplete or leftover compilation files in `/tmp`.
 (setq native-comp-async-query-on-exit t)
 (setq confirm-kill-processes t)
+
+;; Make sure jit compilation is enabled
+(setq native-comp-jit-compilation t)  ;; Let compile-angel handle this
+(setq native-comp-deferred-compilation t) ;; Obsolete in Emacs > 29.1
 ```
+
+Additionally, ensure that native compilation is enabled; this should return t: `(native-comp-available-p)`.
 
 ## Installation
 
-### Install with straight (Emacs version < 30)
+### Install compile-angel with straight (Emacs version < 30)
 
 To install *compile-angel* with `straight.el`:
 
