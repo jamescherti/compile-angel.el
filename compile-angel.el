@@ -102,7 +102,8 @@ listed in the `features' variable are compiled.")
 
 (defvar compile-angel--list-compiled-features (make-hash-table :test 'equal))
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
-(defvar compile-angel--currently-compiling (make-hash-table :test 'equal))
+(defvar compile-angel--currently-compiling-files (make-hash-table :test 'equal))
+(defvar compile-angel--currently-compiling-p nil)
 
 ;;; Functions
 
@@ -308,7 +309,9 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
       (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
                                     el-file feature-name)
       (cond
-       ((gethash el-file compile-angel--currently-compiling)
+       ((or
+         compile-angel--currently-compiling-p
+         (gethash el-file compile-angel--currently-compiling-files))
         (compile-angel--debug-message
          "SKIP (To prevent recursive compilation): %s | %s" el-file feature))
 
@@ -323,9 +326,12 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
 
         (unwind-protect
             (progn
-              (puthash el-file t compile-angel--currently-compiling)
+              (puthash el-file t compile-angel--currently-compiling-files)
+              (setq compile-angel--currently-compiling-p t)
               (compile-angel--compile-elisp el-file))
-          (remhash el-file compile-angel--currently-compiling)))))))
+          (progn
+            (setq compile-angel--currently-compiling-p nil)
+            (remhash el-file compile-angel--currently-compiling-files))))))))
 
 (defun compile-angel--advice-before-require (feature
                                              &optional filename _noerror)
