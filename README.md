@@ -54,23 +54,6 @@ To install *compile-angel* with `straight.el`:
   (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode))
 ```
 
-### Install with use-package and :vc (Built-in feature in Emacs version >= 30)
-
-To install *compile-angel* with `use-package` and `:vc`, add the following code **at the very beginning of your Emacs init file, before all other packages**:
-
-``` emacs-lisp
-(use-package compile-angel
-  :ensure t
-  :demand t
-  :vc (:url "https://github.com/jamescherti/compile-angel.el"
-       :rev :newest)
-  :custom
-  (compile-angel-verbose nil)
-  :config
-  (compile-angel-on-save-mode)
-  (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode))
-```
-
 ## Customizations
 
 ``` emacs-lisp
@@ -115,6 +98,7 @@ Here are the main differences:
 - Compile-angel allows enabling debug mode, which allows knowing exactly what compile-angel does. Additionally, compiled files and features are stored in variables that help identify what was compiled.
 - compile-angel-on-save-mode supports compiling indirect buffers (clones).
 - compile-angel-on-load-mode compiles features that have already been loaded to make sure that they are compiled.
+- Compile-Angel uses caching to enhance performance when locating the .el file corresponding to a given feature.
 
 ## How to make compile-angel behave like auto-compile?
 

@@ -69,7 +69,8 @@ compilation process, providing feedback on the compilation status."
   :group 'compile-angel)
 
 (defcustom compile-angel-debug nil
-  "Non-nil to display debug messages. This displays a lot of messages."
+  "Non-nil to display debug messages in the *compile-angel:debug* buffer.
+This displays a lot of messages."
   :type 'boolean
   :group 'compile-angel)
 
@@ -81,6 +82,7 @@ compiled, or nil if the file should not be compiled."
   :type '(choice (const nil)
                  (function)))
 
+;; Enable/Disable features
 (defvar compile-angel-on-load-advise-load t
   "When non-nil, automatically compile .el files loaded using `load'.")
 
@@ -98,6 +100,16 @@ compiled, or nil if the file should not be compiled."
 When `compile-angel-on-load-mode' is activated, this ensures that all features
 listed in the `features' variable are compiled.")
 
+;; Cache
+(defvar compile-angel-enable-cache t
+  "Non-nil to enable the cache.")
+
+(defvar compile-angel-cache-feature (make-hash-table :test 'equal)
+  "Cache for feature lookups.")
+
+(defvar compile-angel-cache-el-file (make-hash-table :test 'equal)
+  "Cache for .el file lookups.")
+
 ;;; Internal variables
 
 (defvar compile-angel--list-compiled-features (make-hash-table :test 'equal))
@@ -106,15 +118,30 @@ listed in the `features' variable are compiled.")
 
 ;;; Functions
 
-(defmacro compile-angel--verbose-message (&rest args)
-  "Display a verbose message with the same ARGS arguments as `message'."
-  `(when (or compile-angel-verbose compile-angel-debug)
-     (message (concat "[compile-angel] " ,(car args)) ,@(cdr args))))
+(defun compile-angel--insert-message (buffer-name msg &rest args)
+  "Insert formatted MSG with ARGS into BUFFER-NAME buffer."
+  (with-current-buffer (get-buffer-create buffer-name)
+    (unwind-protect
+        (progn
+          (read-only-mode -1)
+          (goto-char (point-max))
+          (insert (apply 'format msg args) "\n"))
+      (read-only-mode 1))))
 
 (defmacro compile-angel--debug-message (&rest args)
-  "Display a debug message with the same ARGS arguments as `message'."
+  "Display a debug message with the same ARGS arguments as `message'.
+The messages are displayed in the *compile-angel* buffer."
   `(when compile-angel-debug
-     (message (concat "[compile-angel] DEBUG: " ,(car args)) ,@(cdr args))))
+     (compile-angel--insert-message "*compile-angel:debug*"
+                                    ,(car args) ,@(cdr args))))
+
+(defmacro compile-angel--verbose-message (&rest args)
+  "Display a verbose message with the same ARGS arguments as `message'."
+  `(progn
+     (when compile-angel-debug
+       (compile-angel--debug-message ,(car args) ,@(cdr args)))
+     (when compile-angel-verbose
+       (message (concat "[compile-angel] " ,(car args)) ,@(cdr args)))))
 
 (defun compile-angel--el-file-excluded-p (el-file)
   "Check if EL-FILE matches any regex in `compile-angel-excluded-files-regexps'.
@@ -130,8 +157,10 @@ Return non-nil if the file should be ignored, nil otherwise."
   "Return non-nil if EL-FILE is native-compiled and up to date.
 Return nil if it is not native-compiled or if its .eln file is out of date."
   (let ((eln-file (comp-el-to-eln-filename el-file)))
-    (when (and eln-file (file-newer-than-file-p el-file eln-file))
-      eln-file)))
+    (when (and eln-file
+               (file-exists-p eln-file)
+               (file-newer-than-file-p el-file eln-file))
+      t)))
 
 (defun compile-angel--native-compile (el-file)
   "Native-compile EL-FILE."
@@ -144,7 +173,7 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
     (compile-angel--debug-message
      "Native-compilation ignored (native-comp unavailable): %s" el-file))
 
-   ((and (not (compile-angel--elisp-native-compiled-p el-file)))
+   ((not (compile-angel--elisp-native-compiled-p el-file))
     (compile-angel--debug-message "Native-compilation: %s" el-file)
     (let ((inhibit-message (not (or compile-angel-verbose
                                     compile-angel-debug))))
@@ -160,7 +189,8 @@ Return non-nil to allow native compilation."
   (compile-angel--debug-message "Start: Byte-compilation: %s -> %s"
                                 el-file elc-file)
   (cond
-   ((and (not (file-newer-than-file-p el-file elc-file)))
+   ((and (file-exists-p elc-file)
+         (not (file-newer-than-file-p el-file elc-file)))
     (compile-angel--debug-message
      "Byte-compilation Ignored (up-to-date): %s" el-file)
     t)
@@ -184,7 +214,7 @@ Return non-nil to allow native compilation."
        ((eq byte-compile-result 'no-byte-compile)
         (compile-angel--debug-message
          "Byte-compilation Ignore (no-byte-compile): %s" el-file)
-        t)
+        nil)
 
        ((not byte-compile-result)
         (compile-angel--debug-message "Byte-compilation error: %s" el-file)
@@ -260,25 +290,60 @@ FEATURE-NAME is a string representing the feature name being loaded."
 
 (defun compile-angel--compile-current-buffer ()
   "Compile the current buffer."
-  (when (derived-mode-p 'emacs-lisp-mode)
-    (compile-angel--compile-elisp (buffer-file-name (buffer-base-buffer)))))
+  (let ((compile-angel-enable-cache nil))
+    (when (derived-mode-p 'emacs-lisp-mode)
+      (compile-angel--compile-elisp (buffer-file-name (buffer-base-buffer))))))
 
-(defun compile-angel--guess-el-file (el-file &optional feature nosuffix)
-  "Guess the EL-FILE or FEATURE path. NOSUFFIX is similar to `load'."
-  (let* ((library (or el-file (cond ((stringp feature)
-                                     feature)
-                                    ((symbolp feature)
-                                     (symbol-name feature))
-                                    (t nil))))
-         (result (when library
-                   (locate-file (substitute-in-file-name library)
-                                load-path
-                                (if nosuffix
-                                    load-file-rep-suffixes
-                                  (mapcar (lambda (s) (concat ".el" s))
-                                          load-file-rep-suffixes))))))
+(defun compile-angel--reset-cache ()
+  "Reset the caches.
+This resets `compile-angel-cache-feature' and `compile-angel-cache-el-file'."
+  (setq compile-angel-cache-feature (make-hash-table :test 'equal))
+  (setq compile-angel-cache-el-file (make-hash-table :test 'equal)))
+
+(defun compile-angel--guess-el-file (el-file
+                                     &optional feature nosuffix
+                                     substitute-env-vars)
+  "Guess the EL-FILE or FEATURE path. NOSUFFIX is similar to `load'.
+SUBSTITUTE-ENV-VARS Substitute environment variables referred.
+Checks caches before performing computation."
+  (let* ((feature-name (cond
+                        ((stringp feature)
+                         feature)
+                        ((symbolp feature)
+                         (symbol-name feature))
+                        (t nil)))
+         (el-file (when (stringp el-file) el-file))
+         (result nil))
+    ;; Check el-file and feature cache
+    (when compile-angel-enable-cache
+      (when feature-name
+        (setq result (gethash feature-name compile-angel-cache-feature)))
+      (when (and (not result) el-file)
+        (setq result (gethash el-file compile-angel-cache-el-file))))
+
+    ;; Return result
     (if result
-        (expand-file-name result)
+        result
+      ;; Find result and return it
+      (setq result
+            (or (and feature-name
+                     (locate-file (if substitute-env-vars
+                                      (substitute-in-file-name feature-name)
+                                    feature-name)
+                                  load-path
+                                  (if nosuffix
+                                      load-file-rep-suffixes
+                                    (mapcar (lambda (s) (concat ".el" s))
+                                            load-file-rep-suffixes))))
+                el-file))
+      (when result
+        (setq result (expand-file-name result))
+        (when compile-angel-enable-cache
+          (cond
+           (el-file
+            (puthash el-file result compile-angel-cache-el-file))
+           (feature-name
+            (puthash feature-name result compile-angel-cache-feature)))))
       result)))
 
 (defun compile-angel--feature-to-feature-name (feature)
@@ -295,12 +360,15 @@ FEATURE-NAME is a string representing the feature name being loaded."
     (symbol-name feature))))
 
 (defun compile-angel--compile-before-loading (el-file
-                                              &optional feature nosuffix)
+                                              &optional feature nosuffix
+                                              substitute-env-vars)
   "This function is called by all the :before advices.
+SUBSTITUTE-ENV-VARS Substitute environment variables referred.
 EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
   (when (or compile-angel-enable-byte-compile
             compile-angel-enable-native-compile)
-    (let* ((el-file (compile-angel--guess-el-file el-file feature nosuffix))
+    (let* ((el-file (compile-angel--guess-el-file el-file feature nosuffix
+                                                  substitute-env-vars))
            (feature-name (when feature
                            (compile-angel--feature-to-feature-name feature))))
       (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
@@ -344,7 +412,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
       (let ((user-init-file (if (eq user-init-file t)
                                 nil
                               user-init-file)))
-        (compile-angel--compile-before-loading el-file nil nosuffix))
+        (compile-angel--compile-before-loading el-file nil nosuffix t))
     (compile-angel--debug-message
      (concat "ISSUE: Wrong type passed to "
              "compile-angel--advice-before-require %s (%s)")
@@ -363,16 +431,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
   "Advice to track what FEATURE-OR-FILE (symbol) is passed to `eval-after-load'."
   (compile-angel--debug-message "EVAL-AFTER-LOAD: %s (%s)"
                                 feature-or-file (type-of feature-or-file))
-  (cond
-   ((symbolp feature-or-file)
-    (compile-angel--compile-before-loading nil feature-or-file))
-   ((stringp feature-or-file)
-    (compile-angel--compile-before-loading feature-or-file nil))
-   (t
-    (compile-angel--debug-message
-     (concat "ISSUE: Wrong type passed to "
-             "compile-angel--advice-eval-after-load: %s (%s)")
-     feature-or-file (type-of feature-or-file)))))
+  (compile-angel--compile-before-loading feature-or-file feature-or-file))
 
 (defun compile-angel-compile-features ()
   "Compile all loaded features that are in the `features' variable."
