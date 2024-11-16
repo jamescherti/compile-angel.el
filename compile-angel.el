@@ -101,7 +101,7 @@ When `compile-angel-on-load-mode' is activated, this ensures that all features
 listed in the `features' variable are compiled.")
 
 ;; Cache
-(defvar compile-angel-enable-cache t
+(defvar compile-angel-enable-cache nil
   "Non-nil to enable the cache.")
 
 (defvar compile-angel-cache-feature (make-hash-table :test 'equal)
