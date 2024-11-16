@@ -14,13 +14,13 @@ These modes **speed up Emacs by ensuring all libraries are byte-compiled and nat
 It is highly recommended to set the following variables in your init file:
 
 ``` emacs-lisp
-;; Set `load-prefer-newer` to `t` to ensure that Emacs loads the most recent
-;; version of byte-compiled or source files.
+;; Ensure Emacs loads the most recent byte-compiled files.
 (setq load-prefer-newer t)
 
-;; Make sure jit compilation is enabled
-(setq native-comp-jit-compilation t)  ;; Let compile-angel handle this
-(setq native-comp-deferred-compilation t) ;; Obsolete in Emacs > 29.1
+;; Ensure JIT compilation is enabled for improved performance by compiling
+;; code at runtime
+(setq native-comp-jit-compilation t)
+(setq native-comp-deferred-compilation t) ; Deprecated in Emacs > 29.1
 ```
 
 Additionally, ensure that native compilation is enabled; this should return t: `(native-comp-available-p)`.
