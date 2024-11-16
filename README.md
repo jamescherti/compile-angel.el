@@ -7,7 +7,7 @@ The **compile-angel** package automatically byte-compiles and native-compiles Em
 - `(compile-angel-on-load-mode)`: Global mode that compiles .el files before they are loaded.
 - `(compile-angel-on-save-local-mode)`: Local mode that compiles .el files whenever the user saves them.
 
-These modes speed up Emacs by ensuring all libraries are byte-compiled and native-compiled. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
+These modes **speed up Emacs by ensuring all libraries are byte-compiled and native-compiled**. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
 
 ## Before installing
 
@@ -95,9 +95,11 @@ To install `compile-angel` with `use-package` and `:vc`, add the following code 
 
 ## Why did the author develop compile-angel?
 
-The author used to be an auto-compile user, but several of his .el files were not being compiled by auto-compile, and Emacs was slow due to the lack of native compilation. The author experimented for an extended period to understand why auto-compile wasn't compiling many of the .el files in the configuration. The result of that experiment became a package: compile-angel.
+The author used to be an auto-compile user, but several of his .el files were not being compiled by auto-compile, which caused Emacs to become slow due to the lack of native compilation. The author experimented for an extended period to understand why auto-compile wasn't compiling many of the .el files in the configuration. The result of those hours of research and testing became a package called compile-angel.
 
-During the investigation, the author discovered that auto-compile was not utilizing autoload and eval-after-load to compile .el files. Even though autoload and eval-after-load don't directly load libraries, they provide a good indication of what will be loaded in the future. In the case of compile-angel, this triggers compilation if the file has not yet been compiled (The compile-angel package checks whether the .elc and/or .eln files are outdated before compiling them; it does not simply compile them without checking.). Special thanks to Jonas Bernoulli, the creator of the auto-compile package, whose work inspired the development of compile-angel. The compile-angel package was created to offer an alternative to auto-compile that guarantees all .el files are both byte-compiled and native-compiled, which significantly speeds up Emacs.
+During his investigation, the author discovered that auto-compile was not using autoload and eval-after-load to compile .el files. Even though autoload and eval-after-load don't directly load libraries, they provide a good indication of what will be loaded in the future. In the case of compile-angel, this triggers compilation if the file has not yet been compiled (The compile-angel package checks whether the .elc and/or .eln files are outdated before compiling them; it does not simply compile them without checking.). Special thanks to Jonas Bernoulli, the creator of the auto-compile package, whose work inspired the development of compile-angel.
+
+The compile-angel package was created to offer an alternative to auto-compile that guarantees all .el files are both byte-compiled and native-compiled, which significantly speeds up Emacs.
 
 ## What is the difference between auto-compile and compile-angel?
 
