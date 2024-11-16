@@ -3,9 +3,9 @@
 ![License](https://img.shields.io/github/license/jamescherti/compile-angel.el)
 ![](https://raw.githubusercontent.com/jamescherti/compile-angel.el/main/.images/made-for-gnu-emacs.svg)
 
-The **compile-angel** package automatically byte-compiles and native-compiles Emacs Lisp libraries. It offers two global minor modes:
-- `(compile-angel-on-load-mode)`: Compiles .el files before they are loaded.
-- `(compile-angel-on-save-local-mode)`: Compiles .el files whenever the user saves them.
+The **compile-angel** package automatically byte-compiles and native-compiles Emacs Lisp libraries. It offers:
+- `(compile-angel-on-load-mode)`: Global mode that compiles .el files before they are loaded.
+- `(compile-angel-on-save-local-mode)`: Local mode that compiles .el files whenever the user saves them.
 
 These modes speed up Emacs by ensuring all libraries are byte-compiled and native-compiled. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
 
