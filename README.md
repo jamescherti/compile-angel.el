@@ -4,8 +4,8 @@
 ![](https://raw.githubusercontent.com/jamescherti/compile-angel.el/main/.images/made-for-gnu-emacs.svg)
 
 The **compile-angel** package automatically byte-compiles and native-compiles Emacs Lisp libraries. It offers two global minor modes:
-- `(compile-angel-on-save-mode)`: Compiles when an .el file is modified and saved.
-- `(compile-angel-on-load-mode)`: Compiles an .el file before it is loaded.
+- `(compile-angel-on-load-mode)`: Compiles .el files before they are loaded.
+- `(compile-angel-on-save-local-mode)`: Compiles .el files whenever the user saves them.
 
 These modes speed up Emacs by ensuring all libraries are byte-compiled and native-compiled. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
 
@@ -45,8 +45,8 @@ To install `compile-angel` with `straight.el`:
   :custom
   (compile-angel-verbose nil)
   :config
-  (compile-angel-on-save-mode)
-  (compile-angel-on-load-mode))
+  (compile-angel-on-load-mode)
+  (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode))
 ```
 
 ### Install with use-package and :vc (Built-in feature in Emacs version >= 30)
@@ -63,7 +63,7 @@ To install `compile-angel` with `use-package` and `:vc`, add the following code 
   (compile-angel-verbose nil)
   :config
   (compile-angel-on-save-mode)
-  (compile-angel-on-load-mode))
+  (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode))
 ```
 
 ## Customizations

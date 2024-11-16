@@ -387,7 +387,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
 (define-minor-mode compile-angel-on-load-mode
   "Toggle `compile-angel-mode' then compiles .el files before they are loaded."
   :global t
-  :lighter " CompAngelL"
+  :lighter " CAngelL"
   :group 'compile-angel
   (if compile-angel-on-load-mode
       (progn
@@ -411,11 +411,21 @@ FEATURE and FILENAME are the same arguments as the `require' function."
 (define-minor-mode compile-angel-on-save-mode
   "Toggle `compile-angel-mode'that compiles .el file when saved."
   :global t
-  :lighter " CompAngelS"
+  :lighter " CAngelSg"
   :group 'compile-angel
   (if compile-angel-on-save-mode
       (add-hook 'after-save-hook #'compile-angel--compile-current-buffer)
     (remove-hook 'after-save-hook #'compile-angel--compile-current-buffer)))
+
+;;;###autoload
+(define-minor-mode compile-angel-on-save-local-mode
+  "Toggle `compile-angel-mode'that compiles .el file when saved."
+  :global nil
+  :lighter " CAngelSl"
+  :group 'compile-angel
+  (if compile-angel-on-save-local-mode
+      (add-hook 'after-save-hook #'compile-angel--compile-current-buffer nil t)
+    (remove-hook 'after-save-hook #'compile-angel--compile-current-buffer t)))
 
 (provide 'compile-angel)
 ;;; compile-angel.el ends here
