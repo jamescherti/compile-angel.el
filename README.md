@@ -11,7 +11,7 @@ These modes **speed up Emacs by ensuring all libraries are byte-compiled and nat
 
 ## Before installing
 
-It is recommended to set the following variables:
+It is recommended to set the following variables in your init file:
 
 ``` emacs-lisp
 ;; Set `load-prefer-newer` to `t` to ensure that Emacs loads the most recent
