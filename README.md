@@ -30,7 +30,7 @@ It is recommended to set the following variables:
 
 ### Install with straight (Emacs version < 30)
 
-To install `compile-angel` with `straight.el`:
+To install *compile-angel* with `straight.el`:
 
 1. It if hasn't already been done, [add the straight.el bootstrap code](https://github.com/radian-software/straight.el?tab=readme-ov-file#getting-started) to your init file.
 2. Add the following code **at the very beginning of your Emacs init file, before all other packages**:
@@ -51,7 +51,7 @@ To install `compile-angel` with `straight.el`:
 
 ### Install with use-package and :vc (Built-in feature in Emacs version >= 30)
 
-To install `compile-angel` with `use-package` and `:vc`, add the following code **at the very beginning of your Emacs init file, before all other packages**:
+To install *compile-angel* with `use-package` and `:vc`, add the following code **at the very beginning of your Emacs init file, before all other packages**:
 
 ``` emacs-lisp
 (use-package compile-angel
@@ -123,11 +123,11 @@ Execute the following setq **before** activating `compile-angel-on-load-mode`:
 (setq compile-angel-on-load-compile-features nil)
 ```
 
-This will make `compile-angel` behave similarly to auto-compile. It will only compile required and loaded packages. However, if you disable the 'compile features' mode, autoload, or eval-after-load features, certain packages may be missed, especially for heavy users of delaying package loading (e.g., via `:defer t`) and package dependencies (e.g., via `:after`), as well as those whose configuration frequently evaluate ELisp code after load.
+This will make *compile-angel* behave similarly to *auto-compile*. It will only compile required and loaded packages. However, if you disable the 'compile features' mode, autoload, or eval-after-load features, certain packages may be missed, especially for heavy users of delaying package loading (e.g., via `:defer t`) and package dependencies (e.g., via `:after`), as well as those whose configuration frequently evaluate ELisp code after load.
 
 ## Author and License
 
-The `compile-angel` Emacs package has been written by [James Cherti](https://www.jamescherti.com/) and is distributed under terms of the GNU General Public License version 3, or, at your choice, any later version.
+The *compile-angel* Emacs package has been written by [James Cherti](https://www.jamescherti.com/) and is distributed under terms of the GNU General Public License version 3, or, at your choice, any later version.
 
 Copyright (C) 2024 James Cherti
 
