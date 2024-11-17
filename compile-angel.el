@@ -114,8 +114,8 @@ listed in the `features' variable are compiled.")
 
 (defvar compile-angel--list-compiled-features (make-hash-table :test 'equal))
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
-(defvar compile-angel--currently-compiling-files (make-hash-table :test 'equal))
-(defvar compile-angel--currently-compiling-p nil)
+(defvar compile-angel--currently-compiling (make-hash-table :test 'equal))
+(defvar compile-angel--compiling-p nil)
 
 ;;; Functions
 
@@ -372,10 +372,9 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
         (compile-angel--debug-message
          "SKIP (Returned a nil .el file): %s | %s" el-file feature))
 
-       ((or
-         compile-angel--currently-compiling-p
-         ;; (gethash el-file compile-angel--currently-compiling-files)
-         nil)
+       ((or compile-angel--compiling-p
+            ;; (gethash el-file compile-angel--currently-compiling)
+            nil)
         (compile-angel--debug-message
          "SKIP (To prevent recursive compilation): %s | %s" el-file feature))
 
@@ -390,12 +389,16 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
 
         (unwind-protect
             (progn
-              (puthash el-file t compile-angel--currently-compiling-files)
-              (setq compile-angel--currently-compiling-p t)
+              (puthash el-file t compile-angel--currently-compiling)
+              (when feature-name
+                (puthash feature-name t compile-angel--currently-compiling))
+              (setq compile-angel--compiling-p t)
               (compile-angel--compile-elisp el-file))
           (progn
-            (setq compile-angel--currently-compiling-p nil)
-            (remhash el-file compile-angel--currently-compiling-files))))))))
+            (setq compile-angel--compiling-p nil)
+            (remhash el-file compile-angel--currently-compiling)
+            (when feature-name
+              (remhash feature-name compile-angel--currently-compiling)))))))))
 
 (defun compile-angel--advice-before-require (feature
                                              &optional filename _noerror)
