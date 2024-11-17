@@ -301,21 +301,28 @@ This resets `compile-angel-cache-feature' and `compile-angel-cache-el-file'."
   (setq compile-angel-cache-feature (make-hash-table :test 'equal))
   (setq compile-angel-cache-el-file (make-hash-table :test 'equal)))
 
+(defun compile-angel--feature-to-feature-name (feature)
+  "Convert a FEATURE symbol into a feature name and return it."
+  (cond
+   ((stringp feature)
+    feature)
+   ((symbolp feature)
+    (symbol-name feature))
+   (t
+    (compile-angel--debug-message
+     "ISSUE: UNSUPPORTED Feature: Not a symbol: %s (type: %s)"
+     feature (type-of feature))
+    nil)))
+
 (defun compile-angel--guess-el-file (el-file
-                                     &optional feature nosuffix
+                                     &optional feature-name nosuffix
                                      substitute-env-vars)
-  "Guess the EL-FILE or FEATURE path. NOSUFFIX is similar to `load'.
+  "Guess the EL-FILE or FEATURE-NAME path. NOSUFFIX is similar to `load'.
 SUBSTITUTE-ENV-VARS Substitute environment variables referred.
 Checks caches before performing computation."
-  (let* ((feature-name (cond
-                        ((stringp feature)
-                         feature)
-                        ((symbolp feature)
-                         (symbol-name feature))
-                        (t nil)))
-         (el-file (when (stringp el-file) el-file))
+  (let* ((el-file (when (stringp el-file) el-file))
          (result nil))
-    ;; Check el-file and feature cache
+    ;; Check el-file and feature-name cache
     (when compile-angel-enable-cache
       (when feature-name
         (setq result (gethash feature-name compile-angel-cache-feature)))
@@ -347,19 +354,6 @@ Checks caches before performing computation."
             (puthash feature-name result compile-angel-cache-feature)))))
       result)))
 
-(defun compile-angel--feature-to-feature-name (feature)
-  "Convert a FEATURE symbol into a feature name and return it."
-  (cond
-   ((stringp feature)
-    feature)
-   ((symbolp feature)
-    (symbol-name feature))
-   (t
-    (compile-angel--debug-message
-     "ISSUE: UNSUPPORTED Feature: Not a symbol: %s (type: %s)"
-     feature (type-of feature))
-    nil)))
-
 (defun compile-angel--compile-before-loading (el-file
                                               &optional feature nosuffix
                                               substitute-env-vars)
@@ -368,10 +362,9 @@ SUBSTITUTE-ENV-VARS Substitute environment variables referred.
 EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
   (when (or compile-angel-enable-byte-compile
             compile-angel-enable-native-compile)
-    (let* ((el-file (compile-angel--guess-el-file el-file feature nosuffix
-                                                  substitute-env-vars))
-           (feature-name (when feature
-                           (compile-angel--feature-to-feature-name feature))))
+    (let* ((feature-name (compile-angel--feature-to-feature-name feature))
+           (el-file (compile-angel--guess-el-file el-file feature-name nosuffix
+                                                  substitute-env-vars)))
       (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
                                     el-file feature-name)
       (cond
