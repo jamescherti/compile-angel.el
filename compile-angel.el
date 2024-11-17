@@ -376,9 +376,9 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
                                     el-file feature-name)
       (cond
        ((or
-         ;; compile-angel--currently-compiling-p
-         nil
-         (gethash el-file compile-angel--currently-compiling-files))
+         compile-angel--currently-compiling-p
+         ;; (gethash el-file compile-angel--currently-compiling-files)
+         nil)
         (compile-angel--debug-message
          "SKIP (To prevent recursive compilation): %s | %s" el-file feature))
 
