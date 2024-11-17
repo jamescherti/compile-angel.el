@@ -116,6 +116,7 @@ listed in the `features' variable are compiled.")
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
 (defvar compile-angel--currently-compiling (make-hash-table :test 'equal))
 (defvar compile-angel--compiling-p nil)
+(defvar compile-angel--postponed-compilations (make-hash-table :test 'equal))
 
 ;;; Functions
 
@@ -333,15 +334,21 @@ Checks caches before performing computation."
     (if result
         result
       ;; Find result and return it
-      (setq result (locate-file (if substitute-env-vars
-                                    (substitute-in-file-name
-                                     (or el-file feature-name))
-                                  (or el-file feature-name))
-                                load-path
-                                (if nosuffix
-                                    load-file-rep-suffixes
-                                  (mapcar (lambda (s) (concat ".el" s))
-                                          load-file-rep-suffixes))))
+      (setq result (if (and el-file
+                            (string-match-p
+                             (format "\\.el%s\\'"
+                                     (regexp-opt load-file-rep-suffixes))
+                             el-file))
+                       el-file
+                     (locate-file (if substitute-env-vars
+                                      (substitute-in-file-name
+                                       (or el-file feature-name))
+                                    (or el-file feature-name))
+                                  load-path
+                                  (if nosuffix
+                                      load-file-rep-suffixes
+                                    (mapcar (lambda (s) (concat ".el" s))
+                                            load-file-rep-suffixes)))))
       (when result
         (setq result (expand-file-name result))
         (when compile-angel-enable-cache
@@ -352,10 +359,10 @@ Checks caches before performing computation."
             (puthash feature-name result compile-angel-cache-feature)))))
       result)))
 
-(defun compile-angel--compile-before-loading (el-file
-                                              &optional feature nosuffix
-                                              substitute-env-vars)
-  "This function is called by all the :before advices.
+(defun compile-angel--entry-point-compile (el-file
+                                           &optional feature nosuffix
+                                           substitute-env-vars)
+  "This function is called by the entry point function to compile.
 SUBSTITUTE-ENV-VARS Substitute environment variables referred.
 EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
   (when (or compile-angel-enable-byte-compile
@@ -375,6 +382,7 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
          compile-angel--compiling-p
          ;; (gethash el-file compile-angel--currently-compiling)
          nil)
+        (puthash el-file t compile-angel--postponed-compilations)
         (compile-angel--debug-message
          "SKIP (To prevent recursive compilation): %s | %s" el-file feature))
 
@@ -400,6 +408,33 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
             (when feature-name
               (remhash feature-name compile-angel--currently-compiling)))))))))
 
+(defun compile-angel--compile-postponed ()
+  "Compile postponed files.
+To avoid recursive compilations, some compilations were postponed. Using a list
+to detect recursive compilations did not work because compilations come from
+various events (`autoload', `eval-after-load', `require', `load', etc.). The
+best way for now is the postpone them."
+  (unless compile-angel--compiling-p
+    (unwind-protect
+        (dolist (el-file (hash-table-keys compile-angel--postponed-compilations))
+          (compile-angel--debug-message "Compile postponed: %s" el-file)
+          (compile-angel--entry-point-compile el-file))
+      (setq compile-angel--postponed-compilations (make-hash-table :test 'equal)))))
+
+(defun compile-angel--entry-point (el-file
+                                   &optional feature nosuffix
+                                   substitute-env-vars)
+  "This function is called by all the :before advices.
+SUBSTITUTE-ENV-VARS Substitute environment variables referred.
+EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
+  (when (or compile-angel-enable-byte-compile
+            compile-angel-enable-native-compile)
+    ;; (compile-angel--compile-postponed)
+    (unwind-protect
+        (compile-angel--entry-point-compile el-file feature
+                                            nosuffix substitute-env-vars)
+      (compile-angel--compile-postponed))))
+
 (defun compile-angel--advice-before-require (feature
                                              &optional filename _noerror)
   "Recompile the library before `require'.
@@ -407,7 +442,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
   (compile-angel--debug-message
    "REQUIRE: %s (%s) | %s (%s)"
    filename (type-of filename) feature (type-of feature))
-  (compile-angel--compile-before-loading filename feature))
+  (compile-angel--entry-point filename feature))
 
 (defun compile-angel--advice-before-load (el-file &optional _noerror _nomessage
                                                   nosuffix _must-suffix)
@@ -418,7 +453,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
       (let ((user-init-file (if (eq user-init-file t)
                                 nil
                               user-init-file)))
-        (compile-angel--compile-before-loading el-file nil nosuffix t))
+        (compile-angel--entry-point el-file nil nosuffix t))
     (compile-angel--debug-message
      (concat "ISSUE: Wrong type passed to "
              "compile-angel--advice-before-require %s (%s)")
@@ -431,20 +466,20 @@ FEATURE and FILENAME are the same arguments as the `require' function."
   "Recompile before `autoload'. FEATURE is the file or the feature."
   (when compile-angel-debug (compile-angel--debug-message
                              "AUTOLOAD: %s (%s)" feature (type-of feature)))
-  (compile-angel--compile-before-loading nil feature))
+  (compile-angel--entry-point nil feature))
 
 (defun compile-angel--advice-eval-after-load (feature-or-file _form)
   "Advice to track what FEATURE-OR-FILE (symbol) is passed to `eval-after-load'."
   (compile-angel--debug-message "EVAL-AFTER-LOAD: %s (%s)"
                                 feature-or-file (type-of feature-or-file))
-  (compile-angel--compile-before-loading feature-or-file feature-or-file))
+  (compile-angel--entry-point feature-or-file feature-or-file))
 
 (defun compile-angel-compile-features ()
   "Compile all loaded features that are in the `features' variable."
   (dolist (feature features)
     (compile-angel--debug-message
      "compile-angel-compile-features: %s" feature)
-    (compile-angel--compile-before-loading nil feature)))
+    (compile-angel--entry-point nil feature)))
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
