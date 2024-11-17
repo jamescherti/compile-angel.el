@@ -112,7 +112,6 @@ listed in the `features' variable are compiled.")
 
 ;;; Internal variables
 
-(defvar compile-angel--list-compiled-features (make-hash-table :test 'equal))
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
 (defvar compile-angel--currently-compiling (make-hash-table :test 'equal))
 (defvar compile-angel--compiling-p nil)
@@ -251,11 +250,7 @@ FEATURE-NAME is a string representing the feature name being loaded."
     nil)
 
    ((not (or (not compile-angel-on-load-mode-compile-once)
-             (and
-              (not (gethash el-file compile-angel--list-compiled-files))
-              (or (not feature-name)
-                  (not (gethash feature-name
-                                compile-angel--list-compiled-features))))))
+             (not (gethash el-file compile-angel--list-compiled-files))))
     (compile-angel--debug-message
      "SKIP (In the skip hash list): %s | %s" el-file feature-name)
     nil)
@@ -391,8 +386,6 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
          "SKIP (Does not need compilation): %s | %s" el-file feature))
 
        (t
-        (when feature-name
-          (puthash feature-name t compile-angel--list-compiled-features))
         (puthash el-file t compile-angel--list-compiled-files)
 
         (unwind-protect
