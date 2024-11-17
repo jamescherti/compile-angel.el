@@ -85,14 +85,13 @@ Below are a few interesting options:
 (setq native-comp-async-query-on-exit t)
 (setq confirm-kill-processes t)
 
-;; Show buffer when there is a warning (Not recommended, except during development).
+;; Show buffer when there is a warning.
+;; (NOT RECOMMENDED, except during development).
 (setq warning-minimum-level :warning)
-
-;; Report warnings and errors
-(setq native-comp-async-report-warnings-errors t)
-(setq native-comp-warning-on-missing-source t)
 (setq byte-compile-verbose t)
 (setq byte-compile-warnings t)
+(setq native-comp-async-report-warnings-errors t)
+(setq native-comp-warning-on-missing-source t)
 
 ;; Non-nil means to natively compile packages as part of their installation.
 (setq package-native-compile t)
