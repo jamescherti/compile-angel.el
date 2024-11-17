@@ -160,7 +160,7 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
   (let ((eln-file (comp-el-to-eln-filename el-file)))
     (when (and eln-file
                (file-exists-p eln-file)
-               (file-newer-than-file-p el-file eln-file))
+               (file-newer-than-file-p eln-file el-file))
       t)))
 
 (defun compile-angel--native-compile (el-file)
