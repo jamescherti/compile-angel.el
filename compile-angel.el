@@ -333,17 +333,15 @@ Checks caches before performing computation."
     (if result
         result
       ;; Find result and return it
-      (setq result
-            (or (and feature-name
-                     (locate-file (if substitute-env-vars
-                                      (substitute-in-file-name feature-name)
-                                    feature-name)
-                                  load-path
-                                  (if nosuffix
-                                      load-file-rep-suffixes
-                                    (mapcar (lambda (s) (concat ".el" s))
-                                            load-file-rep-suffixes))))
-                el-file))
+      (setq result (locate-file (if substitute-env-vars
+                                    (substitute-in-file-name
+                                     (or el-file feature-name))
+                                  (or el-file feature-name))
+                                load-path
+                                (if nosuffix
+                                    load-file-rep-suffixes
+                                  (mapcar (lambda (s) (concat ".el" s))
+                                          load-file-rep-suffixes))))
       (when result
         (setq result (expand-file-name result))
         (when compile-angel-enable-cache
@@ -363,8 +361,9 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
   (when (or compile-angel-enable-byte-compile
             compile-angel-enable-native-compile)
     (let* ((feature-name (compile-angel--feature-to-feature-name feature))
-           (el-file (compile-angel--guess-el-file el-file feature-name nosuffix
-                                                  substitute-env-vars)))
+           (el-file (compile-angel--guess-el-file
+                     el-file feature-name
+                     nosuffix substitute-env-vars)))
       (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
                                     el-file feature-name)
       (cond
@@ -372,9 +371,10 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
         (compile-angel--debug-message
          "SKIP (Returned a nil .el file): %s | %s" el-file feature))
 
-       ((or compile-angel--compiling-p
-            ;; (gethash el-file compile-angel--currently-compiling)
-            nil)
+       ((or
+         compile-angel--compiling-p
+         ;; (gethash el-file compile-angel--currently-compiling)
+         nil)
         (compile-angel--debug-message
          "SKIP (To prevent recursive compilation): %s | %s" el-file feature))
 
