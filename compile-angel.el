@@ -256,10 +256,10 @@ FEATURE-NAME is a string representing the feature name being loaded."
                   (not (gethash feature-name
                                 compile-angel--list-compiled-features))))))
     (compile-angel--debug-message
-     "SKIP (In skip hash list): %s | %s" el-file feature-name)
+     "SKIP (In the skip hash list): %s | %s" el-file feature-name)
     nil)
 
-   ((not (not (compile-angel--el-file-excluded-p el-file)))
+   ((compile-angel--el-file-excluded-p el-file)
     (compile-angel--debug-message
      "SKIP (.el file excluded with a regex): %s | %s" el-file feature-name)
     nil)
@@ -350,15 +350,15 @@ Checks caches before performing computation."
 (defun compile-angel--feature-to-feature-name (feature)
   "Convert a FEATURE symbol into a feature name and return it."
   (cond
-   ((and (not (stringp feature)) (not (symbolp feature)))
-    (compile-angel--debug-message
-     "ISSUE: UNSUPPORTED Feature: Not a symbol: %s (type: %s)"
-     feature (type-of feature))
-    nil)
    ((stringp feature)
     feature)
    ((symbolp feature)
-    (symbol-name feature))))
+    (symbol-name feature))
+   (t
+    (compile-angel--debug-message
+     "ISSUE: UNSUPPORTED Feature: Not a symbol: %s (type: %s)"
+     feature (type-of feature))
+    nil)))
 
 (defun compile-angel--compile-before-loading (el-file
                                               &optional feature nosuffix
@@ -375,6 +375,10 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
       (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
                                     el-file feature-name)
       (cond
+       ((not el-file)
+        (compile-angel--debug-message
+         "SKIP (Returned a nil .el file): %s | %s" el-file feature))
+
        ((or
          compile-angel--currently-compiling-p
          ;; (gethash el-file compile-angel--currently-compiling-files)
