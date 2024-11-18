@@ -43,7 +43,7 @@
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-enable-native-compile t
+(defcustom compile-angel-enable-native-compile nil
   "Non-nil to enable native-compilation of Emacs Lisp (.el) files."
   :type 'boolean
   :group 'compile-angel)
