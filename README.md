@@ -31,16 +31,15 @@ Additionally, ensure that native compilation is enabled; this should return t: `
 
 To install *compile-angel* with `straight.el`:
 
-1. It if hasn't already been done, [add the straight.el bootstrap code](https://github.com/radian-software/straight.el?tab=readme-ov-file#getting-started) to your init file.
+To install `compile-angel` from MELPA:
+
+1. If you haven't already done so, [add MELPA repository to your Emacs configuration](https://melpa.org/#/getting-started).
+
 2. Add the following code **at the very beginning of your Emacs init file, before all other packages**:
 ```emacs-lisp
 (use-package compile-angel
   :ensure t
   :demand t
-  :straight (compile-angel
-             :type git
-             :host github
-             :repo "jamescherti/compile-angel.el")
   :custom
   (compile-angel-verbose nil)
   :config
