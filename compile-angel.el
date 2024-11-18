@@ -66,9 +66,10 @@
 ;;     (compile-angel-on-load-mode)
 ;;     (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode))
 ;;
-;; Links
-;; -----
-;; - Git repository: https://github.com/jamescherti/compile-angel.el
+;; Links:
+;; ------
+;; - More information about compile-angel (Frequently asked questions, usage...):
+;;   https://github.com/jamescherti/compile-angel.el
 
 ;;; Code:
 
