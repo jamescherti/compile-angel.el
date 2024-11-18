@@ -107,7 +107,7 @@ The compile-angel package was created to offer an alternative to auto-compile th
 ## What is the difference between auto-compile and compile-angel?
 
 Here are the main differences:
-- **Compile-angel ensures more .el files are compiled**: The compile-angel package, in addition to compiling the elisp files that are loaded using `load` and `require`, **also handles files that auto-compile does not support**, such as autoload and eval-after-load.
+- **Compile-angel ensures more .el files are compiled**: The compile-angel package, in addition to compiling the .el files that are loaded using `load` and `require`, also handles files that auto-compile does not support, such as autoload and eval-after-load. They can be useful for compiling packages in advance that will be loaded in the future.
 - Compile-angel can exclude files from compilation using regular expressions in `compile-angel-excluded-files-regexps`.
 - Compile-angel provides options to allow enabling and disabling specific functions that should be advised (load, require, etc.).
 - Compile-angel allows enabling debug mode, which allows knowing exactly what compile-angel does. Additionally, compiled files and features are stored in variables that help identify what was compiled.
