@@ -111,10 +111,10 @@ Here are the main differences:
 - Compile-angel can exclude files from compilation using regular expressions in `compile-angel-excluded-files-regexps`.
 - Compile-angel provides options to allow enabling and disabling specific functions that should be advised (load, require, etc.).
 - Compile-angel allows enabling debug mode, which allows knowing exactly what compile-angel does. Additionally, compiled files and features are stored in variables that help identify what was compiled.
-- Compile-angel-on-save-mode supports compiling indirect buffers (clones).
-- compile-angel-on-load-mode compiles features that have already been loaded to make sure that they are compiled.
-- Compile-Angel uses caching to enhance performance when locating the .el file corresponding to a given feature.
-- Compile-angel-on-load-mode only native-compiles when JIT is disabled. In Compile-angel-on-save-mode, it always native-compiles.
+- `compile-angel-on-save-mode` supports compiling indirect buffers (clones).
+- `compile-angel-on-load-mode` compiles features that have already been loaded to make sure that they are compiled.
+- Compile-Angel can use caching to enhance performance when locating the .el file corresponding to a given feature.
+- `compile-angel-on-load-mode` only performs native compilation when JIT is disabled. **Explanation**: `compile-angel-on-load-mode` performs native compilation only when JIT is disabled. When JIT is enabled, loading an `.elc` file causes Emacs to trigger native compilation automatically anyway. (This also loads makes Emacs load the natively compiled files, replacing the auto-compiled functions with their native versions automatically and asynchronously.) In contrast, auto-compilation disables native compilation by default, which leads to native compilation being ignored in save mode as well.
 
 ## How to make compile-angel behave like auto-compile?
 
