@@ -417,10 +417,13 @@ Checks caches before performing computation."
 
 (defun compile-angel--entry-point-compile (el-file
                                            &optional feature nosuffix
-                                           substitute-env-vars)
+                                           substitute-env-vars
+                                           do-not-postpone)
   "This function is called by the entry point function to compile.
 SUBSTITUTE-ENV-VARS Substitute environment variables referred.
-EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
+EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'.
+When DO-NOT-POSTPONE is non-nil, do not add files to the
+`compile-angel--postponed-compilations' hash table."
   (when (or compile-angel-enable-byte-compile
             compile-angel-enable-native-compile)
     (let* ((feature-name (compile-angel--feature-to-feature-name feature))
@@ -438,7 +441,8 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
          compile-angel--compiling-p
          ;; (gethash el-file compile-angel--currently-compiling)
          nil)
-        (puthash el-file t compile-angel--postponed-compilations)
+        (unless do-not-postpone
+          (puthash el-file t compile-angel--postponed-compilations))
         (compile-angel--debug-message
          "SKIP (To prevent recursive compilation): %s | %s" el-file feature))
 
@@ -472,7 +476,7 @@ compilations come from various events (`autoload', `eval-after-load', `require',
     (unwind-protect
         (dolist (el-file (hash-table-keys compile-angel--postponed-compilations))
           (compile-angel--debug-message "Compile postponed: %s" el-file)
-          (compile-angel--entry-point-compile el-file))
+          (compile-angel--entry-point-compile el-file nil nil nil t))
       (setq compile-angel--postponed-compilations (make-hash-table :test 'equal)))))
 
 (defun compile-angel--entry-point (el-file
