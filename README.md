@@ -28,8 +28,9 @@ It is highly recommended to set the following variables in your init file:
 (setq native-comp-deferred-compilation t) ; Deprecated in Emacs > 29.1
 ```
 
-Additionally, ensure that native compilation is enabled.
-(This should return t: `(native-comp-available-p)`.)
+Additionally, ensure that native compilation is enabled:
+
+This should return t: `(native-comp-available-p)`
 
 ## Installation
 
