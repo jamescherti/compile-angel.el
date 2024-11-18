@@ -10,9 +10,9 @@ The **compile-angel** package automatically byte-compiles and native-compiles Em
 
 These modes **speed up Emacs by ensuring all libraries are byte-compiled and native-compiled**. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
 
-The author used to be an auto-compile user, but several of his .el files were not being compiled by auto-compile, which caused Emacs to become slow due to the lack of native compilation. The author experimented for an extended and the result of those hours of research and testing became a package called compile-angel. Special thanks to Jonas Bernoulli, the creator of the auto-compile package, whose work inspired the development of compile-angel.
+The *compile-angel* author used to be an *auto-compile* user, but several of his .el files were not being compiled by *auto-compile*, which caused Emacs to become slow due to the lack of native compilation. The author experimented for an extended and the result of those hours of research and testing became a package called *compile-angel*.
 
-The compile-angel package was created to offer an alternative to auto-compile that guarantees all .el files are both byte-compiled and native-compiled, which significantly speeds up Emacs.
+The *compile-angel* package was created to offer an alternative to *auto-compile* that guarantees all .el files are both byte-compiled and native-compiled, which significantly speeds up Emacs.
 
 ## Before installing
 
