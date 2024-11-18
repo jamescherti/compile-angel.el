@@ -212,9 +212,14 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
 
 (defun compile-angel--native-compile (el-file)
   "Native-compile EL-FILE."
-  (cond ((and (not compile-angel--is-saving)  ; on load and JIT
-              (or (bound-and-true-p native-comp-jit-compilation)
-                  (bound-and-true-p native-comp-deferred-compilation)))
+  (cond ((and nil  ;; TODO Disabled temporarily.
+              ;; I temporarily disabled this because Emacs seems to ignore some
+              ;; .elc files for some reason. I need to find a way to ensure they
+              ;; are compiled first. For example the ones in use-package :mode.
+              (not compile-angel--is-saving) ; on load and JIT
+              (or
+               (bound-and-true-p native-comp-jit-compilation)
+               (bound-and-true-p native-comp-deferred-compilation)))
          (compile-angel--debug-message
           "Native-compilation ignored (Reason: JIT compilation will do it): %s"
           el-file))
