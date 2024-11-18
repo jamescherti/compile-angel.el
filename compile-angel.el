@@ -311,9 +311,8 @@ FEATURE-NAME is a string representing the feature name being loaded."
      "SKIP (Does not end with the .el): %s | %s" el-file feature-name)
     nil)
 
-   ((not (not compile-angel--is-saving
-              (or (not compile-angel-on-load-mode-compile-once)
-                  (not (gethash el-file compile-angel--list-compiled-files)))))
+   ((not (or (not compile-angel-on-load-mode-compile-once)
+             (not (gethash el-file compile-angel--list-compiled-files))))
     (compile-angel--debug-message
      "SKIP (In the skip hash list): %s | %s" el-file feature-name)
     nil)
