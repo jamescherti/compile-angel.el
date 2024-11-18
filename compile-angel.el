@@ -212,39 +212,31 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
 
 (defun compile-angel--native-compile (el-file)
   "Native-compile EL-FILE."
-  (compile-angel--debug-message "Start: Native-compilation: %s" el-file)
-  (cond
-   ((not (and (featurep 'native-compile)
-              (fboundp 'native-comp-available-p)
-              (fboundp 'native-compile-async)
-              (native-comp-available-p)))
-    (compile-angel--debug-message
-     "Native-compilation ignored (native-comp unavailable): %s" el-file))
+  (cond ((and (not compile-angel--is-saving)  ; on load and JIT
+              (or (bound-and-true-p native-comp-jit-compilation)
+                  (bound-and-true-p native-comp-deferred-compilation)))
+         (compile-angel--debug-message
+          "Native-compilation ignored (Reason: JIT compilation will do it): %s"
+          el-file))
 
-   ((not (compile-angel--elisp-native-compiled-p el-file))
-    (compile-angel--debug-message "Native-compilation: %s" el-file)
-    (let ((inhibit-message (not (or compile-angel-verbose
-                                    compile-angel-debug))))
-      ;; Only perform native compilation when JIT compilation is disabled or
-      ;; when saving
-      (cond
-       ((or (bound-and-true-p native-comp-jit-compilation)
-            (bound-and-true-p native-comp-deferred-compilation))
-        (if compile-angel--is-saving
-            (progn
-              (compile-angel--debug-message
-               "Native-compilation, even with jit enabled (on-save-mode): %s"
-               el-file)
-              (native-compile-async el-file))
-          (compile-angel--debug-message
-           "Native-compilation ignored (Reason: jit enabled): %s" el-file)))
+        (t
+         (cond
+          ((not (and (featurep 'native-compile)
+                     (fboundp 'native-comp-available-p)
+                     (fboundp 'native-compile-async)
+                     (native-comp-available-p)))
+           (compile-angel--debug-message
+            "Native-compilation ignored (native-comp unavailable): %s" el-file))
 
-       (t
-        (native-compile-async el-file)))))
+          ((compile-angel--elisp-native-compiled-p el-file)
+           (compile-angel--debug-message
+            "Native-compilation ignored (up-to-date): %s" el-file))
 
-   (t
-    (compile-angel--debug-message
-     "Native-compilation ignored (up-to-date): %s" el-file))))
+          (t
+           (compile-angel--debug-message "Native-compilation: %s" el-file)
+           (let ((inhibit-message (not (or compile-angel-verbose
+                                           compile-angel-debug))))
+             (native-compile-async el-file)))))))
 
 (defun compile-angel--byte-compile (el-file elc-file)
   "Byte-compile EL-FILE into ELC-FILE.
@@ -311,8 +303,9 @@ FEATURE-NAME is a string representing the feature name being loaded."
      "SKIP (Does not end with the .el): %s | %s" el-file feature-name)
     nil)
 
-   ((not (or (not compile-angel-on-load-mode-compile-once)
-             (not (gethash el-file compile-angel--list-compiled-files))))
+   ((not (and (not compile-angel--is-saving)
+              (or (not compile-angel-on-load-mode-compile-once)
+                  (not (gethash el-file compile-angel--list-compiled-files)))))
     (compile-angel--debug-message
      "SKIP (In the skip hash list): %s | %s" el-file feature-name)
     nil)
