@@ -437,10 +437,10 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
 
 (defun compile-angel--compile-postponed ()
   "Compile postponed files.
-To avoid recursive compilations, some compilations were postponed. Using a list
-to detect recursive compilations did not work because compilations come from
-various events (`autoload', `eval-after-load', `require', `load', etc.). The
-best way for now is the postpone them."
+To avoid recursive compilations, some compilations are postponed. Using a list
+and local variable to detect recursive compilations did not work because
+compilations come from various events (`autoload', `eval-after-load', `require',
+`load', etc.). The best way for now is the postpone them."
   (unless compile-angel--compiling-p
     (unwind-protect
         (dolist (el-file (hash-table-keys compile-angel--postponed-compilations))
