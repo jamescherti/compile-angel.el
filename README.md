@@ -100,20 +100,18 @@ Below are a few interesting options:
 
 ## Why did the author develop compile-angel?
 
-The author used to be an auto-compile user, but several of his .el files were not being compiled by auto-compile, which caused Emacs to become slow due to the lack of native compilation. The author experimented for an extended period to understand why auto-compile wasn't compiling many of the .el files in the configuration. The result of those hours of research and testing became a package called compile-angel.
-
-During his investigation, the author discovered that auto-compile was not using autoload and eval-after-load to compile .el files. Even though autoload and eval-after-load don't directly load libraries, they provide a good indication of what will be loaded in the future. In the case of compile-angel, this triggers compilation if the file has not yet been compiled (The compile-angel package checks whether the .elc and/or .eln files are outdated before compiling them; it does not simply compile them without checking.). Special thanks to Jonas Bernoulli, the creator of the auto-compile package, whose work inspired the development of compile-angel.
+The author used to be an auto-compile user, but several of his .el files were not being compiled by auto-compile, which caused Emacs to become slow due to the lack of native compilation. The author experimented for an extended and the result of those hours of research and testing became a package called compile-angel. Special thanks to Jonas Bernoulli, the creator of the auto-compile package, whose work inspired the development of compile-angel.
 
 The compile-angel package was created to offer an alternative to auto-compile that guarantees all .el files are both byte-compiled and native-compiled, which significantly speeds up Emacs.
 
 ## What is the difference between auto-compile and compile-angel?
 
 Here are the main differences:
-- **Compile-angel ensures more .el files are compiled**: The compile-angel package, in addition to compiling the elisp files that are loaded using `load` and `require`, **also handles files that auto-compile misses**, such as packages that are deferred (e.g., `:defer t` in `use-package`) and the `use-package` dependencies using, for example,`:after package-name`.
+- **Compile-angel ensures more .el files are compiled**: The compile-angel package, in addition to compiling the elisp files that are loaded using `load` and `require`, **also handles files that auto-compile does not support**, such as autoload and eval-after-load.
 - Compile-angel can exclude files from compilation using regular expressions in `compile-angel-excluded-files-regexps`.
 - Compile-angel provides options to allow enabling and disabling specific functions that should be advised (load, require, etc.).
 - Compile-angel allows enabling debug mode, which allows knowing exactly what compile-angel does. Additionally, compiled files and features are stored in variables that help identify what was compiled.
-- compile-angel-on-save-mode supports compiling indirect buffers (clones).
+- Compile-angel-on-save-mode supports compiling indirect buffers (clones).
 - compile-angel-on-load-mode compiles features that have already been loaded to make sure that they are compiled.
 - Compile-Angel uses caching to enhance performance when locating the .el file corresponding to a given feature.
 
