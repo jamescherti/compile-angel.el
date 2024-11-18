@@ -114,6 +114,7 @@ Here are the main differences:
 - Compile-angel-on-save-mode supports compiling indirect buffers (clones).
 - compile-angel-on-load-mode compiles features that have already been loaded to make sure that they are compiled.
 - Compile-Angel uses caching to enhance performance when locating the .el file corresponding to a given feature.
+- Compile-angel-on-load-mode only native-compiles when JIT is disabled. In Compile-angel-on-save-mode, it always native-compiles.
 
 ## How to make compile-angel behave like auto-compile?
 

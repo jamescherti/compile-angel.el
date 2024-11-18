@@ -60,7 +60,7 @@
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-enable-native-compile nil
+(defcustom compile-angel-enable-native-compile t
   "Non-nil to enable native-compilation of Emacs Lisp (.el) files."
   :type 'boolean
   :group 'compile-angel)
@@ -133,6 +133,7 @@ listed in the `features' variable are compiled.")
 (defvar compile-angel--currently-compiling (make-hash-table :test 'equal))
 (defvar compile-angel--compiling-p nil)
 (defvar compile-angel--postponed-compilations (make-hash-table :test 'equal))
+(defvar compile-angel--is-saving nil)
 
 ;;; Functions
 
@@ -195,7 +196,22 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
     (compile-angel--debug-message "Native-compilation: %s" el-file)
     (let ((inhibit-message (not (or compile-angel-verbose
                                     compile-angel-debug))))
-      (native-compile-async el-file)))
+      ;; Only perform native compilation when JIT compilation is disabled or
+      ;; when saving
+      (cond
+       ((or (bound-and-true-p native-comp-jit-compilation)
+            (bound-and-true-p native-comp-deferred-compilation))
+        (if compile-angel--is-saving
+            (progn
+              (compile-angel--debug-message
+               "Native-compilation, even with jit enabled (on-save-mode): %s"
+               el-file)
+              (native-compile-async el-file))
+          (compile-angel--debug-message
+           "Native-compilation ignored (Reason: jit enabled): %s" el-file)))
+
+       (t
+        (native-compile-async el-file)))))
 
    (t
     (compile-angel--debug-message
@@ -304,7 +320,8 @@ FEATURE-NAME is a string representing the feature name being loaded."
 
 (defun compile-angel--compile-current-buffer ()
   "Compile the current buffer."
-  (let ((compile-angel-enable-cache nil))
+  (let ((compile-angel-enable-cache nil)
+        (compile-angel--is-saving t))
     (when (derived-mode-p 'emacs-lisp-mode)
       (compile-angel--compile-elisp (buffer-file-name (buffer-base-buffer))))))
 
