@@ -18,8 +18,8 @@ It is highly recommended to set the following variables in your init file:
 ;; Ensure Emacs loads the most recent byte-compiled files.
 (setq load-prefer-newer t)
 
-;; Ensure JIT compilation is enabled for improved performance by compiling
-;; code at runtime
+;; Ensure JIT compilation is enabled for improved performance by
+;; native-compiling loaded .elc files asynchronously
 (setq native-comp-jit-compilation t)
 (setq native-comp-deferred-compilation t) ; Deprecated in Emacs > 29.1
 ```
@@ -27,10 +27,6 @@ It is highly recommended to set the following variables in your init file:
 Additionally, ensure that native compilation is enabled; this should return t: `(native-comp-available-p)`.
 
 ## Installation
-
-### Install compile-angel with straight (Emacs version < 30)
-
-To install *compile-angel* with `straight.el`:
 
 To install `compile-angel` from MELPA:
 
