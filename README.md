@@ -111,20 +111,6 @@ Here are the main differences:
 - Compile-Angel can use caching to enhance performance when locating the .el file corresponding to a given feature.
 - `compile-angel-on-load-mode` only performs native compilation when JIT compilation is disabled. **Explanation**: `compile-angel-on-load-mode` performs native compilation only when JIT compilation is disabled. When JIT compilation is enabled, loading an `.elc` file causes Emacs to trigger native compilation automatically anyway. (This also loads makes Emacs load the natively-compiled files, replacing the auto-compiled functions with their native versions automatically and asynchronously.) In contrast, auto-compilation disables native compilation by default, which leads to native compilation being ignored in save mode as well. When native compilation is enabled in auto-compile, it native compiles files before load anyway, even though Emacs will native compile later on after loading the .elc file.
 
-## How to make compile-angel behave like auto-compile?
-
-Execute the following setq **before** activating `compile-angel-on-load-mode`:
-
-```emacs-lisp
-(setq compile-angel-on-load-advise-load t)
-(setq compile-angel-on-load-advise-require t)
-(setq compile-angel-on-load-advise-eval-after-load nil)
-(setq compile-angel-on-load-advise-autoload nil)
-(setq compile-angel-on-load-compile-features nil)
-```
-
-This will make *compile-angel* behave similarly to *auto-compile*. It will only compile required and loaded packages. However, if you disable the 'compile features' mode, autoload, or eval-after-load features, certain packages may be missed, especially for heavy users of delaying package loading (e.g., via `:defer t`) and package dependencies (e.g., via `:after`), as well as those whose configuration frequently evaluate ELisp code after load.
-
 ## Author and License
 
 The *compile-angel* Emacs package has been written by [James Cherti](https://www.jamescherti.com/) and is distributed under terms of the GNU General Public License version 3, or, at your choice, any later version.

@@ -23,15 +23,15 @@
 ;; along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; The **compile-angel** package automatically byte-compiles and native-compiles
+;; The compile-angel package automatically byte-compiles and native-compiles
 ;; Emacs Lisp libraries. It offers:
 ;; - (compile-angel-on-load-mode): Global mode that compiles .el files before
 ;;   they are loaded.
 ;; - (compile-angel-on-save-local-mode): Local mode that compiles .el files
 ;;   whenever the user saves them.
 ;;
-;; These modes **speed up Emacs by ensuring all libraries are byte-compiled and
-;; native-compiled**. Byte-compilation reduces the overhead of loading Emacs
+;; These modes speed up Emacs by ensuring all libraries are byte-compiled and
+;; native-compiled. Byte-compilation reduces the overhead of loading Emacs
 ;; Lisp code at runtime, while native compilation optimizes performance by
 ;; generating machine code specific to your system.
 ;;
@@ -57,14 +57,14 @@
 ;;
 ;; Installation from MELPA:
 ;; ------------------------
-;;   (use-package compile-angel
-;;     :ensure t
-;;     :demand t
-;;     :custom
-;;     (compile-angel-verbose nil)
-;;     :config
-;;     (compile-angel-on-load-mode)
-;;     (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode))
+;; (use-package compile-angel
+;;   :ensure t
+;;   :demand t
+;;   :custom
+;;   (compile-angel-verbose nil)
+;;   :config
+;;   (compile-angel-on-load-mode)
+;;   (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode))
 ;;
 ;; Links:
 ;; ------
