@@ -162,7 +162,8 @@ listed in the `features' variable are compiled.")
 (defvar compile-angel--currently-compiling (make-hash-table :test 'equal))
 (defvar compile-angel--compiling-p nil)
 (defvar compile-angel--postponed-compilations (make-hash-table :test 'equal))
-(defvar compile-angel--is-saving nil)
+(defvar compile-angel--force-compilation nil)
+(defvar compile-angel--native-compile-when-jit-enabled nil)
 
 ;;; Functions
 
@@ -216,7 +217,7 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
               ;; I temporarily disabled this because Emacs seems to ignore some
               ;; .elc files for some reason. I need to find a way to ensure they
               ;; are compiled first. For example the ones in use-package :mode.
-              (not compile-angel--is-saving) ; on load and JIT
+              (not compile-angel--native-compile-when-jit-enabled) ; on load and JIT
               (or
                (bound-and-true-p native-comp-jit-compilation)
                (bound-and-true-p native-comp-deferred-compilation)))
@@ -308,7 +309,7 @@ FEATURE-NAME is a string representing the feature name being loaded."
      "SKIP (Does not end with the .el): %s | %s" el-file feature-name)
     nil)
 
-   ((not (and (not compile-angel--is-saving)
+   ((not (and (not compile-angel--force-compilation)
               (or (not compile-angel-on-load-mode-compile-once)
                   (not (gethash el-file compile-angel--list-compiled-files)))))
     (compile-angel--debug-message
@@ -348,7 +349,8 @@ FEATURE-NAME is a string representing the feature name being loaded."
 (defun compile-angel--compile-current-buffer ()
   "Compile the current buffer."
   (let ((compile-angel-enable-cache nil)
-        (compile-angel--is-saving t))
+        (compile-angel--force-compilation t)
+        (compile-angel--native-compile-when-jit-enabled t))
     (when (derived-mode-p 'emacs-lisp-mode)
       (compile-angel--compile-elisp (buffer-file-name (buffer-base-buffer))))))
 
@@ -534,10 +536,11 @@ FEATURE and FILENAME are the same arguments as the `require' function."
 
 (defun compile-angel-compile-features ()
   "Compile all loaded features that are in the `features' variable."
-  (dolist (feature features)
-    (compile-angel--debug-message
-     "compile-angel-compile-features: %s" feature)
-    (compile-angel--entry-point nil feature)))
+  (let ((compile-angel--native-compile-when-jit-enabled t))
+    (dolist (feature features)
+      (compile-angel--debug-message
+       "compile-angel-compile-features: %s" feature)
+      (compile-angel--entry-point nil feature))))
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
