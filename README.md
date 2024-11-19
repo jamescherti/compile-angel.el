@@ -22,9 +22,9 @@ The *compile-angel* author used to be an *auto-compile* user, but several of his
   - [Installation](#installation)
   - [Customizations](#customizations)
   - [Frequently Asked Questions](#frequently-asked-questions)
-  - [What are some interesting Emacs customizations to consider alongside compile-angel?](#what-are-some-interesting-emacs-customizations-to-consider-alongside-compile-angel)
-  - [Why not just use the package-recompile-all function?](#why-not-just-use-the-package-recompile-all-function)
-  - [What is the difference between auto-compile and compile-angel?](#what-is-the-difference-between-auto-compile-and-compile-angel)
+    - [What are some interesting Emacs customizations to consider alongside compile-angel?](#what-are-some-interesting-emacs-customizations-to-consider-alongside-compile-angel)
+    - [Why not just use the package-recompile-all function?](#why-not-just-use-the-package-recompile-all-function)
+    - [What is the difference between auto-compile and compile-angel?](#what-is-the-difference-between-auto-compile-and-compile-angel)
   - [Author and License](#author-and-license)
   - [Links](#links)
 
@@ -93,7 +93,7 @@ To install `compile-angel` from MELPA:
 
 ## Frequently Asked Questions
 
-## What are some interesting Emacs customizations to consider alongside compile-angel?
+### What are some interesting Emacs customizations to consider alongside compile-angel?
 
 Below are a few interesting options:
 
@@ -115,7 +115,7 @@ Below are a few interesting options:
 (setq package-native-compile t)
 ```
 
-## Why not just use the package-recompile-all function?
+### Why not just use the package-recompile-all function?
 
 The *package-recompile-all* function is effective for recompiling files within packages, but it misses other files that are not part of a package.
 
@@ -123,7 +123,7 @@ In the *compile-angel* author's configuration, for example, *package-recompile-a
 
 The *compile-angel* package, on the other hand, transparently compiles all packages without any user intervention. The user simply needs to enable *(compile-angel-on-load-mode)*.
 
-## What is the difference between auto-compile and compile-angel?
+### What is the difference between auto-compile and compile-angel?
 
 Jonas Bernouli, the author of auto-compile, has made some design decisions that prevent it from guaranteeing that all .el packages are byte-compiled and native-compiled. For example, if the user deletes all the .elc files or if the .el files have never been compiled before, auto-compile won't recompile them. Here is a quote from u/tarsius_ (Jonas Bernouli), the auto-compile author ([from this discussion](https://www.reddit.com/r/emacs/comments/1gmmnhn/comment/lwhtte2/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button)):
 > Both [autocompile] modes only ever re-compile a source file when the
