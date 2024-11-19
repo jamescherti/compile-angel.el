@@ -547,6 +547,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
   :group 'compile-angel
   (if compile-angel-on-load-mode
       (progn
+        (compile-angel--entry-point nil "compile-angel")
         (when compile-angel-on-load-compile-features
           (compile-angel-compile-features))
         (when compile-angel-on-load-advise-autoload
