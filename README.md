@@ -14,6 +14,22 @@ The *compile-angel* author used to be an *auto-compile* user, but several of his
 
 **The compile-angel package guarantees that all .el files are both byte-compiled and native-compiled, which significantly speeds up Emacs.**
 
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
+**Table of Contents**
+
+- [compile-angel.el - Byte-compile and native-compile Emacs Lisp libraries Automatically](#compile-angelel---byte-compile-and-native-compile-emacs-lisp-libraries-automatically)
+  - [Before installing](#before-installing)
+  - [Installation](#installation)
+  - [Customizations](#customizations)
+  - [Frequently Asked Questions](#frequently-asked-questions)
+  - [What are some interesting Emacs customizations to consider alongside compile-angel?](#what-are-some-interesting-emacs-customizations-to-consider-alongside-compile-angel)
+  - [Why not just use the package-recompile-all function?](#why-not-just-use-the-package-recompile-all-function)
+  - [What is the difference between auto-compile and compile-angel?](#what-is-the-difference-between-auto-compile-and-compile-angel)
+  - [Author and License](#author-and-license)
+  - [Links](#links)
+
+<!-- markdown-toc end -->
+
 ## Before installing
 
 It is highly recommended to set the following variables in your init file:
