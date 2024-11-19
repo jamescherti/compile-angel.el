@@ -135,9 +135,6 @@ compiled, or nil if the file should not be compiled."
 (defvar compile-angel-on-load-advise-require t
   "When non-nil, automatically compile .el files loaded using `require'.")
 
-(defvar compile-angel-on-load-advise-autoload t
-  "When non-nil, automatically compile .el files loaded using `autoload'.")
-
 (defvar compile-angel-on-load-advise-eval-after-load t
   "When non-nil, compile .el files before `eval-after-load'.")
 
@@ -145,6 +142,9 @@ compiled, or nil if the file should not be compiled."
   "Non-nil to compile features listed in the `features' variable.
 When `compile-angel-on-load-mode' is activated, this ensures that all features
 listed in the `features' variable are compiled.")
+
+(defvar compile-angel-on-load-advise-autoload nil
+  "When non-nil, automatically compile .el files loaded using `autoload'.")
 
 ;; Cache
 (defvar compile-angel-enable-cache nil
