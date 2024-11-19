@@ -35,11 +35,11 @@
 ;; Lisp code at runtime, while native compilation optimizes performance by
 ;; generating machine code specific to your system.
 ;;
-;; The compile-angel author used to be an auto-compile user, but several of
-;; his .el files were not being compiled by auto-compile, which caused Emacs
-;; to become slow due to the lack of native compilation. The author experimented
-;; for an extended and the result of those hours of research and testing became
-;; a package called compile-angel.
+;; The author of compile-angel was previously a user of auto-compile, but
+;; encountered an issue where several `.el` files were not being compiled by
+;; auto-compile, leading to Emacs performance degradation due to the absence of
+;; native compilation. After extensive experimentation and research, the author
+;; developed *compile-angel* as a result of these efforts.
 ;;
 ;; The compile-angel package was created to offer an alternative to
 ;; auto-compile that guarantees all .el files are both byte-compiled and
