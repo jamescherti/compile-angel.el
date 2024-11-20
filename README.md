@@ -10,7 +10,7 @@ The **compile-angel** package automatically byte-compiles and native-compiles Em
 
 These modes **speed up Emacs by ensuring all libraries are byte-compiled and native-compiled**. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
 
-**Why use compile-angel?** Because functions such as *package-install* and *package-recompile-all* are insufficient for recompiling all `.el` files. While they effectively compile `.el` files within packages, they ignore files that are not part of any package. In contrast, **compile-angel** ensures that all loaded files are compiled, regardless of whether they belong to a package or not.
+**Why use compile-angel?** Because functions like *package-install* and *package-recompile-all* only byte-compile files within the packages they install, and ignore other `.el` files that are in the load-path but were not installed using `package.el`. Since these files are not byte-compiled, the Emacs JIT compiler also does not compile them natively, as a byte-compiled file is an indication for the Emacs JIT compiler to native-compile. In contrast, **compile-angel** modes ensure that all loaded .el files are compiled transparently, regardless of whether they belong to a package.
 
 The author of *compile-angel* was previously a user of *auto-compile*, but encountered an issue where several `.el` files were not being compiled by *auto-compile*, leading to Emacs performance degradation due to the absence of native compilation. After extensive experimentation and research, the author developed *compile-angel* as a result of these efforts.
 
