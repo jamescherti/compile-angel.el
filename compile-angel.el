@@ -135,8 +135,11 @@ compiled, or nil if the file should not be compiled."
 (defvar compile-angel-on-load-advise-require t
   "When non-nil, automatically compile .el files loaded using `require'.")
 
-(defvar compile-angel-on-load-advise-eval-after-load t
+(defvar compile-angel-on-load-advise-eval-after-load nil
   "When non-nil, compile .el files before `eval-after-load'.")
+
+(defvar compile-angel-on-load-hook-after-load-functions t
+  "Non-nil to compile missed .el during `after-load-functions'.")
 
 (defvar compile-angel-on-load-compile-features t
   "Non-nil to compile features listed in the `features' variable.
@@ -542,6 +545,20 @@ FEATURE and FILENAME are the same arguments as the `require' function."
        "compile-angel-compile-features: %s" feature)
       (compile-angel--entry-point nil feature))))
 
+(defun compile-angel--hook-after-load-functions (file)
+  "Compile FILE after load."
+  (compile-angel--debug-message
+   "compile-angel--hook-after-load-functions: %s" file)
+  (if (not (string-match-p
+            (format "\\.el%s\\'" (regexp-opt load-file-rep-suffixes)) file))
+      (compile-angel--debug-message
+       "compile-angel--hook-after-load-functions: IGNORE: %s" file)
+    (progn
+      (compile-angel--debug-message
+       "ISSUE? compile-angel--hook-after-load-functions: COMPILE: %s"
+       file)
+      (compile-angel--entry-point file))))
+
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
   "Toggle `compile-angel-mode' then compiles .el files before they are loaded."
@@ -551,6 +568,8 @@ FEATURE and FILENAME are the same arguments as the `require' function."
   (if compile-angel-on-load-mode
       (progn
         (compile-angel--entry-point nil "compile-angel")
+        (when compile-angel-on-load-hook-after-load-functions
+          (add-hook 'after-load-functions #'compile-angel--hook-after-load-functions))
         (when compile-angel-on-load-compile-features
           (compile-angel-compile-features))
         (when compile-angel-on-load-advise-autoload
@@ -562,6 +581,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
         (when compile-angel-on-load-advise-eval-after-load
           (advice-add 'eval-after-load
                       :before #'compile-angel--advice-eval-after-load)))
+    (remove-hook 'after-load-functions #'compile-angel--hook-after-load-functions)
     (advice-remove 'autoload #'compile-angel--advice-before-autoload)
     (advice-remove 'require #'compile-angel--advice-before-require)
     (advice-remove 'load #'compile-angel--advice-before-load)
