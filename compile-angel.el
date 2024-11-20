@@ -6,7 +6,7 @@
 ;; Version: 0.9.9
 ;; URL: https://github.com/jamescherti/compile-angel.el
 ;; Keywords: convenience
-;; Package-Requires: ((emacs "24.4"))
+;; Package-Requires: ((emacs "26.1"))
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -167,6 +167,7 @@ listed in the `features' variable are compiled.")
 (defvar compile-angel--postponed-compilations (make-hash-table :test 'equal))
 (defvar compile-angel--force-compilation nil)
 (defvar compile-angel--native-compile-when-jit-enabled nil)
+(defvar compile-angel--el-file-regexp nil)
 
 ;;; Functions
 
@@ -306,8 +307,7 @@ FEATURE-NAME is a string representing the feature name being loaded."
      "SKIP (Predicate function returned nil): %s | %s" el-file feature-name)
     nil)
 
-   ((not (string-match-p
-          (format "\\.el%s\\'" (regexp-opt load-file-rep-suffixes)) el-file))
+   ((not (compile-angel--is-el-file el-file))
     (compile-angel--debug-message
      "SKIP (Does not end with the .el): %s | %s" el-file feature-name)
     nil)
@@ -396,10 +396,7 @@ Checks caches before performing computation."
         result
       ;; Find result and return it
       (setq result (if (and el-file
-                            (string-match-p
-                             (format "\\.el%s\\'"
-                                     (regexp-opt load-file-rep-suffixes))
-                             el-file))
+                            (compile-angel--is-el-file el-file))
                        el-file
                      (locate-file (if substitute-env-vars
                                       (substitute-in-file-name
@@ -549,8 +546,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
   "Compile FILE after load."
   (compile-angel--debug-message
    "compile-angel--hook-after-load-functions: %s" file)
-  (if (not (string-match-p
-            (format "\\.el%s\\'" (regexp-opt load-file-rep-suffixes)) file))
+  (if (not (compile-angel--is-el-file file))
       (compile-angel--debug-message
        "compile-angel--hook-after-load-functions: IGNORE: %s" file)
     (progn
@@ -558,6 +554,26 @@ FEATURE and FILENAME are the same arguments as the `require' function."
        "ISSUE? compile-angel--hook-after-load-functions: COMPILE: %s"
        file)
       (compile-angel--entry-point file))))
+
+(defun compile-angel--update-el-file-regexp (_symbol new-value
+                                                     _operation _where)
+  "Update the `compile-angel--el-file-regexp' variable.
+NEW-VALUE is the value of the variable."
+  (compile-angel--debug-message "WATCHER: Update: %s" new-value)
+  (setq compile-angel--el-file-regexp
+        (format "\\.el%s\\'" (regexp-opt new-value))))
+
+(defun compile-angel--init ()
+  "Initialize internal variables."
+  (unless compile-angel--el-file-regexp
+    (compile-angel--update-el-file-regexp nil load-file-rep-suffixes nil nil)
+    (add-variable-watcher 'load-file-rep-suffixes
+                          #'compile-angel--update-el-file-regexp)))
+
+(defun compile-angel--is-el-file (file)
+  "Return non-nil if FILE is an el-file."
+  (when compile-angel--el-file-regexp
+    (string-match-p compile-angel--el-file-regexp file)))
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
@@ -567,6 +583,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
   :group 'compile-angel
   (if compile-angel-on-load-mode
       (progn
+        (compile-angel--init)
         (compile-angel--entry-point nil "compile-angel")
         (when compile-angel-on-load-hook-after-load-functions
           (add-hook 'after-load-functions #'compile-angel--hook-after-load-functions))
@@ -594,7 +611,9 @@ FEATURE and FILENAME are the same arguments as the `require' function."
   :lighter " CAngelSg"
   :group 'compile-angel
   (if compile-angel-on-save-mode
-      (add-hook 'after-save-hook #'compile-angel--compile-current-buffer)
+      (progn
+        (compile-angel--init)
+        (add-hook 'after-save-hook #'compile-angel--compile-current-buffer nil t))
     (remove-hook 'after-save-hook #'compile-angel--compile-current-buffer)))
 
 ;;;###autoload
@@ -604,7 +623,9 @@ FEATURE and FILENAME are the same arguments as the `require' function."
   :lighter " CAngelSl"
   :group 'compile-angel
   (if compile-angel-on-save-local-mode
-      (add-hook 'after-save-hook #'compile-angel--compile-current-buffer nil t)
+      (progn
+        (compile-angel--init)
+        (add-hook 'after-save-hook #'compile-angel--compile-current-buffer nil t))
     (remove-hook 'after-save-hook #'compile-angel--compile-current-buffer t)))
 
 (provide 'compile-angel)
