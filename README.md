@@ -137,6 +137,7 @@ Jonas Bernouli, the author of auto-compile, has made some design decisions that 
 
 Here are the main differences between compile-angel and auto-compile:
 - Compile-angel ensures that even when when the .elc file doesn't exist, the .el source file is compiled. Auto-compile, on the other hand, requires (by design, as explained above) an existing .elc file in order to compile.
+- Compile-angel in load mode only native-compiles when the file is not already natively compiled asynchronously. In save mode, it always compiles.
 - **Compile-angel ensures more .el files are compiled**: The compile-angel package, in addition to compiling the .el files that are loaded using *load* and *require*, also handles files that auto-compile does not support, such as after-load-functions hook, autoload and eval-after-load. They can be useful for compiling packages in advance that will be loaded in the future.
 - Compile-angel can exclude files from compilation using regular expressions in *compile-angel-excluded-files-regexps*.
 - Compile-angel provides options to allow enabling and disabling specific functions that should be advised (load, require, etc.).

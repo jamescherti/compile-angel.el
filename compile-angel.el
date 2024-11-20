@@ -217,16 +217,19 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
 
 (defun compile-angel--native-compile (el-file)
   "Native-compile EL-FILE."
-  (cond ((and nil  ;; TODO Disabled temporarily.
-              ;; I temporarily disabled this because Emacs seems to ignore some
-              ;; .elc files for some reason. I need to find a way to ensure they
-              ;; are compiled first. For example the ones in use-package :mode.
-              (not compile-angel--native-compile-when-jit-enabled) ; on load and JIT
+  (cond ((and (not compile-angel--native-compile-when-jit-enabled)
               (or
                (bound-and-true-p native-comp-jit-compilation)
                (bound-and-true-p native-comp-deferred-compilation)))
          (compile-angel--debug-message
           "Native-compilation ignored (Reason: JIT compilation will do it): %s"
+          el-file))
+
+        ((and (not compile-angel--force-compilation)
+              (and (boundp 'comp-files-queue)
+                   (assoc el-file comp-files-queue)))
+         (compile-angel--debug-message
+          "Native-compilation ignored (Already in the async compile queue): %s"
           el-file))
 
         (t
@@ -551,9 +554,10 @@ FEATURE and FILENAME are the same arguments as the `require' function."
        "compile-angel--hook-after-load-functions: IGNORE: %s" file)
     (progn
       (compile-angel--debug-message
-       "ISSUE? compile-angel--hook-after-load-functions: COMPILE: %s"
+       "compile-angel--hook-after-load-functions: COMPILE: %s"
        file)
-      (compile-angel--entry-point file))))
+      (let ((compile-angel--native-compile-when-jit-enabled t))
+        (compile-angel--entry-point file)))))
 
 (defun compile-angel--update-el-file-regexp (_symbol new-value
                                                      _operation _where)
