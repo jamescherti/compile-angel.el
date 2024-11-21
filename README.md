@@ -144,8 +144,6 @@ Here are the main differences between compile-angel and auto-compile:
 - *compile-angel-on-save-mode* supports compiling indirect buffers (clones).
 - *compile-angel-on-load-mode* compiles features that have already been loaded to make sure that they are compiled.
 - Compile-Angel can use caching to enhance performance when locating the .el file corresponding to a given feature.
-- *compile-angel-on-load-mode* performs native compilation only when Emacs fails to do so.
-- **Explanation**: *compile-angel-on-load-mode* performs native compilation only when JIT compilation is disabled, as Emacs will compile the .el file anyway. When JIT compilation is enabled, loading a .elc file causes Emacs to trigger native compilation automatically. (This also makes Emacs load the native-compiled files, replacing the auto-compiled functions with their native versions automatically and asynchronously.) In contrast, auto-compile disables native compilation by default, which leads to native compilation being ignored for the files that Emacs fails to compile, even in save mode. When native compilation is enabled in auto-compile, it native-compiles all files before loading, even though Emacs will later native-compile them after loading the .elc file.
 
 ## Author and License
 

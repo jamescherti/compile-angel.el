@@ -160,7 +160,7 @@ listed in the `features' variable are compiled.")
 (defvar compile-angel--compiling-p nil)
 (defvar compile-angel--postponed-compilations (make-hash-table :test 'equal))
 (defvar compile-angel--force-compilation nil)
-(defvar compile-angel--native-compile-when-jit-enabled nil)
+(defvar compile-angel--native-compile-when-jit-enabled t)
 (defvar compile-angel--el-file-regexp nil)
 
 ;;; Functions
