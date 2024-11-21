@@ -8,11 +8,11 @@ The **compile-angel** package automatically byte-compiles and native-compiles Em
 - `(compile-angel-on-load-mode)`: Global mode that compiles .el files before they are loaded.
 - `(compile-angel-on-save-local-mode)`: Local mode that compiles .el files whenever the user saves them.
 
-These modes **speed up Emacs by ensuring all libraries are byte-compiled and native-compiled**. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
+The *compile-angel* modes **speed up Emacs by ensuring all libraries are byte-compiled and native-compiled**. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
 
-**Why use compile-angel?** Because functions like *package-install* and *package-recompile-all* only byte-compile files within the packages they install, and ignore other `.el` files that are in the load-path but were not installed using `package.el`. Since these files are not byte-compiled, the Emacs JIT compiler also does not compile them natively, as a byte-compiled file is an indication for the Emacs JIT compiler to native-compile. In contrast, **compile-angel** modes ensure that all loaded .el files are compiled transparently, regardless of whether they belong to a package.
+**Why use compile-angel?** Because you are likely running a significant amount of interpreted, slow Elisp code. Ensuring that Elisp is native-compiled significantly improves Emacs' performance. This is because functions like *package-install* and *package-recompile-all* do not compile .el files in the *load-path* paths that were not installed using *package.el*. Since these files are not byte-compiled, the Emacs JIT compiler does not native-compile them either, as a byte-compiled file signals the JIT compiler to perform native compilation. **In contrast, **compile-angel** modes ensure that all loaded `.el` files are compiled transparently, regardless of whether they are part of a package.**
 
-The author of *compile-angel* was previously a user of *auto-compile*, but encountered an issue where several `.el` files were not being compiled by *auto-compile*, leading to Emacs performance degradation due to the absence of native compilation. After extensive experimentation and research, the author developed *compile-angel* as a result of these efforts.
+The author of *compile-angel* was previously a user of *auto-compile* but encountered an issue where several `.el` files were not being compiled by *auto-compile* (see the explanation below), resulting in Emacs performance degradation due to the lack of native compilation. After extensive experimentation and research, the author developed *compile-angel* to address this problem.
 
 **The compile-angel package guarantees that all .el files are both byte-compiled and native-compiled, which significantly speeds up Emacs.**
 
@@ -113,7 +113,7 @@ Below are a few interesting options:
 (setq native-comp-async-report-warnings-errors t)
 (setq native-comp-warning-on-missing-source t)
 
-;; Non-nil means to natively compile packages as part of their installation.
+;; Non-nil means to native compile packages as part of their installation.
 (setq package-native-compile t)
 ```
 
@@ -137,15 +137,15 @@ Jonas Bernouli, the author of auto-compile, has made some design decisions that 
 
 Here are the main differences between compile-angel and auto-compile:
 - Compile-angel ensures that even when when the .elc file doesn't exist, the .el source file is compiled. Auto-compile, on the other hand, requires (by design, as explained above) an existing .elc file in order to compile.
-- Compile-angel in load mode only native-compiles when the file is not already natively compiled asynchronously. In save mode, it always compiles.
-- **Compile-angel ensures more .el files are compiled**: The compile-angel package, in addition to compiling the .el files that are loaded using *load* and *require*, also handles files that auto-compile does not support, such as after-load-functions hook, autoload and eval-after-load. They can be useful for compiling packages in advance that will be loaded in the future.
+- It ensures that files are compiled before and after they are loaded: The compile-angel package, in addition to compiling the `.el` files loaded using *load* and *require*, also handles files that auto-compile using the `after-load-functions` hook, which is not supported by auto-compile. This ensures that all files are byte-compiled and native-compiled.
 - Compile-angel can exclude files from compilation using regular expressions in *compile-angel-excluded-files-regexps*.
 - Compile-angel provides options to allow enabling and disabling specific functions that should be advised (load, require, etc.).
 - Compile-angel allows enabling debug mode, which allows knowing exactly what compile-angel does. Additionally, compiled files and features are stored in variables that help identify what was compiled.
 - *compile-angel-on-save-mode* supports compiling indirect buffers (clones).
 - *compile-angel-on-load-mode* compiles features that have already been loaded to make sure that they are compiled.
 - Compile-Angel can use caching to enhance performance when locating the .el file corresponding to a given feature.
-- *compile-angel-on-load-mode* only performs native compilation when JIT compilation is disabled. **Explanation**: *compile-angel-on-load-mode* performs native compilation only when JIT compilation is disabled. When JIT compilation is enabled, loading an *.elc* file causes Emacs to trigger native compilation automatically anyway. (This also loads makes Emacs load the natively-compiled files, replacing the auto-compiled functions with their native versions automatically and asynchronously.) In contrast, auto-compilation disables native compilation by default, which leads to native compilation being ignored in save mode as well. When native compilation is enabled in auto-compile, it native compiles files before load anyway, even though Emacs will native compile later on after loading the .elc file.
+- *compile-angel-on-load-mode* performs native compilation only when Emacs fails to do so.
+- **Explanation**: *compile-angel-on-load-mode* performs native compilation only when JIT compilation is disabled, as Emacs will compile the .el file anyway. When JIT compilation is enabled, loading a .elc file causes Emacs to trigger native compilation automatically. (This also makes Emacs load the native-compiled files, replacing the auto-compiled functions with their native versions automatically and asynchronously.) In contrast, auto-compile disables native compilation by default, which leads to native compilation being ignored for the files that Emacs fails to compile, even in save mode. When native compilation is enabled in auto-compile, it native-compiles all files before loading, even though Emacs will later native-compile them after loading the .elc file.
 
 ## Author and License
 

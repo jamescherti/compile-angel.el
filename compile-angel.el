@@ -135,9 +135,6 @@ compiled, or nil if the file should not be compiled."
 (defvar compile-angel-on-load-advise-require t
   "When non-nil, automatically compile .el files loaded using `require'.")
 
-(defvar compile-angel-on-load-advise-eval-after-load nil
-  "When non-nil, compile .el files before `eval-after-load'.")
-
 (defvar compile-angel-on-load-hook-after-load-functions t
   "Non-nil to compile missed .el during `after-load-functions'.")
 
@@ -145,9 +142,6 @@ compiled, or nil if the file should not be compiled."
   "Non-nil to compile features listed in the `features' variable.
 When `compile-angel-on-load-mode' is activated, this ensures that all features
 listed in the `features' variable are compiled.")
-
-(defvar compile-angel-on-load-advise-autoload nil
-  "When non-nil, automatically compile .el files loaded using `autoload'.")
 
 ;; Cache
 (defvar compile-angel-enable-cache nil
@@ -522,21 +516,6 @@ FEATURE and FILENAME are the same arguments as the `require' function."
              "compile-angel--advice-before-require %s (%s)")
      el-file (type-of el-file))))
 
-(defun compile-angel--advice-before-autoload (_function
-                                              feature
-                                              &optional _docstring _interactive
-                                              _type)
-  "Recompile before `autoload'. FEATURE is the file or the feature."
-  (when compile-angel-debug (compile-angel--debug-message
-                             "AUTOLOAD: %s (%s)" feature (type-of feature)))
-  (compile-angel--entry-point nil feature))
-
-(defun compile-angel--advice-eval-after-load (feature-or-file _form)
-  "Advice to track what FEATURE-OR-FILE (symbol) is passed to `eval-after-load'."
-  (compile-angel--debug-message "EVAL-AFTER-LOAD: %s (%s)"
-                                feature-or-file (type-of feature-or-file))
-  (compile-angel--entry-point feature-or-file feature-or-file))
-
 (defun compile-angel-compile-features ()
   "Compile all loaded features that are in the `features' variable."
   (let ((compile-angel--native-compile-when-jit-enabled t))
@@ -589,24 +568,17 @@ NEW-VALUE is the value of the variable."
       (progn
         (compile-angel--init)
         (compile-angel--entry-point nil "compile-angel")
-        (when compile-angel-on-load-hook-after-load-functions
-          (add-hook 'after-load-functions #'compile-angel--hook-after-load-functions))
         (when compile-angel-on-load-compile-features
           (compile-angel-compile-features))
-        (when compile-angel-on-load-advise-autoload
-          (advice-add 'autoload :before #'compile-angel--advice-before-autoload))
+        (when compile-angel-on-load-hook-after-load-functions
+          (add-hook 'after-load-functions #'compile-angel--hook-after-load-functions))
         (when compile-angel-on-load-advise-require
           (advice-add 'require :before #'compile-angel--advice-before-require))
         (when compile-angel-on-load-advise-load
-          (advice-add 'load :before #'compile-angel--advice-before-load))
-        (when compile-angel-on-load-advise-eval-after-load
-          (advice-add 'eval-after-load
-                      :before #'compile-angel--advice-eval-after-load)))
+          (advice-add 'load :before #'compile-angel--advice-before-load)))
     (remove-hook 'after-load-functions #'compile-angel--hook-after-load-functions)
-    (advice-remove 'autoload #'compile-angel--advice-before-autoload)
     (advice-remove 'require #'compile-angel--advice-before-require)
-    (advice-remove 'load #'compile-angel--advice-before-load)
-    (advice-remove 'eval-after-load #'compile-angel--advice-eval-after-load)))
+    (advice-remove 'load #'compile-angel--advice-before-load)))
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-save-mode
