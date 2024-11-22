@@ -311,9 +311,9 @@ FEATURE-NAME is a string representing the feature name being loaded."
      "SKIP (Does not end with the .el): %s | %s" el-file feature-name)
     nil)
 
-   ((not (and (not compile-angel--force-compilation)
-              (or (not compile-angel-on-load-mode-compile-once)
-                  (not (gethash el-file compile-angel--list-compiled-files)))))
+   ((and (not compile-angel--force-compilation)
+         (or (not compile-angel-on-load-mode-compile-once)
+             (gethash el-file compile-angel--list-compiled-files)))
     (compile-angel--debug-message
      "SKIP (In the skip hash list): %s | %s" el-file feature-name)
     nil)
@@ -567,14 +567,14 @@ be JIT compiled."
   (when (and compile-angel-enable-native-compile
              (> (hash-table-count compile-angel--list-jit-native-compiled-files)
                 0))
-    (let ((compile-angel--native-compile-when-jit-enabled t))
-      (unwind-protect
-          (maphash (lambda (el-file _value)
-                     (compile-angel--debug-message
-                      "Checking if Emacs really JIT Native-Compiled: %s" el-file)
-                     (compile-angel--native-compile el-file))
-                   compile-angel--list-jit-native-compiled-files)
-        (clrhash compile-angel--list-jit-native-compiled-files)))))
+    (unwind-protect
+        (maphash (lambda (el-file _value)
+                   (compile-angel--debug-message
+                    "Checking if Emacs really JIT Native-Compiled: %s" el-file)
+                   (let ((compile-angel--native-compile-when-jit-enabled t))
+                     (compile-angel--native-compile el-file)))
+                 compile-angel--list-jit-native-compiled-files)
+      (clrhash compile-angel--list-jit-native-compiled-files))))
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
