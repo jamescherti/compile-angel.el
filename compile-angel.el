@@ -528,19 +528,49 @@ FEATURE and FILENAME are the same arguments as the `require' function."
        "compile-angel-compile-features: %s" feature)
       (compile-angel--entry-point nil feature))))
 
+(defun compile-angel--find-el-file (file)
+  "Find the .el file corresponding to FILE.
+
+If FILE is already a .el file, return it. If FILE is a .elc file, check for the
+corresponding .el file by removing the .elc extension and verifying its
+existence.
+
+The function iterates through the extensions in `load-file-rep-suffixes` to
+construct possible .el file paths. If a matching file exists, return its path;
+otherwise, return nil."
+  (cond
+   ((not file)
+    nil)
+
+   ((compile-angel--is-el-file file)
+    file)
+
+   ((string-suffix-p ".elc" file)
+    (let ((base (file-name-sans-extension file))
+          (suffixes load-file-rep-suffixes)
+          result)
+      (while (and suffixes (not result))
+        (let ((candidate (concat base ".el")))
+          (when (file-exists-p candidate)
+            (setq result candidate)))
+        (setq suffixes (cdr suffixes)))
+      result))))
+
 (defun compile-angel--hook-after-load-functions (file)
   "Compile FILE after load."
-  (compile-angel--debug-message
-   "compile-angel--hook-after-load-functions: %s" file)
-  (if (not (compile-angel--is-el-file file))
+  (let ((file (compile-angel--find-el-file file)))
+    (when file
       (compile-angel--debug-message
-       "compile-angel--hook-after-load-functions: IGNORE: %s" file)
-    (progn
-      (compile-angel--debug-message
-       "compile-angel--hook-after-load-functions: COMPILE: %s"
-       file)
-      (let ((compile-angel--native-compile-when-jit-enabled t))
-        (compile-angel--entry-point file)))))
+       "compile-angel--hook-after-load-functions: %s" file)
+      (if (not (compile-angel--is-el-file file))
+          (compile-angel--debug-message
+           "compile-angel--hook-after-load-functions: IGNORE: %s" file)
+        (progn
+          (compile-angel--debug-message
+           "compile-angel--hook-after-load-functions: COMPILE: %s"
+           file)
+          (let ((compile-angel--native-compile-when-jit-enabled t))
+            (compile-angel--entry-point file)))))))
 
 (defun compile-angel--update-el-file-regexp (_symbol new-value
                                                      _operation _where)
