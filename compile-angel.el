@@ -156,11 +156,12 @@ listed in the `features' variable are compiled.")
 ;;; Internal variables
 
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
+(defvar compile-angel--list-jit-native-compiled-files (make-hash-table :test 'equal))
 (defvar compile-angel--currently-compiling (make-hash-table :test 'equal))
 (defvar compile-angel--compiling-p nil)
 (defvar compile-angel--postponed-compilations (make-hash-table :test 'equal))
 (defvar compile-angel--force-compilation nil)
-(defvar compile-angel--native-compile-when-jit-enabled t)
+(defvar compile-angel--native-compile-when-jit-enabled nil)
 (defvar compile-angel--el-file-regexp nil)
 
 ;;; Functions
@@ -215,6 +216,7 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
               (or
                (bound-and-true-p native-comp-jit-compilation)
                (bound-and-true-p native-comp-deferred-compilation)))
+         (puthash el-file t compile-angel--list-jit-native-compiled-files)
          (compile-angel--debug-message
           "Native-compilation ignored (Reason: JIT compilation will do it): %s"
           el-file))
@@ -357,8 +359,8 @@ FEATURE-NAME is a string representing the feature name being loaded."
 (defun compile-angel--reset-cache ()
   "Reset the caches.
 This resets `compile-angel-cache-feature' and `compile-angel-cache-el-file'."
-  (setq compile-angel-cache-feature (make-hash-table :test 'equal))
-  (setq compile-angel-cache-el-file (make-hash-table :test 'equal)))
+  (clrhash compile-angel-cache-feature)
+  (clrhash compile-angel-cache-el-file))
 
 (defun compile-angel--feature-to-feature-name (feature)
   "Convert a FEATURE symbol into a feature name and return it."
@@ -558,6 +560,22 @@ NEW-VALUE is the value of the variable."
   (when compile-angel--el-file-regexp
     (string-match-p compile-angel--el-file-regexp file)))
 
+(defun compile-angel--check-if-jit-files-compiled ()
+  "When JIT is enabled, ensure that Emacs native-compiles the loaded .elc files.
+Occasionally, Emacs fails to `native-compile' certain `.elc` files that should
+be JIT compiled."
+  (when (and compile-angel-enable-native-compile
+             (> (hash-table-count compile-angel--list-jit-native-compiled-files)
+                0))
+    (let ((compile-angel--native-compile-when-jit-enabled t))
+      (unwind-protect
+          (maphash (lambda (el-file _value)
+                     (compile-angel--debug-message
+                      "Checking if Emacs really JIT Native-Compiled: %s" el-file)
+                     (compile-angel--native-compile el-file))
+                   compile-angel--list-jit-native-compiled-files)
+        (clrhash compile-angel--list-jit-native-compiled-files)))))
+
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
   "Toggle `compile-angel-mode' then compiles .el files before they are loaded."
@@ -566,17 +584,26 @@ NEW-VALUE is the value of the variable."
   :group 'compile-angel
   (if compile-angel-on-load-mode
       (progn
+        ;; Init
         (compile-angel--init)
         (compile-angel--entry-point nil "compile-angel")
-        (when compile-angel-on-load-compile-features
-          (compile-angel-compile-features))
+        ;; Hooks
+        (when compile-angel-enable-native-compile
+          (add-hook 'native-comp-async-all-done-hook
+                    #'compile-angel--check-if-jit-files-compiled))
         (when compile-angel-on-load-hook-after-load-functions
           (add-hook 'after-load-functions #'compile-angel--hook-after-load-functions))
+        ;; Advices
+        (when compile-angel-on-load-compile-features
+          (compile-angel-compile-features))
         (when compile-angel-on-load-advise-require
           (advice-add 'require :before #'compile-angel--advice-before-require))
         (when compile-angel-on-load-advise-load
           (advice-add 'load :before #'compile-angel--advice-before-load)))
+    ;; Hooks
+    (remove-hook 'native-comp-async-all-done-hook #'compile-angel--check-if-jit-files-compiled)
     (remove-hook 'after-load-functions #'compile-angel--hook-after-load-functions)
+    ;; Advices
     (advice-remove 'require #'compile-angel--advice-before-require)
     (advice-remove 'load #'compile-angel--advice-before-load)))
 
