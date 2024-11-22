@@ -562,6 +562,22 @@ NEW-VALUE is the value of the variable."
   (when compile-angel--el-file-regexp
     (string-match-p compile-angel--el-file-regexp file)))
 
+(defun compile-angel--ensure-jit-compile ()
+  "When JIT is enabled, ensure that Emacs native-compiles the loaded .elc files.
+Occasionally, Emacs fails to `native-compile' certain `.elc` files that should
+be JIT compiled."
+  (when (and compile-angel-enable-native-compile
+             (> (hash-table-count compile-angel--list-jit-native-compiled-files)
+                0))
+    (unwind-protect
+        (maphash (lambda (el-file _value)
+                   (compile-angel--debug-message
+                    "Checking if Emacs really JIT Native-Compiled: %s" el-file)
+                   (let ((compile-angel--native-compile-when-jit-enabled t))
+                     (compile-angel--native-compile el-file)))
+                 compile-angel--list-jit-native-compiled-files)
+      (clrhash compile-angel--list-jit-native-compiled-files))))
+
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
   "Toggle `compile-angel-mode' then compiles .el files before they are loaded."
@@ -576,6 +592,9 @@ NEW-VALUE is the value of the variable."
         ;; Hooks
         (when compile-angel-on-load-hook-after-load-functions
           (add-hook 'after-load-functions #'compile-angel--hook-after-load-functions))
+        (when compile-angel-enable-native-compile
+          (add-hook 'native-comp-async-all-done-hook
+                    #'compile-angel--ensure-jit-compile))
         ;; Advices
         (when compile-angel-on-load-compile-features
           (compile-angel-compile-features))
@@ -585,6 +604,7 @@ NEW-VALUE is the value of the variable."
           (advice-add 'load :before #'compile-angel--advice-before-load)))
     ;; Hooks
     (remove-hook 'after-load-functions #'compile-angel--hook-after-load-functions)
+    (remove-hook 'native-comp-async-all-done-hook #'compile-angel--ensure-jit-compile)
     ;; Advices
     (advice-remove 'require #'compile-angel--advice-before-require)
     (advice-remove 'load #'compile-angel--advice-before-load)))
