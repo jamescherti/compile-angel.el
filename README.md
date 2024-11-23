@@ -1,4 +1,4 @@
-# compile-angel.el - Byte-compile and native-compile Emacs Lisp libraries Automatically
+# compile-angel.el - Speed up Emacs by Byte-compiling and Native-compiling all .el files
 [![MELPA](https://melpa.org/packages/compile-angel-badge.svg)](https://melpa.org/#/compile-angel)
 ![Build Status](https://github.com/jamescherti/compile-angel.el/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/github/license/jamescherti/compile-angel.el)
@@ -15,7 +15,7 @@ The author of *compile-angel* was previously a user of *auto-compile* but encoun
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
 
-- [compile-angel.el - Byte-compile and native-compile Emacs Lisp libraries Automatically](#compile-angelel---byte-compile-and-native-compile-emacs-lisp-libraries-automatically)
+- [compile-angel.el - Speed up Emacs by Byte-compiling and Native-compiling all .el files](#compile-angelel---speed-up-emacs-by-byte-compiling-and-native-compiling-all-el-files)
   - [Why use compile-angel?](#why-use-compile-angel)
   - [Before installing](#before-installing)
   - [Installation](#installation)
@@ -126,7 +126,7 @@ The *compile-angel* package, on the other hand, transparently compiles all packa
 
 ### What is the difference between auto-compile and compile-angel?
 
-Jonas Bernouli, the author of auto-compile, has made some design decisions that prevent it from guaranteeing that all .el packages are byte-compiled and native-compiled. For example, if the user deletes all the .elc files or if the .el files have never been compiled before, auto-compile won't recompile them. Here is a quote from u/tarsius_ (Jonas Bernouli), the auto-compile author ([from this discussion](https://www.reddit.com/r/emacs/comments/1gmmnhn/comment/lwhtte2/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button)):
+Jonas Bernouli, the author of auto-compile, has made some design decisions that prevent it from guaranteeing that all .el packages are byte-compiled and native-compiled. For example, if the user deletes all the .elc files or if the .el files have never been compiled before, auto-compile won't recompile them. Here is a quote from Jonas Bernouli, aka *u/tarsius_*, the auto-compile author ([from this discussion](https://www.reddit.com/r/emacs/comments/1gmmnhn/comment/lwhtte2/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button)):
 > Both [autocompile] modes only ever re-compile a source file when the
 > respective byte code file already exists but is outdated. Otherwise
 > they do not compile the source file. By "otherwise" I mean if:
@@ -134,7 +134,10 @@ Jonas Bernouli, the author of auto-compile, has made some design decisions that 
 >   - The *.elc does not exist.
 > In both cases the source file is not compiled, by design.
 
+This is one of the reasons why opening an issue or submitting a pull request regarding the auto-compile issue above is pointless, as Jonas Bernouli is unlikely to merge it due to his design decision.
+
 Here are the main differences between compile-angel and auto-compile:
+- Compile-angel is optimized. It is fast enough that it is nearly imperceptible to the user.
 - Compile-angel ensures that even when when the .elc file doesn't exist, the .el source file is compiled. Auto-compile, on the other hand, requires (by design, as explained above) an existing .elc file in order to compile.
 - Compile-angel ensures that files are compiled before and after they are loaded, In addition to compiling the `.el` files loaded using *load* and *require*, also handles files that auto-compile misses, using the `after-load-functions` hook. This ensures that all files are byte-compiled and native-compiled.
 - Compile-angel can exclude files from compilation using regular expressions in *compile-angel-excluded-files-regexps*.
