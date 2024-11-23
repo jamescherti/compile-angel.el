@@ -378,10 +378,8 @@ This resets `compile-angel-cache-feature' and `compile-angel-cache-el-file'."
     nil)))
 
 (defun compile-angel--guess-el-file (el-file
-                                     &optional feature-name nosuffix
-                                     substitute-env-vars)
+                                     &optional feature-name nosuffix)
   "Guess the EL-FILE or FEATURE-NAME path. NOSUFFIX is similar to `load'.
-SUBSTITUTE-ENV-VARS Substitute environment variables referred.
 Checks caches before performing computation."
   (let* ((el-file (when (stringp el-file) el-file))
          (result nil))
@@ -399,17 +397,13 @@ Checks caches before performing computation."
       (setq result (if (and el-file
                             (compile-angel--is-el-file el-file))
                        el-file
-                     (locate-file (if substitute-env-vars
-                                      (substitute-in-file-name
-                                       (or el-file feature-name))
-                                    (or el-file feature-name))
+                     (locate-file (or el-file feature-name)
                                   load-path
                                   (if nosuffix
                                       load-file-rep-suffixes
                                     (mapcar (lambda (s) (concat ".el" s))
                                             load-file-rep-suffixes)))))
       (when result
-        (setq result (expand-file-name result))
         (when compile-angel-enable-cache
           (cond
            (el-file
@@ -420,10 +414,8 @@ Checks caches before performing computation."
 
 (defun compile-angel--entry-point-compile (el-file
                                            &optional feature nosuffix
-                                           substitute-env-vars
                                            do-not-postpone)
   "This function is called by the entry point function to compile.
-SUBSTITUTE-ENV-VARS Substitute environment variables referred.
 EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'.
 When DO-NOT-POSTPONE is non-nil, do not add files to the
 `compile-angel--postponed-compilations' hash table."
@@ -431,8 +423,7 @@ When DO-NOT-POSTPONE is non-nil, do not add files to the
             compile-angel-enable-native-compile)
     (let* ((feature-name (compile-angel--feature-to-feature-name feature))
            (el-file (compile-angel--guess-el-file
-                     el-file feature-name
-                     nosuffix substitute-env-vars)))
+                     el-file feature-name nosuffix)))
       (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
                                     el-file feature-name)
       (cond
@@ -479,21 +470,18 @@ compilations come from various events (`autoload', `eval-after-load', `require',
     (unwind-protect
         (dolist (el-file (hash-table-keys compile-angel--postponed-compilations))
           (compile-angel--debug-message "Compile postponed: %s" el-file)
-          (compile-angel--entry-point-compile el-file nil nil nil t))
+          (compile-angel--entry-point-compile el-file nil nil t))
       (setq compile-angel--postponed-compilations (make-hash-table :test 'equal)))))
 
 (defun compile-angel--entry-point (el-file
-                                   &optional feature nosuffix
-                                   substitute-env-vars)
+                                   &optional feature nosuffix)
   "This function is called by all the :before advices.
-SUBSTITUTE-ENV-VARS Substitute environment variables referred.
 EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
   (when (or compile-angel-enable-byte-compile
             compile-angel-enable-native-compile)
     ;; (compile-angel--compile-postponed)
     (unwind-protect
-        (compile-angel--entry-point-compile el-file feature
-                                            nosuffix substitute-env-vars)
+        (compile-angel--entry-point-compile el-file feature nosuffix)
       (compile-angel--compile-postponed))))
 
 (defun compile-angel--advice-before-require (feature
@@ -514,7 +502,10 @@ FEATURE and FILENAME are the same arguments as the `require' function."
       (let ((user-init-file (if (eq user-init-file t)
                                 nil
                               user-init-file)))
-        (compile-angel--entry-point el-file nil nosuffix t))
+        (compile-angel--entry-point (when el-file
+                                      (expand-file-name
+                                       (substitute-in-file-name el-file)))
+                                    nil nosuffix))
     (compile-angel--debug-message
      (concat "ISSUE: Wrong type passed to "
              "compile-angel--advice-before-require %s (%s)")

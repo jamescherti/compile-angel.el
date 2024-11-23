@@ -10,7 +10,9 @@ The **compile-angel** package automatically byte-compiles and native-compiles Em
 
 The *compile-angel* modes **speed up Emacs by ensuring all libraries are byte-compiled and native-compiled**. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
 
-The author of *compile-angel* was previously a user of *auto-compile* but encountered an issue where several .el files were not being compiled by *auto-compile* (see the explanation below), resulting in Emacs performance degradation due to the lack of native compilation. After extensive experimentation and research, the author developed *compile-angel* to address this problem. **The compile-angel package guarantees that all .el files are both byte-compiled and native-compiled, which significantly speeds up Emacs.**
+The *compile-angel* author was previously an *auto-compile* user but encountered an issue where several .el files were not being compiled by auto-compile (see the explanation below), resulting in Emacs performance degradation due to the lack of native compilation. After extensive experimentation and research, the author developed *compile-angel* to address this problem. **The compile-angel package guarantees that all .el files are both byte-compiled and native-compiled, which significantly speeds up Emacs.**
+
+After extensive experimentation and research, the `compile-angel` author created the package to solve this problem. The `compile-angel` package ensures that all `.el` files are consistently byte-compiled and native-compiled, significantly improving Emacs performance.
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
@@ -163,6 +165,7 @@ This program is free software: you can redistribute it and/or modify it under th
 ## Links
 
 - [compile-angel.el @GitHub](https://github.com/jamescherti/compile-angel.el)
+- [compile-angel.el @MELPA](https://melpa.org/#/compile-angel)
 - For users who prefer compiling .el files from the command line: [elispcomp](https://github.com/jamescherti/elispcomp)
 
 Other Emacs packages by the same author:
