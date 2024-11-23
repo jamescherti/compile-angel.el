@@ -35,7 +35,7 @@ Because you are likely running a significant amount of interpreted, slow Elisp c
 
 ## Before installing
 
-It is highly recommended to set the following variables in your init file:
+It is highly recommended to set the following variables **at the very beginning of your early-init.el**:
 
 ``` emacs-lisp
 ;; Ensure Emacs loads the most recent byte-compiled files.
@@ -57,7 +57,7 @@ To install `compile-angel` from MELPA:
 
 1. If you haven't already done so, [add MELPA repository to your Emacs configuration](https://melpa.org/#/getting-started).
 
-2. Add the following code **at the very beginning of your Emacs init file, before all other packages**:
+2. Add the following code **at the very beginning of your init.el file, before all other packages**:
 ```emacs-lisp
 (use-package compile-angel
   :ensure t
@@ -78,17 +78,6 @@ To install `compile-angel` from MELPA:
 
 ;; Ignore certain files, for example, for users of the `dir-config` package:
 (setq compile-angel-excluded-files-regexps '("/\\.dir-config\\.el$"))
-
-;; Function that determines if an .el file should be compiled. It takes one
-;; argument (an EL file) and returns t if the file should be compiled,
-;; (By default, `compile-angel-predicate-function` is set to nil, which
-;; means that the predicate function is ignored.)
-(setq compile-angel-predicate-function
-   #'(lambda(el-file)
-       ;; Show a message
-       (message "PREDICATE: %s" el-file)
-       ;; Return t to compile the file
-       t))
 ```
 
 ## Frequently Asked Questions
