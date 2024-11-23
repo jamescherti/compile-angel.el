@@ -76,16 +76,13 @@ To install `compile-angel` from MELPA:
 (setq compile-angel-enable-byte-compile t)
 (setq compile-angel-enable-native-compile t)
 
-;; Enable displaying messages (e.g., when files are compiled)
-(setq compile-angel-verbose t)
-
 ;; Ignore certain files, for example, for users of the `dir-config` package:
 (setq compile-angel-excluded-files-regexps '("/\\.dir-config\\.el$"))
 
 ;; Function that determines if an .el file should be compiled. It takes one
 ;; argument (an EL file) and returns t if the file should be compiled,
 ;; (By default, `compile-angel-predicate-function` is set to nil, which
-;; means that the predicate function is not called.)
+;; means that the predicate function is ignored.)
 (setq compile-angel-predicate-function
    #'(lambda(el-file)
        ;; Show a message
@@ -108,6 +105,7 @@ Below are a few interesting options:
 
 ;; Show buffer when there is a warning.
 ;; (NOT RECOMMENDED, except during development).
+(setq compile-angel-verbose t)
 (setq warning-minimum-level :warning)
 (setq byte-compile-verbose t)
 (setq byte-compile-warnings t)
