@@ -19,9 +19,10 @@ The author of *compile-angel* was previously a user of *auto-compile* but encoun
   - [Why use compile-angel?](#why-use-compile-angel)
   - [Before installing](#before-installing)
   - [Installation](#installation)
-  - [Customizations](#customizations)
   - [Frequently Asked Questions](#frequently-asked-questions)
     - [What are some interesting Emacs customizations to consider alongside compile-angel?](#what-are-some-interesting-emacs-customizations-to-consider-alongside-compile-angel)
+    - [How to exclude certain .el files from compilation in compile-angel](#how-to-exclude-certain-el-files-from-compilation-in-compile-angel)
+    - [How to enable or disable byte-compilation and native-compilation?](#how-to-enable-or-disable-byte-compilation-and-native-compilation)
     - [Why not just use the package-recompile-all function?](#why-not-just-use-the-package-recompile-all-function)
     - [What is the difference between auto-compile and compile-angel?](#what-is-the-difference-between-auto-compile-and-compile-angel)
   - [Author and License](#author-and-license)
@@ -69,17 +70,6 @@ To install `compile-angel` from MELPA:
   (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode))
 ```
 
-## Customizations
-
-``` emacs-lisp
-;; Enable/Disable byte compilation and native compilation
-(setq compile-angel-enable-byte-compile t)
-(setq compile-angel-enable-native-compile t)
-
-;; Ignore certain files, for example, for users of the `dir-config` package:
-(setq compile-angel-excluded-files-regexps '("/\\.dir-config\\.el$"))
-```
-
 ## Frequently Asked Questions
 
 ### What are some interesting Emacs customizations to consider alongside compile-angel?
@@ -103,6 +93,30 @@ Below are a few interesting options:
 
 ;; Non-nil means to native compile packages as part of their installation.
 (setq package-native-compile t)
+```
+
+### How to exclude certain .el files from compilation in compile-angel
+
+You can make *compile-angel* exclude specific `.el` files by adding regular expressions to `compile-angel-excluded-files-regexps`.
+
+For instance, to prevent *compile-angel* from compiling .dir-config.el files (the dir-config package) and .dir-locals.el files, add the following to your configuration:
+
+``` elisp
+(setq compile-angel-excluded-files-regexps '("/\\.dir-config\\.el$"
+                                             "/\\.dir-locals\\.el$" ))
+```
+
+### How to enable or disable byte-compilation and native-compilation?
+
+You can control whether *compile-angel* performs byte-compilation or native-compilation of your .el files by setting the following variables in your configuration:
+- **`compile-angel-enable-byte-compile`**: Set this variable to `t` to enable byte-compilation. When enabled, *compile-angel* will generate .elc files for your .el files, making them load faster by converting them into bytecode. Set it to `nil` to disable byte-compilation.
+- **`compile-angel-enable-native-compile`**: Set this variable to `t` to enable native-compilation, which generates machine code for supported systems, further improving performance. Set it to `nil` to disable native-compilation.
+
+Example configuration:
+```emacs-lisp
+;; Enable both byte-compilation and native-compilation (default)
+(setq compile-angel-enable-byte-compile t)
+(setq compile-angel-enable-native-compile t)
 ```
 
 ### Why not just use the package-recompile-all function?
