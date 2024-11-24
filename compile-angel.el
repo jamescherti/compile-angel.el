@@ -560,7 +560,8 @@ otherwise, return nil."
           (compile-angel--debug-message
            "compile-angel--hook-after-load-functions: COMPILE: %s"
            file)
-          (let ((compile-angel--native-compile-when-jit-enabled t))
+          (let ((compile-angel--native-compile-when-jit-enabled t)
+                (compile-angel--force-compilation t))
             (compile-angel--entry-point file)))))))
 
 (defun compile-angel--update-el-file-regexp (_symbol new-value
