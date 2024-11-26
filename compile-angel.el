@@ -122,14 +122,6 @@ This displays a lot of messages."
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-predicate-function nil
-  "Function that determines if an .el file should be compiled.
-It takes one argument (an .el file) and returns t if the file should be
-compiled, or nil if the file should not be compiled."
-  :group 'compile-angel
-  :type '(choice (const nil)
-                 (function)))
-
 ;; Enable/Disable features
 (defvar compile-angel-on-load-advise-load t
   "When non-nil, automatically compile .el files loaded using `load'.")
@@ -299,13 +291,6 @@ FEATURE-NAME is a string representing the feature name being loaded."
    ((not el-file)
     (compile-angel--debug-message
      "SKIP (el-file is nil): %s | %s" el-file feature-name)
-    nil)
-
-   ((not (if compile-angel-predicate-function
-             (funcall compile-angel-predicate-function el-file)
-           t))
-    (compile-angel--debug-message
-     "SKIP (Predicate function returned nil): %s | %s" el-file feature-name)
     nil)
 
    ((not (compile-angel--is-el-file el-file))
