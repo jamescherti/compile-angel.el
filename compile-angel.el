@@ -147,6 +147,11 @@ listed in the `features' variable are compiled.")
 (defvar compile-angel-cache-el-file (make-hash-table :test 'equal)
   "Cache for .el file lookups.")
 
+(defvar compile-angel-predicate-function nil)
+(make-obsolete 'compile-angel-predicate-function
+               "The `compile-angel-predicate-function' variable is deprecated."
+               "1.1.4")
+
 ;;; Internal variables
 
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
