@@ -15,12 +15,14 @@ The *compile-angel* author was previously an *auto-compile* user but encountered
 After extensive experimentation and research, the `compile-angel` author created the package to solve this problem. The `compile-angel` package ensures that all `.el` files are consistently byte-compiled and native-compiled, significantly improving Emacs performance.
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
-**Table of Contents**
+## Table of Contents
 
 - [compile-angel.el - Speed up Emacs by Byte-compiling and Native-compiling all .el files](#compile-angelel---speed-up-emacs-by-byte-compiling-and-native-compiling-all-el-files)
   - [Why use compile-angel?](#why-use-compile-angel)
   - [Before installing](#before-installing)
   - [Installation](#installation)
+    - [Emacs (preferred)](#emacs-preferred)
+    - [Doom Emacs](#doom-emacs)
   - [Frequently Asked Questions](#frequently-asked-questions)
     - [What are some interesting Emacs customizations to consider alongside compile-angel?](#what-are-some-interesting-emacs-customizations-to-consider-alongside-compile-angel)
     - [How to exclude certain .el files from compilation in compile-angel](#how-to-exclude-certain-el-files-from-compilation-in-compile-angel)
@@ -56,7 +58,9 @@ This should return t: `(native-comp-available-p)`
 
 ## Installation
 
-To install `compile-angel` from MELPA:
+### Emacs (preferred)
+
+To install *compile-angel* from MELPA:
 
 1. If you haven't already done so, [add MELPA repository to your Emacs configuration](https://melpa.org/#/getting-started).
 
@@ -71,6 +75,28 @@ To install `compile-angel` from MELPA:
   (compile-angel-on-load-mode)
   (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode))
 ```
+
+### Doom Emacs
+
+Here is how to install *compile-angel* on Doom Emacs. (The following assumes that doom Emacs is installed in the `~/.emacs.d` directory):
+
+1. Add to the `~/.doom.d/packages.el` file:
+```
+(package! compile-angel)
+```
+
+2. Add to the top of `~/.doom.d/config.el`:
+```
+(setq compile-angel-predicate-function
+      (lambda (file)
+        (and (not (file-in-directory-p file doom-user-dir))
+             (not (file-in-directory-p file (expand-file-name "~/.emacs.d/lisp")))
+             (not (file-in-directory-p file (expand-file-name "~/.emacs.d/modules"))))))
+(compile-angel-on-load-mode)
+(add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
+```
+
+(This ensures that the Doom Emacs Lisp files in `~/.emacs.d/lisp` and `~/.emacs.d/modules` are ignored. If your Doom Emacs is installed elsewhere, adjust those paths accordingly. This is important because `.el` files in these directories should never be compiled, or Doom may fail to load some of them correctly.)
 
 ## Frequently Asked Questions
 
