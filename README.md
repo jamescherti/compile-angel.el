@@ -105,7 +105,7 @@ For instance, to prevent *compile-angel* from compiling .dir-config.el files (th
 
 ``` elisp
 (setq compile-angel-excluded-files-regexps '("/\\.dir-config\\.el$"
-                                             "/\\.dir-locals\\.el$" ))
+                                             "/\\.dir-locals\\.el$"))
 ```
 
 ### How to enable or disable byte-compilation and native-compilation?
