@@ -640,7 +640,7 @@ be JIT compiled."
   (if compile-angel-on-save-mode
       (progn
         (compile-angel--init)
-        (add-hook 'after-save-hook #'compile-angel--compile-current-buffer nil t))
+        (add-hook 'after-save-hook #'compile-angel--compile-current-buffer))
     (remove-hook 'after-save-hook #'compile-angel--compile-current-buffer)))
 
 ;;;###autoload
