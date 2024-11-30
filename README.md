@@ -81,12 +81,12 @@ To install *compile-angel* from MELPA:
 Here is how to install *compile-angel* on Doom Emacs:
 
 1. Add to the `~/.doom.d/packages.el` file:
-```
+```elisp
 (package! compile-angel)
 ```
 
 2. Add to the top of `~/.doom.d/config.el`:
-```
+```elisp
 (setq compile-angel-predicate-function
       (lambda (file)
         (and (not (file-in-directory-p file doom-user-dir))
