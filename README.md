@@ -78,7 +78,7 @@ To install *compile-angel* from MELPA:
 
 ### Doom Emacs
 
-Here is how to install *compile-angel* on Doom Emacs. (The following assumes that doom Emacs is installed in the `~/.emacs.d` directory):
+Here is how to install *compile-angel* on Doom Emacs:
 
 1. Add to the `~/.doom.d/packages.el` file:
 ```
@@ -90,13 +90,13 @@ Here is how to install *compile-angel* on Doom Emacs. (The following assumes tha
 (setq compile-angel-predicate-function
       (lambda (file)
         (and (not (file-in-directory-p file doom-user-dir))
-             (not (file-in-directory-p file (expand-file-name "~/.emacs.d/lisp")))
-             (not (file-in-directory-p file (expand-file-name "~/.emacs.d/modules"))))))
+             (not (file-in-directory-p file (expand-file-name "lisp" doom-emacs-dir)))
+             (not (file-in-directory-p file (expand-file-name doom-modules-dir))))))
 (compile-angel-on-load-mode)
 (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 ```
 
-(This ensures that the Doom Emacs Lisp files in `~/.emacs.d/lisp` and `~/.emacs.d/modules` are ignored. If your Doom Emacs is installed elsewhere, adjust those paths accordingly. This is important because `.el` files in these directories should never be compiled, or Doom may fail to load some of them correctly.)
+(This ensures that the Doom Emacs Lisp files and modules are not compiled by compile-angel. This is important because `.el` files in these directories should never be compiled, or Doom may fail to load some of them correctly.)
 
 ## Frequently Asked Questions
 
