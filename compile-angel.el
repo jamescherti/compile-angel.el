@@ -159,9 +159,7 @@ listed in the `features' variable are compiled.")
 
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
 (defvar compile-angel--list-jit-native-compiled-files (make-hash-table :test 'equal))
-(defvar compile-angel--currently-compiling (make-hash-table :test 'equal))
-(defvar compile-angel--compiling-p nil)
-(defvar compile-angel--postponed-compilations (make-hash-table :test 'equal))
+(defvar compile-angel--currently-compiling nil)
 (defvar compile-angel--force-compilation nil)
 (defvar compile-angel--native-compile-when-jit-enabled nil)
 (defvar compile-angel--el-file-regexp nil)
@@ -412,13 +410,9 @@ Checks caches before performing computation."
             (puthash feature-name result compile-angel-cache-feature)))))
       result)))
 
-(defun compile-angel--entry-point-compile (el-file
-                                           &optional feature nosuffix
-                                           do-not-postpone)
-  "This function is called by the entry point function to compile.
-EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'.
-When DO-NOT-POSTPONE is non-nil, do not add files to the
-`compile-angel--postponed-compilations' hash table."
+(defun compile-angel--entry-point (el-file &optional feature nosuffix)
+  "This function is called by all the :before advices.
+EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
   (when (or compile-angel-enable-byte-compile
             compile-angel-enable-native-compile)
     (let* ((feature-name (compile-angel--feature-to-feature-name feature))
@@ -431,12 +425,7 @@ When DO-NOT-POSTPONE is non-nil, do not add files to the
         (compile-angel--debug-message
          "SKIP (Returned a nil .el file): %s | %s" el-file feature))
 
-       ((or
-         compile-angel--compiling-p
-         ;; (gethash el-file compile-angel--currently-compiling)
-         nil)
-        (unless do-not-postpone
-          (puthash el-file t compile-angel--postponed-compilations))
+       ((member el-file compile-angel--currently-compiling)
         (compile-angel--debug-message
          "SKIP (To prevent recursive compilation): %s | %s" el-file feature))
 
@@ -446,43 +435,9 @@ When DO-NOT-POSTPONE is non-nil, do not add files to the
 
        (t
         (puthash el-file t compile-angel--list-compiled-files)
-
-        (unwind-protect
-            (progn
-              (puthash el-file t compile-angel--currently-compiling)
-              (when feature-name
-                (puthash feature-name t compile-angel--currently-compiling))
-              (setq compile-angel--compiling-p t)
-              (compile-angel--compile-elisp el-file))
-          (progn
-            (setq compile-angel--compiling-p nil)
-            (remhash el-file compile-angel--currently-compiling)
-            (when feature-name
-              (remhash feature-name compile-angel--currently-compiling)))))))))
-
-(defun compile-angel--compile-postponed ()
-  "Compile postponed files.
-To avoid recursive compilations, some compilations are postponed. Using a list
-and local variable to detect recursive compilations did not work because
-compilations come from various events (`autoload', `eval-after-load', `require',
-`load', etc.). The best way for now is the postpone them."
-  (unless compile-angel--compiling-p
-    (unwind-protect
-        (dolist (el-file (hash-table-keys compile-angel--postponed-compilations))
-          (compile-angel--debug-message "Compile postponed: %s" el-file)
-          (compile-angel--entry-point-compile el-file nil nil t))
-      (setq compile-angel--postponed-compilations (make-hash-table :test 'equal)))))
-
-(defun compile-angel--entry-point (el-file
-                                   &optional feature nosuffix)
-  "This function is called by all the :before advices.
-EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
-  (when (or compile-angel-enable-byte-compile
-            compile-angel-enable-native-compile)
-    ;; (compile-angel--compile-postponed)
-    (unwind-protect
-        (compile-angel--entry-point-compile el-file feature nosuffix)
-      (compile-angel--compile-postponed))))
+        (let ((compile-angel--currently-compiling
+               (cons el-file compile-angel--currently-compiling)))
+          (compile-angel--compile-elisp el-file)))))))
 
 (defun compile-angel--advice-before-require (feature
                                              &optional filename _noerror)
@@ -531,12 +486,14 @@ construct possible .el file paths. If a matching file exists, return its path;
 otherwise, return nil."
   (cond
    ((not file)
+    (compile-angel--debug-message
+     "compile-angel--find-el-file: nil file")
     nil)
 
    ((compile-angel--is-el-file file)
     file)
 
-   ((string-suffix-p ".elc" file)
+   ((string-equal (file-name-extension file) "elc")
     (let ((base (file-name-sans-extension file))
           (suffixes load-file-rep-suffixes)
           result)
@@ -545,7 +502,11 @@ otherwise, return nil."
           (when (file-exists-p candidate)
             (setq result candidate)))
         (setq suffixes (cdr suffixes)))
-      result))))
+      result))
+
+   (t
+    (compile-angel--debug-message
+     "compile-angel--find-el-file: NO .el FILE CORRESPONDS TO: %s" file))))
 
 (defun compile-angel--hook-after-load-functions (file)
   "Compile FILE after load."
@@ -610,16 +571,15 @@ be JIT compiled."
       (progn
         ;; Init
         (compile-angel--init)
-        (compile-angel--entry-point nil "compile-angel")
         ;; Hooks
         (when compile-angel-on-load-hook-after-load-functions
           (add-hook 'after-load-functions #'compile-angel--hook-after-load-functions))
         (when compile-angel-enable-native-compile
-          (add-hook 'native-comp-async-all-done-hook
-                    #'compile-angel--ensure-jit-compile))
-        ;; Advices
+          (add-hook 'native-comp-async-all-done-hook #'compile-angel--ensure-jit-compile))
+        ;; Compile features
         (when compile-angel-on-load-compile-features
           (compile-angel-compile-features))
+        ;; Advices
         (when compile-angel-on-load-advise-require
           (advice-add 'require :before #'compile-angel--advice-before-require))
         (when compile-angel-on-load-advise-load
