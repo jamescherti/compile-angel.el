@@ -60,7 +60,7 @@ This should return t: `(native-comp-available-p)`
 
 ### Emacs
 
-To install *compile-angel* from MELPA:
+To install *compile-angel* on Emacs from MELPA:
 
 1. If you haven't already done so, [add MELPA repository to your Emacs configuration](https://melpa.org/#/getting-started).
 
