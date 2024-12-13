@@ -21,7 +21,7 @@ After extensive experimentation and research, the `compile-angel` author created
   - [Why use compile-angel?](#why-use-compile-angel)
   - [Before installing](#before-installing)
   - [Installation](#installation)
-    - [Emacs (preferred)](#emacs-preferred)
+    - [Emacs](#emacs)
     - [Doom Emacs](#doom-emacs)
   - [Frequently Asked Questions](#frequently-asked-questions)
     - [What are some interesting Emacs customizations to consider alongside compile-angel?](#what-are-some-interesting-emacs-customizations-to-consider-alongside-compile-angel)
@@ -58,7 +58,7 @@ This should return t: `(native-comp-available-p)`
 
 ## Installation
 
-### Emacs (preferred)
+### Emacs
 
 To install *compile-angel* from MELPA:
 
