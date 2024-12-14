@@ -145,16 +145,6 @@ compiled, or nil if the file should not be compiled."
 When `compile-angel-on-load-mode' is activated, this ensures that all features
 listed in the `features' variable are compiled.")
 
-;; Cache
-(defvar compile-angel-enable-cache nil
-  "Non-nil to enable the cache.")
-
-(defvar compile-angel-cache-feature (make-hash-table :test 'equal)
-  "Cache for feature lookups.")
-
-(defvar compile-angel-cache-el-file (make-hash-table :test 'equal)
-  "Cache for .el file lookups.")
-
 ;;; Internal variables
 
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
@@ -350,17 +340,10 @@ FEATURE-NAME is a string representing the feature name being loaded."
 
 (defun compile-angel--compile-current-buffer ()
   "Compile the current buffer."
-  (let ((compile-angel-enable-cache nil)
-        (compile-angel--force-compilation t)
+  (let ((compile-angel--force-compilation t)
         (compile-angel--native-compile-when-jit-enabled t))
     (when (derived-mode-p 'emacs-lisp-mode)
       (compile-angel--compile-elisp (buffer-file-name (buffer-base-buffer))))))
-
-(defun compile-angel--reset-cache ()
-  "Reset the caches.
-This resets `compile-angel-cache-feature' and `compile-angel-cache-el-file'."
-  (clrhash compile-angel-cache-feature)
-  (clrhash compile-angel-cache-el-file))
 
 (defun compile-angel--feature-to-feature-name (feature)
   "Convert a FEATURE symbol into a feature name and return it."
@@ -381,13 +364,6 @@ This resets `compile-angel-cache-feature' and `compile-angel-cache-el-file'."
 Checks caches before performing computation."
   (let* ((el-file (when (stringp el-file) el-file))
          (result nil))
-    ;; Check el-file and feature-name cache
-    (when compile-angel-enable-cache
-      (when feature-name
-        (setq result (gethash feature-name compile-angel-cache-feature)))
-      (when (and (not result) el-file)
-        (setq result (gethash el-file compile-angel-cache-el-file))))
-
     ;; Return result
     (if result
         result
@@ -401,13 +377,6 @@ Checks caches before performing computation."
                                       load-file-rep-suffixes
                                     (mapcar (lambda (s) (concat ".el" s))
                                             load-file-rep-suffixes)))))
-      (when result
-        (when compile-angel-enable-cache
-          (cond
-           (el-file
-            (puthash el-file result compile-angel-cache-el-file))
-           (feature-name
-            (puthash feature-name result compile-angel-cache-feature)))))
       result)))
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix)
