@@ -105,7 +105,10 @@ the mode will recompile on each load."
   :group 'compile-angel)
 
 (defcustom compile-angel-excluded-files-regexps nil
-  "A list of regular expressions to exclude certain .el files from compilation."
+  "A list of regular expressions to exclude certain .el files from compilation.
+These regular expression apply to all modes:
+- `compile-angel-on-load-mode'
+- `compile-angel-on-save-local-mode'"
   :type '(repeat string)
   :group 'compile-angel)
 
@@ -125,7 +128,11 @@ This displays a lot of messages."
 (defcustom compile-angel-predicate-function nil
   "Function that determines if an .el file should be compiled.
 It takes one argument (an .el file) and returns t if the file should be
-compiled, or nil if the file should not be compiled."
+compiled, or nil if the file should not be compiled.
+
+This function applies to all modes:
+- `compile-angel-on-load-mode'
+- `compile-angel-on-save-local-mode'"
   :group 'compile-angel
   :type '(choice (const nil)
                  (function)))
@@ -341,9 +348,14 @@ FEATURE-NAME is a string representing the feature name being loaded."
 (defun compile-angel--compile-current-buffer ()
   "Compile the current buffer."
   (let ((compile-angel--force-compilation t)
-        (compile-angel--native-compile-when-jit-enabled t))
-    (when (derived-mode-p 'emacs-lisp-mode)
-      (compile-angel--compile-elisp (buffer-file-name (buffer-base-buffer))))))
+        (compile-angel--native-compile-when-jit-enabled t)
+        (el-file (buffer-file-name (buffer-base-buffer))))
+    (when (and (derived-mode-p 'emacs-lisp-mode)
+               (if compile-angel-predicate-function
+                   (funcall compile-angel-predicate-function el-file)
+                 t)
+               (not (compile-angel--el-file-excluded-p el-file)))
+      (compile-angel--compile-elisp el-file))))
 
 (defun compile-angel--feature-to-feature-name (feature)
   "Convert a FEATURE symbol into a feature name and return it."
