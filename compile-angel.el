@@ -112,6 +112,16 @@ These regular expression apply to all modes:
   :type '(repeat string)
   :group 'compile-angel)
 
+(defcustom compile-angel-exclude-loaddefs t
+  "Non-nil to exclude loaddefs files from compilation.
+(e.g., cus-load.el, theme-loaddefs.el, etc.)
+
+This exclusion applies to all modes:
+- `compile-angel-on-load-mode'
+- `compile-angel-on-save-local-mode'"
+  :type 'boolean
+  :group 'compile-angel)
+
 (defcustom compile-angel-verbose nil
   "Enable displaying messages (e.g., when files are compiled).
 When set to non-nil, this option will cause messages to be shown during the
@@ -191,10 +201,23 @@ The messages are displayed in the *compile-angel* buffer."
 (defun compile-angel--el-file-excluded-p (el-file)
   "Check if EL-FILE matches any regex in `compile-angel-excluded-files-regexps'.
 Return non-nil if the file should be ignored, nil otherwise."
-  (when (and compile-angel-excluded-files-regexps
-             (cl-some (lambda (regex)
-                        (string-match-p regex el-file))
-                      compile-angel-excluded-files-regexps))
+  (when (or
+         ;; Load defs
+         (and
+          compile-angel-exclude-loaddefs
+          (let ((el-file-regexp (or compile-angel--el-file-regexp
+                                    "\\.el$")))
+            (cl-some (lambda (regex)
+                       (string-match-p regex el-file))
+                     (list (concat "/cus-load" el-file-regexp)
+                           (concat "-loaddefs" el-file-regexp)
+                           (concat "/loaddefs" el-file-regexp)))))
+         ;; Excluded files
+         (and
+          compile-angel-excluded-files-regexps
+          (cl-some (lambda (regex)
+                     (string-match-p regex el-file))
+                   compile-angel-excluded-files-regexps)))
     (compile-angel--debug-message
      "SKIP (.el file excluded with a regex): %s" el-file)
     t))
