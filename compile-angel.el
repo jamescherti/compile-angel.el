@@ -195,7 +195,8 @@ Return non-nil if the file should be ignored, nil otherwise."
              (cl-some (lambda (regex)
                         (string-match-p regex el-file))
                       compile-angel-excluded-files-regexps))
-    (compile-angel--verbose-message "Skipped: %s" el-file)
+    (compile-angel--debug-message
+     "SKIP (.el file excluded with a regex): %s" el-file)
     t))
 
 (defun compile-angel--elisp-native-compiled-p (el-file)
@@ -316,8 +317,6 @@ FEATURE-NAME is a string representing the feature name being loaded."
     nil)
 
    ((compile-angel--el-file-excluded-p el-file)
-    (compile-angel--debug-message
-     "SKIP (.el file excluded with a regex): %s | %s" el-file feature-name)
     nil)
 
    (t t)))
