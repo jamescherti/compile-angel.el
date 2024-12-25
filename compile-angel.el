@@ -160,6 +160,7 @@ listed in the `features' variable are compiled.")
 (defvar compile-angel--force-compilation nil)
 (defvar compile-angel--native-compile-when-jit-enabled nil)
 (defvar compile-angel--el-file-regexp nil)
+(defvar compile-angel--loaddefs-regexps nil)
 
 ;;; Functions
 
@@ -511,7 +512,12 @@ otherwise, return nil."
 NEW-VALUE is the value of the variable."
   (compile-angel--debug-message "WATCHER: Update: %s" new-value)
   (setq compile-angel--el-file-regexp
-        (format "\\.el%s\\'" (regexp-opt new-value))))
+        (format "\\.el%s\\'" (regexp-opt new-value)))
+  (setq compile-angel--loaddefs-regexps
+        (list (concat "/cus-load" compile-angel--el-file-regexp)
+              (concat "/charprop" compile-angel--el-file-regexp)
+              (concat "-loaddefs" compile-angel--el-file-regexp)
+              (concat "/loaddefs" compile-angel--el-file-regexp))))
 
 (defun compile-angel--init ()
   "Initialize internal variables."
