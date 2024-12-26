@@ -96,12 +96,22 @@
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-on-load-mode-compile-once t
-  "If non-nil, enable single compilation for `compile-angel-on-load-mode'.
-This setting causes the `compile-angel-on-load-mode' to perform byte and native
-compilation of .el files only once during initial loading. When disabled (nil),
-the mode will recompile on each load."
-  :type 'boolean
+(defcustom compile-angel-excluded-files nil
+  "A list of path suffixes used to exclude specific .el files from compilation.
+
+Example: \\='(\"-loaddefs.el\" \"/cus-load.el\" \"charprop.el\")
+This excludes any path that ends with \"loaddefs.el\" (or its variations, such
+as loaddefs.el.gz) and exactly matches paths that end with \"/cus-load.el\" and
+\"/charprop.el\" (including their variations, like cus-load.el.gz and
+charprop.el.gz).
+
+If a path suffix in `compile-angel-excluded-files' ends with .el,
+compile-angel will automatically exclude the .el.gz variant of that file as
+well (e.g., loaddefs.el will also exclude loaddefs.el.gz).
+
+The variable `load-file-rep-suffixes' is used by compile-angel to detect and
+include all extensions associated with .el files."
+  :type '(repeat string)
   :group 'compile-angel)
 
 (defcustom compile-angel-excluded-files-regexps nil
@@ -137,6 +147,15 @@ This function applies to all modes:
   :type '(choice (const nil)
                  (function)))
 
+(defcustom compile-angel-on-load-mode-compile-once t
+  "If non-nil, enable single compilation for `compile-angel-on-load-mode'.
+This setting ensures that `compile-angel-on-load-mode' performs byte and native
+compilation of .el files only once during the initial loading. When set to nil,
+the mode will verify if the .el file needs recompilation each time it is
+loaded."
+  :type 'boolean
+  :group 'compile-angel)
+
 ;; Enable/Disable features
 (defvar compile-angel-on-load-advise-load t
   "When non-nil, automatically compile .el files loaded using `load'.")
@@ -160,7 +179,7 @@ listed in the `features' variable are compiled.")
 (defvar compile-angel--force-compilation nil)
 (defvar compile-angel--native-compile-when-jit-enabled nil)
 (defvar compile-angel--el-file-regexp nil)
-(defvar compile-angel--loaddefs-regexps nil)
+(defvar compile-angel--excluded-path-suffixes-regexps nil)
 
 ;;; Functions
 
@@ -192,10 +211,14 @@ The messages are displayed in the *compile-angel* buffer."
 (defun compile-angel--el-file-excluded-p (el-file)
   "Check if EL-FILE matches any regex in `compile-angel-excluded-files-regexps'.
 Return non-nil if the file should be ignored, nil otherwise."
-  (when (and compile-angel-excluded-files-regexps
-             (cl-some (lambda (regex)
-                        (string-match-p regex el-file))
-                      compile-angel-excluded-files-regexps))
+  (when (or (and compile-angel--excluded-path-suffixes-regexps
+                 (cl-some (lambda (regex)
+                            (string-match-p regex el-file))
+                          compile-angel--excluded-path-suffixes-regexps))
+            (and compile-angel-excluded-files-regexps
+                 (cl-some (lambda (regex)
+                            (string-match-p regex el-file))
+                          compile-angel-excluded-files-regexps)))
     (compile-angel--debug-message
      "SKIP (.el file excluded with a regex): %s" el-file)
     t))
@@ -506,25 +529,65 @@ otherwise, return nil."
                 (compile-angel--force-compilation t))
             (compile-angel--entry-point file)))))))
 
-(defun compile-angel--update-el-file-regexp (_symbol new-value
-                                                     _operation _where)
+(defun compile-angel--update-el-file-regexp (symbol new-value
+                                                    _operation _where)
   "Update the `compile-angel--el-file-regexp' variable.
+SYMBOL is the symbol.
 NEW-VALUE is the value of the variable."
-  (compile-angel--debug-message "WATCHER: Update: %s" new-value)
-  (setq compile-angel--el-file-regexp
-        (format "\\.el%s\\'" (regexp-opt new-value)))
-  (setq compile-angel--loaddefs-regexps
-        (list (concat "/cus-load" compile-angel--el-file-regexp)
-              (concat "/charprop" compile-angel--el-file-regexp)
-              (concat "-loaddefs" compile-angel--el-file-regexp)
-              (concat "/loaddefs" compile-angel--el-file-regexp))))
+  (when (eq symbol 'load-file-rep-suffixes)
+    (compile-angel--debug-message
+     "WATCHER: Update compile-angel--el-file-regexp: %s" new-value)
+    (setq compile-angel--el-file-regexp
+          (format "\\.el%s\\'" (regexp-opt new-value))))
+
+  (when (eq symbol 'compile-angel-excluded-files)
+    (compile-angel--debug-message
+     "WATCHER: Update compile-angel-excluded-files: %s"
+     compile-angel-excluded-files)
+    (let ((path-suffixes-regexp nil))
+      ;; Process `compile-angel-excluded-files' to generate regular
+      ;; expressions.
+      ;; For each suffix:
+      ;; - If it ends with `.el`, remove the `.el` and concatenate it with
+      ;;   `compile-angel--el-file-regexp`, then add \\' at the end.
+      ;; - Otherwise, convert it into a regular expression and add \\' at the
+      ;;   end.
+      (dolist (suffix new-value)
+        (when (and suffix (not (string= suffix "")))
+          (let* ((el-suffix-p (string-suffix-p ".el" suffix))
+                 (suffix-without-el (if el-suffix-p
+                                        (string-remove-suffix ".el" suffix)
+                                      suffix))
+                 (el-file-regexp (if (and el-suffix-p
+                                          compile-angel--el-file-regexp)
+                                     compile-angel--el-file-regexp)))
+            (push (concat (regexp-quote suffix-without-el)
+                          el-file-regexp
+                          (unless (string-prefix-p "\\'" el-file-regexp)
+                            "\\'" ))
+                  path-suffixes-regexp))))
+      (setq compile-angel--excluded-path-suffixes-regexps
+            (nreverse path-suffixes-regexp)))))
+
+(defvar compile-angel--init-completed nil)
 
 (defun compile-angel--init ()
   "Initialize internal variables."
-  (unless compile-angel--el-file-regexp
-    (compile-angel--update-el-file-regexp nil load-file-rep-suffixes nil nil)
+  (unless compile-angel--init-completed
+    ;; load-file-rep-suffixes
+    (compile-angel--update-el-file-regexp 'load-file-rep-suffixes
+                                          load-file-rep-suffixes
+                                          nil nil)
     (add-variable-watcher 'load-file-rep-suffixes
-                          #'compile-angel--update-el-file-regexp)))
+                          #'compile-angel--update-el-file-regexp)
+
+    ;; compile-angel--update-el-file-regexp
+    (compile-angel--update-el-file-regexp 'compile-angel-excluded-files
+                                          compile-angel-excluded-files
+                                          nil nil)
+    (add-variable-watcher 'compile-angel-excluded-files
+                          #'compile-angel--update-el-file-regexp)
+    (setq compile-angel--init-completed t)))
 
 (defun compile-angel--is-el-file (file)
   "Return non-nil if FILE is an el-file."
