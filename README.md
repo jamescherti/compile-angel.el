@@ -25,7 +25,7 @@ After extensive experimentation and research, the author developed *compile-ange
     - [Doom Emacs](#doom-emacs)
   - [Frequently Asked Questions](#frequently-asked-questions)
     - [What are some interesting Emacs customizations to consider alongside compile-angel?](#what-are-some-interesting-emacs-customizations-to-consider-alongside-compile-angel)
-    - [How to exclude certain .el files from compilation in compile-angel](#how-to-exclude-certain-el-files-from-compilation-in-compile-angel)
+    - [How to exclude certain .el files from compilation in compile-angel?](#how-to-exclude-certain-el-files-from-compilation-in-compile-angel)
     - [How to enable or disable byte-compilation and native-compilation?](#how-to-enable-or-disable-byte-compilation-and-native-compilation)
     - [Why not just use the package-recompile-all function?](#why-not-just-use-the-package-recompile-all-function)
     - [What is the difference between auto-compile and compile-angel?](#what-is-the-difference-between-auto-compile-and-compile-angel)
@@ -123,16 +123,21 @@ Below are a few interesting options:
 (setq package-native-compile t)
 ```
 
-### How to exclude certain .el files from compilation in compile-angel
+### How to exclude certain .el files from compilation in compile-angel?
 
-You can make *compile-angel* exclude specific `.el` files by adding regular expressions to `compile-angel-excluded-files-regexps`.
+You can exclude .el files from compilation by adding path suffixes to the `compile-angel-excluded-files` list.
 
-For instance, to prevent *compile-angel* from compiling .dir-config.el files (the dir-config package) and .dir-locals.el files, add the following to your configuration:
+For instance, the following excludes any path that ends with `suffix.el` (or its variations, such as `/path/ANYTHINGsuffix.el.gz` or `ANYTHINGsuffix.el.gz`) and exactly matches paths that end with `/filename.el` (including their variations, like `/filename.el.gz` or `ANYTHING/filename.el.gz`).
 
-``` elisp
-(setq compile-angel-excluded-files-regexps '("/\\.dir-config\\.el$"
-                                             "/\\.dir-locals\\.el$"))
+```elisp
+;; Run the following before enabling `compile-angel-on-load-mode'
+(push "suffix.el" compile-angel-excluded-files)
+(push "/filename.el" compile-angel-excluded-files)
+
+;; Run here: (compile-angel-on-load-mode)
 ```
+
+If a path suffix in `compile-angel-excluded-files` ends with `.el`, `compile-angel` will automatically exclude the `.el.gz` variant of that file. For instance, specifying `suffix.el` will also exclude `suffix.el.gz`.
 
 ### How to enable or disable byte-compilation and native-compilation?
 

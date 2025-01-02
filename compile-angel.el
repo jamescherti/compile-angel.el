@@ -96,18 +96,19 @@
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-excluded-files nil
+(defcustom compile-angel-excluded-files '("loaddefs.el"
+                                          "/cus-load.el"
+                                          "/charprop.el")
   "A list of path suffixes used to exclude specific .el files from compilation.
 
-Example: \\='(\"-loaddefs.el\" \"/cus-load.el\" \"charprop.el\")
-This excludes any path that ends with \"loaddefs.el\" (or its variations, such
-as loaddefs.el.gz) and exactly matches paths that end with \"/cus-load.el\" and
-\"/charprop.el\" (including their variations, like cus-load.el.gz and
-charprop.el.gz).
+Example: \\='(\"suffix.el\" \"/filename.el\") This excludes any path that ends
+with \"suffix.el\" (or its variations, such as \"/path/ANYTHINGsuffix.el.gz\")
+and exactly matches paths that end with \"/filename.el\" (including their
+variations, like \"/filename.el.gz\" or \"ANYTHING/filename.el.gz\").
 
-If a path suffix in `compile-angel-excluded-files' ends with .el,
-compile-angel will automatically exclude the .el.gz variant of that file as
-well (e.g., loaddefs.el will also exclude loaddefs.el.gz).
+If a path suffix in `compile-angel-excluded-files' ends with .el, compile-angel
+will automatically exclude the .el.gz variant of that file as well (e.g.,
+\"suffix.el\" will also exclude \"ANYTHINGsuffix.el.gz\").
 
 The variable `load-file-rep-suffixes' is used by compile-angel to detect and
 include all extensions associated with .el files."
@@ -116,6 +117,14 @@ include all extensions associated with .el files."
 
 (defcustom compile-angel-excluded-files-regexps nil
   "A list of regular expressions to exclude certain .el files from compilation.
+
+(It is advisable to use `compile-angel-excluded-files' instead of
+`compile-angel-excluded-files-regexps', as it simplifies matching file names.
+Regular expressions may become unnecessarily complex in this context,
+particularly since .el files might also end with the extension .el.gz on certain
+configurations. Furthermore, Emacs regular expressions differ from PCRE, adding
+another layer of potential complexity.)
+
 These regular expression apply to all modes:
 - `compile-angel-on-load-mode'
 - `compile-angel-on-save-local-mode'"
