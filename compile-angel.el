@@ -175,10 +175,10 @@ loaded."
 (defvar compile-angel-on-load-hook-after-load-functions t
   "Non-nil to compile missed .el during `after-load-functions'.")
 
-(defvar compile-angel-on-load-compile-features t
-  "Non-nil to compile features listed in the `features' variable.
-When `compile-angel-on-load-mode' is activated, this ensures that all features
-listed in the `features' variable are compiled.")
+(defvar compile-angel-on-load-compile-loaded t
+  "Non-nil to compile all uncompiled files in the load history.
+This ensures that all files loaded before `compile-angel-on-load-mode' is
+activated are compiled when this mode is activated.")
 
 ;;; Internal variables
 
@@ -189,6 +189,11 @@ listed in the `features' variable are compiled.")
 (defvar compile-angel--native-compile-when-jit-enabled nil)
 (defvar compile-angel--el-file-regexp nil)
 (defvar compile-angel--excluded-path-suffixes-regexps nil)
+
+;;; Constants
+
+(defconst compile-angel--need-compilation
+  (mapcar (lambda (ext) (concat ".el" ext)) load-file-rep-suffixes))
 
 ;;; Functions
 
@@ -419,8 +424,7 @@ Checks caches before performing computation."
                                   load-path
                                   (if nosuffix
                                       load-file-rep-suffixes
-                                    (mapcar (lambda (s) (concat ".el" s))
-                                            load-file-rep-suffixes)))))
+                                    compile-angel--need-compilation))))
       result)))
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix)
@@ -479,13 +483,15 @@ FEATURE and FILENAME are the same arguments as the `require' function."
              "compile-angel--advice-before-require %s (%s)")
      el-file (type-of el-file))))
 
-(defun compile-angel-compile-features ()
-  "Compile all loaded features that are in the `features' variable."
+(defun compile-angel-compile-loaded ()
+  "Compile all previously loaded files."
   (let ((compile-angel--native-compile-when-jit-enabled t))
-    (dolist (feature features)
-      (compile-angel--debug-message
-       "compile-angel-compile-features: %s" feature)
-      (compile-angel--entry-point nil feature))))
+    (dolist (entry load-history)
+      (let ((fname (car entry)))
+        (when (member (file-name-extension fname t) compile-angel--need-compilation)
+          (compile-angel--debug-message
+           "compile-angel-compile-loaded: %s" fname)
+          (compile-angel--entry-point fname))))))
 
 (defun compile-angel--find-el-file (file)
   "Find the .el file corresponding to FILE.
@@ -635,8 +641,8 @@ be JIT compiled."
         (when compile-angel-enable-native-compile
           (add-hook 'native-comp-async-all-done-hook #'compile-angel--ensure-jit-compile))
         ;; Compile features
-        (when compile-angel-on-load-compile-features
-          (compile-angel-compile-features))
+        (when compile-angel-on-load-compile-loaded
+          (compile-angel-compile-loaded))
         ;; Advices
         (when compile-angel-on-load-advise-require
           (advice-add 'require :before #'compile-angel--advice-before-require))
