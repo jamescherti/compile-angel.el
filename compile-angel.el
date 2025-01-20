@@ -492,10 +492,12 @@ FEATURE and FILENAME are the same arguments as the `require' function."
         (exts (compile-angel--el-file-extensions)))
     (dolist (entry load-history)
       (let ((fname (car entry)))
-        (when (member (file-name-extension fname t) exts)
-          (compile-angel--debug-message
-           "compile-angel-compile-loaded: %s" fname)
-          (compile-angel--entry-point fname))))))
+        (if (member (file-name-extension fname t) exts)
+            (progn
+              (compile-angel--debug-message
+               "compile-angel-compile-loaded: %s" fname)
+              (compile-angel--entry-point fname))
+          (puthash fname t compile-angel--list-compiled-files))))))
 
 (defun compile-angel--find-el-file (file)
   "Find the .el file corresponding to FILE.
