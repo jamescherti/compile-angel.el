@@ -620,6 +620,9 @@ NEW-VALUE is the value of the variable."
 (defun compile-angel--is-el-file (file)
   "Return non-nil if FILE is an el-file."
   (when compile-angel--el-file-regexp
+    ;; A variable watcher (the `compile-angel--update-el-file-regexp` function)
+    ;; dynamically updates `compile-angel--el-file-regexp` whenever
+    ;; `load-file-rep-suffixes` is modified.
     (string-match-p compile-angel--el-file-regexp file)))
 
 (defun compile-angel--ensure-jit-compile ()
