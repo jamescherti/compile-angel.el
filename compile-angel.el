@@ -488,11 +488,10 @@ FEATURE and FILENAME are the same arguments as the `require' function."
 
 (defun compile-angel-compile-loaded ()
   "Compile all previously loaded files."
-  (let ((compile-angel--native-compile-when-jit-enabled t)
-        (exts (compile-angel--el-file-extensions)))
+  (let ((compile-angel--native-compile-when-jit-enabled t))
     (dolist (entry load-history)
       (let ((fname (car entry)))
-        (if (member (file-name-extension fname t) exts)
+        (if (compile-angel--is-el-file fname)
             (progn
               (compile-angel--debug-message
                "compile-angel-compile-loaded: %s" fname)
