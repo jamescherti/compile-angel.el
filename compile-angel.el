@@ -175,10 +175,10 @@ loaded."
 (defvar compile-angel-on-load-hook-after-load-functions t
   "Non-nil to compile missed .el during `after-load-functions'.")
 
-(define-obsolete-variable-alias
-  'compile-angel-on-load-compile-features
-  'compile-angel-on-load-compile-load-history
-  "1.0.5" "Use `compile-angel-on-load-compile-load-history' instead.")
+(defvar compile-angel-on-load-compile-features t
+  "Non-nil to compile features listed in the `features' variable.
+When `compile-angel-on-load-mode' is activated, this ensures that all features
+listed in the `features' variable are compiled.")
 
 (defvar compile-angel-on-load-compile-load-history t
   "Non-nil to compile all uncompiled files in the load history.
@@ -498,6 +498,14 @@ FEATURE and FILENAME are the same arguments as the `require' function."
              "compile-angel--compile-load-history: %s" fname)
             (compile-angel--entry-point fname)))))))
 
+(defun compile-angel--compile-features ()
+  "Compile all loaded features that are in the `features' variable."
+  (let ((compile-angel--native-compile-when-jit-enabled t))
+    (dolist (feature features)
+      (compile-angel--debug-message
+       "compile-angel-compile-features: %s" feature)
+      (compile-angel--entry-point nil feature))))
+
 (defun compile-angel--find-el-file (file)
   "Find the .el file corresponding to FILE.
 
@@ -648,6 +656,9 @@ be JIT compiled."
         ;; Compile features
         (when compile-angel-on-load-compile-load-history
           (compile-angel--compile-load-history))
+        ;; Compile features
+        (when compile-angel-on-load-compile-features
+          (compile-angel--compile-features))
         ;; Advices
         (when compile-angel-on-load-advise-require
           (advice-add 'require :before #'compile-angel--advice-before-require))
