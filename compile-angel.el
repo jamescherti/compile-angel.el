@@ -175,6 +175,10 @@ loaded."
 (defvar compile-angel-on-load-hook-after-load-functions t
   "Non-nil to compile missed .el during `after-load-functions'.")
 
+(define-obsolete-variable-alias
+  'compile-angel-on-load-compile-features 'compile-angel-on-load-compile-loaded
+  "1.0.5" "Use `compile-angel-on-load-compile-loaded' instead.")
+
 (defvar compile-angel-on-load-compile-loaded t
   "Non-nil to compile all uncompiled files in the load history.
 This ensures that all files loaded before `compile-angel-on-load-mode' is
@@ -190,12 +194,11 @@ activated are compiled when this mode is activated.")
 (defvar compile-angel--el-file-regexp nil)
 (defvar compile-angel--excluded-path-suffixes-regexps nil)
 
-;;; Constants
-
-(defconst compile-angel--need-compilation
-  (mapcar (lambda (ext) (concat ".el" ext)) load-file-rep-suffixes))
-
 ;;; Functions
+
+(defun compile-angel--el-file-extensions ()
+  "Return a list of valid file extensions for uncompiled Elisp files."
+  (mapcar (lambda (ext) (concat ".el" ext)) load-file-rep-suffixes))
 
 (defun compile-angel--insert-message (buffer-name msg &rest args)
   "Insert formatted MSG with ARGS into BUFFER-NAME buffer."
@@ -424,7 +427,7 @@ Checks caches before performing computation."
                                   load-path
                                   (if nosuffix
                                       load-file-rep-suffixes
-                                    compile-angel--need-compilation))))
+                                    (compile-angel--el-file-extensions)))))
       result)))
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix)
@@ -485,10 +488,11 @@ FEATURE and FILENAME are the same arguments as the `require' function."
 
 (defun compile-angel-compile-loaded ()
   "Compile all previously loaded files."
-  (let ((compile-angel--native-compile-when-jit-enabled t))
+  (let ((compile-angel--native-compile-when-jit-enabled t)
+        (exts (compile-angel--el-file-extensions)))
     (dolist (entry load-history)
       (let ((fname (car entry)))
-        (when (member (file-name-extension fname t) compile-angel--need-compilation)
+        (when (member (file-name-extension fname t) exts)
           (compile-angel--debug-message
            "compile-angel-compile-loaded: %s" fname)
           (compile-angel--entry-point fname))))))
