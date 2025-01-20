@@ -176,10 +176,11 @@ loaded."
   "Non-nil to compile missed .el during `after-load-functions'.")
 
 (define-obsolete-variable-alias
-  'compile-angel-on-load-compile-features 'compile-angel-on-load-compile-loaded
-  "1.0.5" "Use `compile-angel-on-load-compile-loaded' instead.")
+  'compile-angel-on-load-compile-features
+  'compile-angel-on-load-compile-load-history
+  "1.0.5" "Use `compile-angel-on-load-compile-load-history' instead.")
 
-(defvar compile-angel-on-load-compile-loaded t
+(defvar compile-angel-on-load-compile-load-history t
   "Non-nil to compile all uncompiled files in the load history.
 This ensures that all files loaded before `compile-angel-on-load-mode' is
 activated are compiled when this mode is activated.")
@@ -486,17 +487,16 @@ FEATURE and FILENAME are the same arguments as the `require' function."
              "compile-angel--advice-before-require %s (%s)")
      el-file (type-of el-file))))
 
-(defun compile-angel-compile-loaded ()
-  "Compile all previously loaded files."
+(defun compile-angel--compile-load-history ()
+  "Compile `load-history', which tracks all previously loaded files."
   (let ((compile-angel--native-compile-when-jit-enabled t))
     (dolist (entry load-history)
       (let ((fname (car entry)))
-        (if (compile-angel--is-el-file fname)
-            (progn
-              (compile-angel--debug-message
-               "compile-angel-compile-loaded: %s" fname)
-              (compile-angel--entry-point fname))
-          (puthash fname t compile-angel--list-compiled-files))))))
+        (when (compile-angel--is-el-file fname)
+          (progn
+            (compile-angel--debug-message
+             "compile-angel--compile-load-history: %s" fname)
+            (compile-angel--entry-point fname)))))))
 
 (defun compile-angel--find-el-file (file)
   "Find the .el file corresponding to FILE.
@@ -646,8 +646,8 @@ be JIT compiled."
         (when compile-angel-enable-native-compile
           (add-hook 'native-comp-async-all-done-hook #'compile-angel--ensure-jit-compile))
         ;; Compile features
-        (when compile-angel-on-load-compile-loaded
-          (compile-angel-compile-loaded))
+        (when compile-angel-on-load-compile-load-history
+          (compile-angel--compile-load-history))
         ;; Advices
         (when compile-angel-on-load-advise-require
           (advice-add 'require :before #'compile-angel--advice-before-require))
