@@ -118,12 +118,12 @@ include all extensions associated with .el files."
 (defcustom compile-angel-excluded-files-regexps nil
   "A list of regular expressions to exclude certain .el files from compilation.
 
-(It is advisable to use `compile-angel-excluded-files' instead of
+It is advisable to use `compile-angel-excluded-files' instead of
 `compile-angel-excluded-files-regexps', as it simplifies matching file names.
 Regular expressions may become unnecessarily complex in this context,
 particularly since .el files might also end with the extension .el.gz on certain
 configurations. Furthermore, Emacs regular expressions differ from PCRE, adding
-another layer of potential complexity.)
+another layer of potential complexity.
 
 These regular expression apply to all modes:
 - `compile-angel-on-load-mode'
@@ -283,8 +283,7 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
 
           (t
            (compile-angel--debug-message "Native-compilation: %s" el-file)
-           (let ((inhibit-message (not (or compile-angel-verbose
-                                           compile-angel-debug))))
+           (let ((inhibit-message (not compile-angel-verbose)))
              (native-compile-async el-file)))))))
 
 (defun compile-angel--byte-compile (el-file elc-file)
@@ -308,8 +307,7 @@ Return non-nil to allow native compilation."
     (let* ((after-change-major-mode-hook
             (and (fboundp 'global-font-lock-mode-enable-in-buffer)
                  (list 'global-font-lock-mode-enable-in-buffer)))
-           (inhibit-message (not (or compile-angel-verbose
-                                     compile-angel-debug)))
+           (inhibit-message (not compile-angel-verbose))
            (prog-mode-hook nil)
            (emacs-lisp-mode-hook nil)
            (byte-compile-result
@@ -645,6 +643,19 @@ be JIT compiled."
                  compile-angel--list-jit-native-compiled-files)
       (clrhash compile-angel--list-jit-native-compiled-files))))
 
+(defun compile-angel--suppress-wrote-messages (original-func &rest args)
+  "Suppress Wrote messages when calling ORIGINAL-FUNC with ARGS."
+  (let ((original-message (symbol-function 'message)))
+    (cl-letf (((symbol-function #'message)
+               #'(lambda (format-string &rest messages-args)
+                   (let ((combined-args (cons format-string messages-args)))
+                     (when (or compile-angel-verbose
+                               (not (and (stringp format-string)
+                                         (string-prefix-p "Wrote "
+                                                          format-string))))
+                       (apply original-message combined-args))))))
+      (apply original-func args))))
+
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
   "Toggle `compile-angel-mode' then compiles .el files before they are loaded."
@@ -660,12 +671,15 @@ be JIT compiled."
           (add-hook 'after-load-functions #'compile-angel--hook-after-load-functions))
         (when compile-angel-enable-native-compile
           (add-hook 'native-comp-async-all-done-hook #'compile-angel--ensure-jit-compile))
-        ;; Compile features
+        ;; Compile load-history
         (when compile-angel-on-load-compile-load-history
           (compile-angel--compile-load-history))
         ;; Compile features
         (when compile-angel-on-load-compile-features
           (compile-angel--compile-features))
+        ;; Suppress Wrote messages when calling byte-compile-file
+        (advice-add 'byte-compile-file :around
+                    #'compile-angel--suppress-wrote-messages)
         ;; Advices
         (when compile-angel-on-load-advise-require
           (advice-add 'require :before #'compile-angel--advice-before-require))
