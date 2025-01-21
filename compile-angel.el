@@ -546,18 +546,14 @@ otherwise, return nil."
   "Compile FILE after load."
   (let ((file (compile-angel--find-el-file file)))
     (when file
-      (compile-angel--debug-message
-       "compile-angel--hook-after-load-functions: %s" file)
       (if (not (compile-angel--is-el-file file))
           (compile-angel--debug-message
            "compile-angel--hook-after-load-functions: IGNORE: %s" file)
-        (progn
-          (compile-angel--debug-message
-           "compile-angel--hook-after-load-functions: COMPILE: %s"
-           file)
-          (let ((compile-angel--native-compile-when-jit-enabled t)
-                (compile-angel--force-compilation t))
-            (compile-angel--entry-point file)))))))
+        (compile-angel--debug-message
+         "compile-angel--hook-after-load-functions: COMPILE: %s" file)
+        (let ((compile-angel--native-compile-when-jit-enabled t)
+              (compile-angel--force-compilation t))
+          (compile-angel--entry-point file))))))
 
 (defun compile-angel--update-el-file-regexp (symbol new-value
                                                     _operation _where)
