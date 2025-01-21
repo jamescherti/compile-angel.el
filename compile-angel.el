@@ -464,7 +464,10 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
                                              &optional filename _noerror)
   "Recompile the library before `require'.
 FEATURE and FILENAME are the same arguments as the `require' function."
-  (unless (featurep feature)
+  (if (featurep feature)
+      (compile-angel--debug-message
+       "SKIP: REQUIRE (Feature already provided): %s (%s) | %s (%s)"
+       filename (type-of filename) feature (type-of feature))
     (compile-angel--debug-message
      "REQUIRE: %s (%s) | %s (%s)"
      filename (type-of filename) feature (type-of feature))
