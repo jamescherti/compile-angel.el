@@ -26,7 +26,7 @@ After extensive experimentation and research, the author developed *compile-ange
   - [Frequently Asked Questions](#frequently-asked-questions)
     - [What are some interesting Emacs customizations to consider alongside compile-angel?](#what-are-some-interesting-emacs-customizations-to-consider-alongside-compile-angel)
     - [How to exclude certain .el files from compilation in compile-angel?](#how-to-exclude-certain-el-files-from-compilation-in-compile-angel)
-    - [How to exclude recentf and savehist files?](#how-to-exclude-recentf-and-savehist-files)
+    - [How to exclude custom-file, recentf, savehist files?](#how-to-exclude-custom-file-recentf-savehist-files)
     - [How to enable or disable byte-compilation and native-compilation?](#how-to-enable-or-disable-byte-compilation-and-native-compilation)
     - [Why not just use the package-recompile-all function?](#why-not-just-use-the-package-recompile-all-function)
     - [What is the difference between auto-compile and compile-angel?](#what-is-the-difference-between-auto-compile-and-compile-angel)
@@ -140,19 +140,26 @@ For instance, the following excludes any path that ends with `suffix.el` (or its
 
 If a path suffix in `compile-angel-excluded-files` ends with `.el`, `compile-angel` will automatically exclude the `.el.gz` variant of that file. For instance, specifying `suffix.el` will also exclude `suffix.el.gz`.
 
-### How to exclude recentf and savehist files?
+### How to exclude custom-file, recentf, savehist files?
 
-You can exclude the recentf and savehist files using the following code snippet:
+You can exclude the custom-file, recentf, and savehist files using the following code snippet:
 ``` emacs-lisp
+;; Exclude the custom-file, recentf, and savehist files
+;;
 ;; Ensure that compile-angel is loaded using `require`, `use-package`, or
 ;; another package manager, as compile-angel-excluded-files is declared after
 ;; the package is loaded.
-
 (with-eval-after-load "savehist"
-  (push savehist-file compile-angel-excluded-files))
+  (push (concat "/" (file-name-nondirectory savehist-file))
+        compile-angel-excluded-files))
 
 (with-eval-after-load "recentf"
-  (push recentf-save-file compile-angel-excluded-files))
+  (push (concat "/" (file-name-nondirectory recentf-save-file))
+        compile-angel-excluded-files))
+
+(with-eval-after-load "cus-edit"
+  (push (concat "/" (file-name-nondirectory custom-file))
+        compile-angel-excluded-files))
 
 ;; Enable the (compile-angel-on-load-mode) mode after the above
 ```
