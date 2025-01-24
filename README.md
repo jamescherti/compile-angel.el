@@ -90,6 +90,9 @@ Here is how to install *compile-angel* on Doom Emacs:
 
 2. Add to the top of `~/.doom.d/config.el`:
 ```elisp
+;; Set `compile-angel-verbose' to nil to silence compile-angel.
+(setq compile-angel-verbose t)
+
 (setq compile-angel-predicate-function
       (lambda (file)
         (and (not (file-in-directory-p file doom-user-dir))
