@@ -375,13 +375,14 @@ FEATURE-NAME is a string representing the feature name being loaded."
      (t
       (if compile-angel-enable-byte-compile
           (progn
-            (compile-angel--verbose-message
-             "Byte and Native compilation: %s" el-file)
+            (when compile-angel-debug
+              (message "Byte and Native compilation: %s" el-file))
             (when (compile-angel--byte-compile el-file elc-file)
               (when compile-angel-enable-native-compile
                 (compile-angel--native-compile el-file))))
         (when compile-angel-enable-native-compile
-          (compile-angel--verbose-message "Native-compilation only: %s" el-file)
+          (when compile-angel-debug
+            (message "Native-compilation only: %s" el-file))
           (compile-angel--native-compile el-file)))))))
 
 (defun compile-angel--compile-current-buffer ()
