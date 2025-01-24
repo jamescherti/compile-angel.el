@@ -20,7 +20,7 @@ After extensive experimentation and research, the author developed *compile-ange
 - [compile-angel.el - Speed up Emacs by Byte-compiling and Native-compiling all .el files](#compile-angelel---speed-up-emacs-by-byte-compiling-and-native-compiling-all-el-files)
   - [Why use compile-angel?](#why-use-compile-angel)
   - [Before installing](#before-installing)
-  - [Installation](#installation)
+  - [Installation of compile-angel](#installation-of-compile-angel)
     - [Emacs](#emacs)
     - [Doom Emacs](#doom-emacs)
   - [Frequently Asked Questions](#frequently-asked-questions)
@@ -28,6 +28,7 @@ After extensive experimentation and research, the author developed *compile-ange
     - [How to exclude certain .el files from compilation in compile-angel?](#how-to-exclude-certain-el-files-from-compilation-in-compile-angel)
     - [How to exclude custom-file, recentf, savehist files?](#how-to-exclude-custom-file-recentf-savehist-files)
     - [How to enable or disable byte-compilation and native-compilation?](#how-to-enable-or-disable-byte-compilation-and-native-compilation)
+    - [What's the point of using compile-angel? My Emacs compiles packages automatically anyway!](#whats-the-point-of-using-compile-angel-my-emacs-compiles-packages-automatically-anyway)
     - [Why not just use the package-recompile-all function?](#why-not-just-use-the-package-recompile-all-function)
     - [What is the difference between auto-compile and compile-angel?](#what-is-the-difference-between-auto-compile-and-compile-angel)
   - [Author and License](#author-and-license)
@@ -57,7 +58,7 @@ Additionally, ensure that native compilation is enabled:
 
 This should return t: `(native-comp-available-p)`
 
-## Installation
+## Installation of compile-angel
 
 ### Emacs
 
@@ -181,6 +182,16 @@ Example configuration:
 (setq compile-angel-enable-byte-compile t)
 (setq compile-angel-enable-native-compile t)
 ```
+
+### What's the point of using compile-angel? My Emacs compiles packages automatically anyway!
+
+Emacs often skips the compilation of certain Elisp files. To verify this:
+
+- Install `compile-angel`,
+- Enable verbose mode: `(setq compile-angel-verbose t)`
+- Enable the mode: `(compile-angel-on-load-mode)`
+
+Observe whether `compile-angel` compiles any Elisp files (you will see "Wrote" `.elc` files in the `*Messages*` buffer). If it does, this indicates that Emacs missed compiling those files and that `compile-angel` can help improve the performance of your Emacs.
 
 ### Why not just use the package-recompile-all function?
 
