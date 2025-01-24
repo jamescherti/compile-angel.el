@@ -97,6 +97,7 @@ Here is how to install *compile-angel* on Doom Emacs:
         (and (not (file-in-directory-p file doom-user-dir))
              (not (file-in-directory-p file (expand-file-name "lisp" doom-emacs-dir)))
              (not (file-in-directory-p file (expand-file-name doom-modules-dir))))))
+
 (compile-angel-on-load-mode)
 (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 ```
