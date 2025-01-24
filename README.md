@@ -71,7 +71,7 @@ To install *compile-angel* on Emacs from MELPA:
   :ensure t
   :demand t
   :custom
-  ;; Set `compile-angel-verbose' to nil to silence `compile-angel`.
+  ;; Set `compile-angel-verbose' to nil to silence compile-angel.
   (compile-angel-verbose t)
   :config
   (compile-angel-on-load-mode)
