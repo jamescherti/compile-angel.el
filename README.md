@@ -30,6 +30,9 @@ After extensive experimentation and research, the author developed *compile-ange
     - [How to enable or disable byte-compilation and native-compilation?](#how-to-enable-or-disable-byte-compilation-and-native-compilation)
     - [What's the point of using compile-angel? My Emacs compiles packages automatically anyway!](#whats-the-point-of-using-compile-angel-my-emacs-compiles-packages-automatically-anyway)
     - [Why not just use the package-recompile-all function?](#why-not-just-use-the-package-recompile-all-function)
+    - [What is the impact on Emacs startup?](#what-is-the-impact-on-emacs-startup)
+    - [What's the difference between native and byte compiled?](#whats-the-difference-between-native-and-byte-compiled)
+    - [What are some use-cases of compile-angel?](#what-are-some-use-cases-of-compile-angel)
     - [What is the difference between auto-compile and compile-angel?](#what-is-the-difference-between-auto-compile-and-compile-angel)
   - [Author and License](#author-and-license)
   - [Links](#links)
@@ -200,6 +203,24 @@ The *package-recompile-all* function is effective for recompiling files within p
 In the *compile-angel* author's configuration, for example, *package-recompile-all* skipped most of the local packages loaded using *use-package* with *:ensure nil* or *require*. Additionally, *package-recompile-all* does not compile transparently; the user must manually run it and wait for it to complete.
 
 The *compile-angel* package, on the other hand, transparently compiles all packages without any user intervention. The user simply needs to enable *(compile-angel-on-load-mode)*.
+
+### What is the impact on Emacs startup?
+
+The author of compile-angel reports an Emacs startup time of 0.25 seconds with compile-angel enabled and 0.23 seconds without it. Feel free to share your own benchmarks.
+
+### What's the difference between native and byte compiled?
+
+Byte-compilation translates Elisp code into an intermediate bytecode .elc that is faster to load than .el files.
+
+Native-compilation goes a step further by converting this bytecode into machine code, which is directly executed by the CPU without the need for an interpreter. Native-compilation significantly improves performance.
+
+### What are some use-cases of compile-angel?
+
+Emacs often misses the compilation of certain Elisp files.
+
+One of the author's primary use cases involves maintaining numerous Emacs packages, which are synchronized into `~/.emacs.d` using automation scripts and `rsync` for testing during development. The author appreciates how compile-angel automatically compiles the files synchronized to the `~/.emacs.d` directory while working on these packages.
+
+There are many other use cases as well. For example, some Emacs users prefer storing packages locally or in GitHub repositories, periodically updating them using `git pull`. This approach is often adopted for packages that are no longer actively maintained, enabling users to manage them independently. In such cases, compile-angel can seamlessly handle both byte-compiling and native-compiling these packages whenever local modifications are made.
 
 ### What is the difference between auto-compile and compile-angel?
 
