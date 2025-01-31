@@ -282,8 +282,11 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
             "Native-compilation ignored (up-to-date): %s" el-file))
 
           (t
-           (compile-angel--debug-message "Native-compilation: %s" el-file)
-           (let ((inhibit-message (not compile-angel-verbose)))
+           (let ((el-file-abbreviated (abbreviate-file-name el-file)))
+             (compile-angel--verbose-message
+              "Async native-compilation: %s" el-file-abbreviated))
+           (let ((inhibit-message (not (or (not compile-angel-verbose)
+                                           (not compile-angel-debug)))))
              (native-compile-async el-file)))))))
 
 (defun compile-angel--byte-compile (el-file elc-file)
@@ -307,24 +310,34 @@ Return non-nil to allow native compilation."
     (let* ((after-change-major-mode-hook
             (and (fboundp 'global-font-lock-mode-enable-in-buffer)
                  (list 'global-font-lock-mode-enable-in-buffer)))
-           (inhibit-message (not compile-angel-verbose))
+           (inhibit-message (not (or (not compile-angel-verbose)
+                                     (not compile-angel-debug))))
+           (el-file-abbreviated (abbreviate-file-name el-file))
            (prog-mode-hook nil)
            (emacs-lisp-mode-hook nil)
            (byte-compile-result
-            (byte-compile-file el-file)))
+            (let ((original-message (symbol-function 'message)))
+              (cl-letf (((symbol-function #'message)
+                         #'(lambda (format-string &rest messages-args)
+                             (let ((combined-args (cons format-string
+                                                        messages-args)))
+                               (when compile-angel-debug
+                                 (apply original-message combined-args))))))
+                (byte-compile-file el-file)))))
       (cond
        ((eq byte-compile-result 'no-byte-compile)
         (compile-angel--debug-message
-         "Byte-compilation Ignore (no-byte-compile): %s" el-file)
+         "Byte-compilation Ignore (no-byte-compile): %s" el-file-abbreviated)
         nil)
 
        ((not byte-compile-result)
-        (compile-angel--debug-message "Byte-compilation error: %s" el-file)
+        (compile-angel--verbose-message "Byte-compilation error: %s"
+                                        el-file-abbreviated)
         nil)
 
        (byte-compile-result
-        (compile-angel--debug-message
-         "Byte-compilation successful: %s" el-file)
+        (compile-angel--verbose-message
+         "Byte-compilation successful: %s" el-file-abbreviated)
         t))))))
 
 (defun compile-angel--need-compilation-p (el-file feature-name)
@@ -640,19 +653,6 @@ be JIT compiled."
                  compile-angel--list-jit-native-compiled-files)
       (clrhash compile-angel--list-jit-native-compiled-files))))
 
-(defun compile-angel--suppress-wrote-messages (original-func &rest args)
-  "Suppress Wrote messages when calling ORIGINAL-FUNC with ARGS."
-  (let ((original-message (symbol-function 'message)))
-    (cl-letf (((symbol-function #'message)
-               #'(lambda (format-string &rest messages-args)
-                   (let ((combined-args (cons format-string messages-args)))
-                     (when (or compile-angel-verbose
-                               (not (and (stringp format-string)
-                                         (string-prefix-p "Wrote "
-                                                          format-string))))
-                       (apply original-message combined-args))))))
-      (apply original-func args))))
-
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
   "Toggle `compile-angel-mode' then compiles .el files before they are loaded."
@@ -674,9 +674,6 @@ be JIT compiled."
         ;; Compile features
         (when compile-angel-on-load-compile-features
           (compile-angel--compile-features))
-        ;; Suppress Wrote messages when calling byte-compile-file
-        (advice-add 'byte-compile-file :around
-                    #'compile-angel--suppress-wrote-messages)
         ;; Advices
         (when compile-angel-on-load-advise-require
           (advice-add 'require :before #'compile-angel--advice-before-require))

@@ -120,17 +120,20 @@ Below are a few interesting options:
 (setq native-comp-async-query-on-exit t)
 (setq confirm-kill-processes t)
 
-;; Show buffer when there is a warning.
-;; (NOT RECOMMENDED, except during development).
-(setq compile-angel-verbose t)
-(setq warning-minimum-level :warning)
-(setq byte-compile-verbose t)
-(setq byte-compile-warnings t)
-(setq native-comp-async-report-warnings-errors t)
-(setq native-comp-warning-on-missing-source t)
-
 ;; Non-nil means to native compile packages as part of their installation.
 (setq package-native-compile t)
+
+;; -------------------------------------------------
+;; Show buffer when there is a warning.
+;; (NOT RECOMMENDED, except during development).
+;; -------------------------------------------------
+;; (setq compile-angel-verbose t)
+;;
+;; (setq warning-minimum-level :warning)
+;; (setq byte-compile-verbose t)
+;; (setq byte-compile-warnings t)
+;; (setq native-comp-async-report-warnings-errors t)
+;; (setq native-comp-warning-on-missing-source t)
 ```
 
 ### How to exclude certain .el files from compilation in compile-angel?
