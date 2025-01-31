@@ -144,6 +144,19 @@ This displays a lot of messages."
   :type 'boolean
   :group 'compile-angel)
 
+(defcustom compile-angel-byte-compile-report-issues nil
+  "Controls whether byte-compilation warnings are reported.
+
+When set to nil, `byte-compile-file' will disregard the value of
+`byte-compile-warnings', preventing byte-compilation warnings from being shown
+to the user.
+
+When set to a non-nil value, this variable ensures that the value of
+`byte-compile-warnings' is respected during byte-compilation and warnings are
+displayed accordingly."
+  :type 'boolean
+  :group 'compile-angel)
+
 (defcustom compile-angel-predicate-function nil
   "Function that determines if an .el file should be compiled.
 It takes one argument (an .el file) and returns t if the file should be
@@ -307,7 +320,10 @@ Return non-nil to allow native compilation."
     t)
 
    (t
-    (let* ((after-change-major-mode-hook
+    (let* ((byte-compile-warnings
+            (when compile-angel-byte-compile-report-issues
+              byte-compile-warnings))
+           (after-change-major-mode-hook
             (and (fboundp 'global-font-lock-mode-enable-in-buffer)
                  (list 'global-font-lock-mode-enable-in-buffer)))
            (inhibit-message (not (or (not compile-angel-verbose)

@@ -128,6 +128,7 @@ Below are a few interesting options:
 ;; (NOT RECOMMENDED, except during development).
 ;; -------------------------------------------------
 ;; (setq compile-angel-verbose t)
+;; (setq compile-angel-byte-compile-report-issues t)
 ;;
 ;; (setq warning-minimum-level :warning)
 ;; (setq byte-compile-verbose t)
