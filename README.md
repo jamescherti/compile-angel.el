@@ -95,18 +95,9 @@ Here is how to install *compile-angel* on Doom Emacs:
 ```elisp
 ;; Set `compile-angel-verbose' to nil to silence compile-angel.
 (setq compile-angel-verbose t)
-
-(setq compile-angel-predicate-function
-      (lambda (file)
-        (and (not (file-in-directory-p file doom-user-dir))
-             (not (file-in-directory-p file (expand-file-name "lisp" doom-emacs-dir)))
-             (not (file-in-directory-p file (expand-file-name doom-modules-dir))))))
-
 (compile-angel-on-load-mode)
 (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 ```
-
-(This ensures that the Doom Emacs Lisp files and modules are not compiled by compile-angel. This is important because `.el` files in these directories should never be compiled, or Doom may fail to load some of them correctly.)
 
 ## Frequently Asked Questions
 

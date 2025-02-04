@@ -373,6 +373,23 @@ FEATURE-NAME is a string representing the feature name being loaded."
      "SKIP (Predicate function returned nil): %s | %s" el-file feature-name)
     nil)
 
+   ;; This is specific to Doom Emacs: It ensures that the Doom Emacs user
+   ;; directory, Emacs directory, and modules directory are not compiled by
+   ;; compile-angel. This is important because `.el` files in these directories
+   ;; should never be compiled, or Doom may fail to load some of them correctly.
+   ((or (and (boundp 'doom-user-dir)
+             (file-in-directory-p el-file doom-user-dir))
+        (and (boundp 'doom-emacs-dir)
+             (file-in-directory-p
+              el-file (expand-file-name "lisp" doom-emacs-dir)))
+        (and (boundp 'doom-modules-dir)
+             (file-in-directory-p
+              el-file (expand-file-name doom-modules-dir))))
+    (compile-angel--debug-message
+     "SKIP (Doom Emacs modules/emacs/user directory): %s | %s"
+     el-file feature-name)
+    nil)
+
    ((not (compile-angel--is-el-file el-file))
     (compile-angel--debug-message
      "SKIP (Does not end with the .el): %s | %s" el-file feature-name)
