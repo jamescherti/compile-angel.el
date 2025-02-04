@@ -366,30 +366,6 @@ FEATURE-NAME is a string representing the feature name being loaded."
      "SKIP (el-file is nil): %s | %s" el-file feature-name)
     nil)
 
-   ((not (if compile-angel-predicate-function
-             (funcall compile-angel-predicate-function el-file)
-           t))
-    (compile-angel--debug-message
-     "SKIP (Predicate function returned nil): %s | %s" el-file feature-name)
-    nil)
-
-   ;; This is specific to Doom Emacs: It ensures that the Doom Emacs user
-   ;; directory, Emacs directory, and modules directory are not compiled by
-   ;; compile-angel. This is important because `.el` files in these directories
-   ;; should never be compiled, or Doom may fail to load some of them correctly.
-   ((or (and (boundp 'doom-user-dir)
-             (file-in-directory-p el-file doom-user-dir))
-        (and (boundp 'doom-emacs-dir)
-             (file-in-directory-p
-              el-file (expand-file-name "lisp" doom-emacs-dir)))
-        (and (boundp 'doom-modules-dir)
-             (file-in-directory-p
-              el-file (expand-file-name doom-modules-dir))))
-    (compile-angel--debug-message
-     "SKIP (Doom Emacs modules/emacs/user directory): %s | %s"
-     el-file feature-name)
-    nil)
-
    ((not (compile-angel--is-el-file el-file))
     (compile-angel--debug-message
      "SKIP (Does not end with the .el): %s | %s" el-file feature-name)
@@ -402,10 +378,73 @@ FEATURE-NAME is a string representing the feature name being loaded."
      "SKIP (In the skip hash list): %s | %s" el-file feature-name)
     nil)
 
-   ((compile-angel--el-file-excluded-p el-file)
-    nil)
+   (t
+    (let ((decision (if compile-angel-predicate-function
+                        (funcall compile-angel-predicate-function el-file)
+                      t)))
+      (when (and (not (eq decision t))  ; t = :continue
+                 (not (eq decision nil))  ; nil = :ignore
 
-   (t t)))
+                 ;; `:compile' have precedence over excluded files
+                 ;; (`compile-angel-excluded-files' and
+                 ;; `compile-angel-excluded-files-regexps')
+                 (not (eq decision :compile))
+
+                 ;; `:continue' is the same as nil
+                 (not (eq decision :continue))
+
+                 ;; Do not use `:force-compile'. Use `:compile' instead.
+                 (not (eq decision :force-compile))
+
+                 ;; Do not compile the file
+                 (not (eq decision :ignore)))
+        (message (format
+                  (concat "[compile-angel] WARNING: The predicate function "
+                          "`compile-angel-predicate-function' returned an "
+                          "invalid value: %s")
+                  decision))
+        (setq decision t))
+      (cond
+       ((eq decision :force-compile)
+        t)
+
+       ;; This is specific to Doom Emacs: It ensures that the Doom Emacs user
+       ;; directory, Emacs directory, and modules directory are not compiled by
+       ;; compile-angel. This is important because `.el` files in these
+       ;; directories should never be compiled, or Doom may fail to load some of
+       ;; them correctly.
+       ((or (and (boundp 'doom-user-dir)
+                 (file-in-directory-p el-file doom-user-dir))
+            (and (boundp 'doom-emacs-dir)
+                 (file-in-directory-p
+                  el-file (expand-file-name "lisp" doom-emacs-dir)))
+            (and (boundp 'doom-modules-dir)
+                 (file-in-directory-p
+                  el-file (expand-file-name doom-modules-dir))))
+        (compile-angel--debug-message
+         "SKIP (Doom Emacs modules/emacs/user directory): %s | %s"
+         el-file feature-name)
+        nil)
+
+       ((eq decision :compile)
+        t)
+
+       ((eq decision :ignore)
+        (compile-angel--debug-message
+         "SKIP (Predicate function returned :ignore): %s | %s"
+         el-file feature-name)
+        nil)
+
+       ((not decision)  ; nil = :ignore
+        (compile-angel--debug-message
+         "SKIP (Predicate function returned nil): %s | %s" el-file feature-name)
+        nil)
+
+       ;; :continue starts here:
+       ((compile-angel--el-file-excluded-p el-file)
+        nil)
+
+       (t t))))))
 
 (defun compile-angel--compile-elisp (el-file)
   "Byte-compile and Native-compile the .el file EL-FILE."
@@ -421,14 +460,15 @@ FEATURE-NAME is a string representing the feature name being loaded."
      (t
       (if compile-angel-enable-byte-compile
           (progn
-            (when compile-angel-debug
-              (message "Byte and Native compilation: %s" el-file))
+            (compile-angel--debug-message
+             "[compile-angel] Byte and Native compilation: %s" el-file)
             (when (compile-angel--byte-compile el-file elc-file)
               (when compile-angel-enable-native-compile
                 (compile-angel--native-compile el-file))))
         (when compile-angel-enable-native-compile
           (when compile-angel-debug
-            (message "Native-compilation only: %s" el-file))
+            (compile-angel--debug-message
+             "Native-compilation only: %s" el-file))
           (compile-angel--native-compile el-file)))))))
 
 (defun compile-angel--compile-current-buffer ()
