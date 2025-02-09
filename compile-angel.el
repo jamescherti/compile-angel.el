@@ -200,6 +200,7 @@ activated are compiled when this mode is activated.")
 
 ;;; Internal variables
 
+(defvar compile-angel--quiet-byte-compile-file t)
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
 (defvar compile-angel--list-jit-native-compiled-files (make-hash-table :test 'equal))
 (defvar compile-angel--currently-compiling nil)
@@ -337,7 +338,11 @@ Return non-nil to allow native compilation."
                          #'(lambda (format-string &rest messages-args)
                              (let ((combined-args (cons format-string
                                                         messages-args)))
-                               (when compile-angel-debug
+                               (when (or (not compile-angel--quiet-byte-compile-file)
+                                         (and compile-angel--quiet-byte-compile-file
+                                              (and (not (string-prefix-p "Wrote" format-string))
+                                                   (not (string-prefix-p "Compiling " format-string)))))
+                                 ;; Show the message
                                  (apply original-message combined-args))))))
                 (byte-compile-file el-file)))))
       (cond
