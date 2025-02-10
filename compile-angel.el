@@ -747,6 +747,8 @@ be JIT compiled."
         ;; After load hook
         (when compile-angel-on-load-hook-after-load-functions
           (add-hook 'after-load-functions #'compile-angel--hook-after-load-functions))
+        (when compile-angel-enable-native-compile
+          (add-hook 'native-comp-async-all-done-hook #'compile-angel--ensure-jit-compile))
         ;; Compile features
         (when compile-angel-on-load-compile-features
           (compile-angel--compile-features))
@@ -754,10 +756,7 @@ be JIT compiled."
         (when compile-angel-on-load-advise-require
           (advice-add 'require :before #'compile-angel--advice-before-require))
         (when compile-angel-on-load-advise-load
-          (advice-add 'load :before #'compile-angel--advice-before-load))
-        ;; Hooks
-        (when compile-angel-enable-native-compile
-          (add-hook 'native-comp-async-all-done-hook #'compile-angel--ensure-jit-compile)))
+          (advice-add 'load :before #'compile-angel--advice-before-load)))
     ;; Hooks
     (remove-hook 'after-load-functions #'compile-angel--hook-after-load-functions)
     (remove-hook 'native-comp-async-all-done-hook #'compile-angel--ensure-jit-compile)
