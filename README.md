@@ -99,6 +99,11 @@ Here is how to install *compile-angel* on Doom Emacs:
 (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 ```
 
+3. Run the `doom sync` command:
+```
+doom sync
+```
+
 ## Frequently Asked Questions
 
 ### What are some interesting Emacs customizations to consider alongside compile-angel?
