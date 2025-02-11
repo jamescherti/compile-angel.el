@@ -34,6 +34,7 @@ After extensive experimentation and research, the author developed *compile-ange
     - [What's the difference between native and byte compiled?](#whats-the-difference-between-native-and-byte-compiled)
     - [What are some use-cases of compile-angel?](#what-are-some-use-cases-of-compile-angel)
     - [What is the difference between auto-compile and compile-angel?](#what-is-the-difference-between-auto-compile-and-compile-angel)
+    - [What are the key differences between compile-angel and not auto-compile?](#what-are-the-key-differences-between-compile-angel-and-not-auto-compile)
   - [Author and License](#author-and-license)
   - [Links](#links)
 
@@ -234,7 +235,8 @@ Jonas Bernouli, the author of auto-compile, has made some design decisions that 
 
 This is one of the reasons why opening an issue or submitting a pull request regarding the auto-compile issue above is pointless, as Jonas Bernouli is unlikely to merge it due to his design decision.
 
-Here are the main differences between compile-angel and auto-compile:
+### What are the key differences between compile-angel and not auto-compile?
+
 - Compile-angel is optimized. It is fast enough that it is nearly imperceptible to the user.
 - Compile-angel ensures that even when when the .elc file doesn't exist, the .el source file is compiled. Auto-compile, on the other hand, requires (by design, as explained above) an existing .elc file in order to compile.
 - Compile-angel ensures that files are compiled before and after they are loaded, In addition to compiling the `.el` files loaded using *load* and *require*, also handles files that auto-compile misses, using the `after-load-functions` hook. This ensures that all files are byte-compiled and native-compiled.
@@ -245,6 +247,7 @@ Here are the main differences between compile-angel and auto-compile:
 - *compile-angel-on-save-mode* supports compiling indirect buffers (clones).
 - *compile-angel-on-load-mode* compiles features that have already been loaded to make sure that they are compiled.
 - Compile-Angel can use caching to enhance performance when locating the .el file corresponding to a given feature. Auto-compile does not compile features.
+- Supports both Vanilla Emacs and Doom Emacs. For Doom Emacs, compile-angel ensures that the Doom Emacs user directory, Emacs directory, and modules directory are excluded from compilation. This is essential because .el files in these directories must not be compiled, or Doom may fail to load them correctly.
 - compile-angel-on-load-mode performs native compilation only when Emacs fails to do so. Explanation: When JIT compilation is enabled, loading a .elc file automatically triggers native compilation, making Emacs load the native-compiled version asynchronously and replacing the auto-compiled functions. (However, auto-compile disables native compilation by default, causing Emacs to skip native-compiling some files, even in save mode. When enabled, auto-compile compiles files before loading, but Emacs will still recompile them after loading the .elc file.)
 - Compile-Angel double-checks after packages are loaded to ensure that Emacs properly performs native compilation when JIT is enabled, as Emacs sometimes skips native-compiling .elc files that should be JIT compiled.
 - Prevent `byte-compile-file` from displaying Wrote messages in the *Messages* buffer unless `compile-angel-verbose` customization is set to `t`.
