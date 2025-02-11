@@ -198,6 +198,14 @@ listed in the `features' variable are compiled.")
 This ensures that all files loaded before `compile-angel-on-load-mode' is
 activated are compiled when this mode is activated.")
 
+(defcustom compile-angel-on-save-check-parens t
+  "Non-nil to check for unbalanced parentheses before compiling a file.
+This applies only to `compile-angel-on-save-local-mode' and
+`compile-angel-on-save-mode'. If unbalanced parentheses are detected, the file
+is not compiled, as the compilation would fail anyway."
+  :group 'compile-angel
+  :type 'boolean)
+
 ;;; Internal variables
 
 (defvar compile-angel--quiet-byte-compile-file t)
@@ -476,17 +484,45 @@ FEATURE-NAME is a string representing the feature name being loaded."
              "Native-compilation only: %s" el-file))
           (compile-angel--native-compile el-file)))))))
 
-(defun compile-angel--compile-current-buffer ()
+(defun compile-angel--check-parens ()
+  "Check for unbalanced parentheses in the current buffer.
+
+This function scans the entire buffer for balanced parentheses. If an imbalance
+is found, it raises a user error with details about the position of the
+unmatched parenthesis or quote, including the line number, column number, and
+the file name.
+
+If the parentheses are balanced, it returns t. If unbalanced parentheses are
+detected, it raises an error and returns nil."
+  (interactive)
+  (condition-case data
+      (progn
+        (scan-sexps (point-min) (point-max))
+        ;; Return t
+        t)
+    (scan-error
+     (let ((char (nth 2 data)))
+       (user-error
+        (concat "[compile-angel] Compilation aborted: Unmatched bracket or "
+                "quote in line %s, column %s in %s")
+        (line-number-at-pos char)
+        (let ((column (save-excursion (goto-char char) (current-column))))
+          (when (integerp column)
+            (1+ column)))
+        (let ((file-name (buffer-file-name (buffer-base-buffer))))
+          (when file-name
+            (abbreviate-file-name file-name))))
+       ;; Return nil
+       nil))))
+
+(defun compile-angel--compile-on-save ()
   "Compile the current buffer."
-  (let ((compile-angel--force-compilation t)
-        (compile-angel--native-compile-when-jit-enabled t)
-        (el-file (buffer-file-name (buffer-base-buffer))))
-    (when (and (derived-mode-p 'emacs-lisp-mode)
-               (if compile-angel-predicate-function
-                   (funcall compile-angel-predicate-function el-file)
-                 t)
-               (not (compile-angel--el-file-excluded-p el-file)))
-      (compile-angel--compile-elisp el-file))))
+  (when (derived-mode-p 'emacs-lisp-mode)
+    (let ((el-file (buffer-file-name (buffer-base-buffer)))
+          (compile-angel--force-compilation t)
+          (compile-angel--native-compile-when-jit-enabled t))
+      (when (compile-angel--check-parens)
+        (compile-angel--entry-point el-file)))))
 
 (defun compile-angel--feature-to-feature-name (feature)
   "Convert a FEATURE symbol into a feature name and return it."
@@ -773,8 +809,8 @@ be JIT compiled."
   (if compile-angel-on-save-mode
       (progn
         (compile-angel--init)
-        (add-hook 'after-save-hook #'compile-angel--compile-current-buffer))
-    (remove-hook 'after-save-hook #'compile-angel--compile-current-buffer)))
+        (add-hook 'after-save-hook #'compile-angel--compile-on-save 99))
+    (remove-hook 'after-save-hook #'compile-angel--compile-on-save)))
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-save-local-mode
@@ -785,8 +821,8 @@ be JIT compiled."
   (if compile-angel-on-save-local-mode
       (progn
         (compile-angel--init)
-        (add-hook 'after-save-hook #'compile-angel--compile-current-buffer nil t))
-    (remove-hook 'after-save-hook #'compile-angel--compile-current-buffer t)))
+        (add-hook 'after-save-hook #'compile-angel--compile-on-save 99 t))
+    (remove-hook 'after-save-hook #'compile-angel--compile-on-save t)))
 
 (provide 'compile-angel)
 ;;; compile-angel.el ends here
