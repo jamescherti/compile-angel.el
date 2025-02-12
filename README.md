@@ -168,8 +168,9 @@ You can exclude the custom-file, recentf, and savehist files using the following
         compile-angel-excluded-files))
 
 (with-eval-after-load "cus-edit"
-  (push (concat "/" (file-name-nondirectory custom-file))
-        compile-angel-excluded-files))
+  (when (stringp custom-file)
+    (push (concat "/" (file-name-nondirectory custom-file))
+          compile-angel-excluded-files)))
 
 ;; Enable the (compile-angel-on-load-mode) mode after the above
 ```
