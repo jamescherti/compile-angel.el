@@ -159,14 +159,18 @@ You can exclude the custom-file, recentf, and savehist files using the following
 ;; Ensure that compile-angel is loaded using `require`, `use-package`, or
 ;; another package manager, as compile-angel-excluded-files is declared after
 ;; the package is loaded.
+
+;; Ensure that the value of `savehist-file` is updated before proceeding
 (with-eval-after-load "savehist"
   (push (concat "/" (file-name-nondirectory savehist-file))
         compile-angel-excluded-files))
 
+;; Ensure that the value of `recentf-save-file` is updated before proceeding
 (with-eval-after-load "recentf"
   (push (concat "/" (file-name-nondirectory recentf-save-file))
         compile-angel-excluded-files))
 
+;; Ensure that the value of `custom-file` is updated before proceeding
 (with-eval-after-load "cus-edit"
   (when (stringp custom-file)
     (push (concat "/" (file-name-nondirectory custom-file))
