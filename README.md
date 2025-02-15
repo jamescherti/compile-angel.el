@@ -76,11 +76,15 @@ To install *compile-angel* on Emacs from MELPA:
   :ensure t
   :demand t
   :config
-  ;; Set `compile-angel-verbose' to nil to silence compile-angel.
+  ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
+  ;; (When set to nil, the minibuffer won't show which file is being compiled.)
   (setq compile-angel-verbose t)
 
-  (compile-angel-on-load-mode)
-  (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode))
+  ;; Uncomment the line below to compile automatically when an Elisp file is saved
+  ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
+
+  ;; Compiles .el files before they are loaded.
+  (compile-angel-on-load-mode))
 ```
 
 ### Doom Emacs
@@ -94,10 +98,15 @@ Here is how to install *compile-angel* on Doom Emacs:
 
 2. Add to the top of `~/.doom.d/config.el`:
 ```elisp
-;; Set `compile-angel-verbose' to nil to silence compile-angel.
+;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
+;; (When set to nil, the minibuffer won't show which file is being compiled.)
 (setq compile-angel-verbose t)
+
+;; Uncomment the line below to compile automatically when an Elisp file is saved
+;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
+
+;; Compiles .el files before they are loaded.
 (compile-angel-on-load-mode)
-(add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 ```
 
 3. Run the `doom sync` command:
