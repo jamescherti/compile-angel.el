@@ -97,6 +97,7 @@
   :group 'compile-angel)
 
 (defcustom compile-angel-excluded-files '("loaddefs.el"
+                                          "/subdirs.el"
                                           "/cus-load.el"
                                           "/charprop.el")
   "A list of path suffixes used to exclude specific .el files from compilation.
