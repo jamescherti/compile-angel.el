@@ -34,7 +34,7 @@ After extensive experimentation and research, the author developed *compile-ange
     - [What's the difference between native and byte compiled?](#whats-the-difference-between-native-and-byte-compiled)
     - [What are some use-cases of compile-angel?](#what-are-some-use-cases-of-compile-angel)
     - [What is the difference between auto-compile and compile-angel?](#what-is-the-difference-between-auto-compile-and-compile-angel)
-    - [What are the key differences between compile-angel and not auto-compile?](#what-are-the-key-differences-between-compile-angel-and-not-auto-compile)
+    - [What are the key differences between compile-angel and auto-compile?](#what-are-the-key-differences-between-compile-angel-and-auto-compile)
   - [Author and License](#author-and-license)
   - [Links](#links)
 
@@ -249,7 +249,7 @@ Jonas Bernouli, the author of auto-compile, has made some design decisions that 
 
 This is one of the reasons why opening an issue or submitting a pull request regarding the auto-compile issue above is pointless, as Jonas Bernouli is unlikely to merge it due to his design decision.
 
-### What are the key differences between compile-angel and not auto-compile?
+### What are the key differences between compile-angel and auto-compile?
 
 - Compile-angel is optimized. It is fast enough that it is nearly imperceptible to the user.
 - Compile-angel ensures that even when when the .elc file doesn't exist, the .el source file is compiled. Auto-compile, on the other hand, requires (by design, as explained above) an existing .elc file in order to compile.
