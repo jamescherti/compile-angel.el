@@ -6,7 +6,7 @@
 ;; Version: 1.0.5
 ;; URL: https://github.com/jamescherti/compile-angel.el
 ;; Keywords: convenience
-;; Package-Requires: ((emacs "26.1"))
+;; Package-Requires: ((emacs "26.3"))
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -264,7 +264,8 @@ Return non-nil if the file should be ignored, nil otherwise."
 (defun compile-angel--elisp-native-compiled-p (el-file)
   "Return non-nil if EL-FILE is native-compiled and up to date.
 Return nil if it is not native-compiled or if its .eln file is out of date."
-  (let ((eln-file (comp-el-to-eln-filename el-file)))
+  (let ((eln-file (and (fboundp 'comp-el-to-eln-filename)
+                       (funcall 'comp-el-to-eln-filename el-file))))
     (when (and eln-file
                (file-exists-p eln-file)
                (file-newer-than-file-p eln-file el-file))
@@ -307,7 +308,10 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
               "Async native-compilation: %s" el-file-abbreviated))
            (let ((inhibit-message (not (or (not compile-angel-verbose)
                                            (not compile-angel-debug)))))
-             (native-compile-async el-file)))))))
+             ;; TODO: Move featurep before the first (cond in this function
+             (when (and (featurep 'native-compile)
+                        (fboundp 'native-compile-async))
+               (funcall 'native-compile-async el-file))))))))
 
 (defun compile-angel--byte-compile (el-file elc-file)
   "Byte-compile EL-FILE into ELC-FILE.
