@@ -523,7 +523,8 @@ detected, it raises an error and returns nil."
     (let ((el-file (buffer-file-name (buffer-base-buffer)))
           (compile-angel--force-compilation t)
           (compile-angel--native-compile-when-jit-enabled t))
-      (when (compile-angel--check-parens)
+      (when (or (not compile-angel-on-save-check-parens)
+                (compile-angel--check-parens))
         (compile-angel--entry-point el-file)))))
 
 (defun compile-angel--feature-to-feature-name (feature)
