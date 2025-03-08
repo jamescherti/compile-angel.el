@@ -325,11 +325,6 @@ Return non-nil to allow native compilation."
      "Byte-compilation Ignored (up-to-date): %s" el-file)
     t)
 
-   ((not (file-writable-p elc-file))
-    (compile-angel--debug-message
-     "Byte-compilation ignored (not writable): %s" elc-file)
-    t)
-
    (t
     (let* ((byte-compile-warnings
             (when compile-angel-byte-compile-report-issues
@@ -473,17 +468,40 @@ FEATURE-NAME is a string representing the feature name being loaded."
                el-file))
 
      (t
-      (if compile-angel-enable-byte-compile
-          (progn
+      (let ((elc-writable (file-writable-p elc-file))
+            (do-native-compile nil)
+            (compile-angel--native-compile-when-jit-enabled t))
+        (if (not compile-angel-enable-byte-compile)
+            ;; Byte-compile Disabled
+            (when compile-angel-enable-native-compile
+              (compile-angel--debug-message
+               "Native-compilation only: %s" el-file)
+              (setq do-native-compile t))
+          ;; Byte-compile enabled
+          (cond
+           (elc-writable
+            ;; Byte-compile
             (compile-angel--debug-message
-             "[compile-angel] Byte and Native compilation: %s" el-file)
-            (when (compile-angel--byte-compile el-file elc-file)
-              (when compile-angel-enable-native-compile
-                (compile-angel--native-compile el-file))))
-        (when compile-angel-enable-native-compile
-          (when compile-angel-debug
+             "[compile-angel] Byte %scompilation: %s"
+             (when compile-angel-enable-native-compile "and Native " "")
+             el-file)
+            (setq compile-angel--native-compile-when-jit-enabled nil)
+            (setq do-native-compile (compile-angel--byte-compile el-file elc-file)))
+
+           ;; .elc not writable
+           (t
+            ;; Do not byte-compile
             (compile-angel--debug-message
-             "Native-compilation only: %s" el-file))
+             "Byte-compilation ignored (not writable)%s: %s"
+             (if compile-angel-enable-native-compile
+                 ". Native-compilation only"
+               "")
+             elc-file)
+            (setq do-native-compile t))))
+
+        (when do-native-compile
+          ;; When the .elc is not writable, force native compilation even when
+          ;; JIT is enabled.
           (compile-angel--native-compile el-file)))))))
 
 (defun compile-angel--check-parens ()
