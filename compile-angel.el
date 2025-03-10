@@ -214,7 +214,6 @@ is not compiled, as the compilation would fail anyway."
 (defvar compile-angel--list-jit-native-compiled-files (make-hash-table :test 'equal))
 (defvar compile-angel--currently-compiling nil)
 (defvar compile-angel--force-compilation nil)
-(defvar compile-angel--native-compile-when-jit-enabled nil)
 (defvar compile-angel--el-file-regexp nil)
 (defvar compile-angel--excluded-path-suffixes-regexps nil)
 
@@ -273,16 +272,7 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
 
 (defun compile-angel--native-compile (el-file)
   "Native-compile EL-FILE."
-  (cond ((and (not compile-angel--native-compile-when-jit-enabled)
-              (or
-               (bound-and-true-p native-comp-jit-compilation)
-               (bound-and-true-p native-comp-deferred-compilation)))
-         (puthash el-file t compile-angel--list-jit-native-compiled-files)
-         (compile-angel--debug-message
-          "Native-compilation ignored (Reason: JIT compilation will do it): %s"
-          el-file))
-
-        ((and (not compile-angel--force-compilation)
+  (cond ((and (not compile-angel--force-compilation)
               (and (boundp 'comp-files-queue)
                    (assoc el-file comp-files-queue)))
          (compile-angel--debug-message
@@ -469,8 +459,7 @@ FEATURE-NAME is a string representing the feature name being loaded."
 
      (t
       (let ((elc-writable (file-writable-p elc-file))
-            (do-native-compile nil)
-            (compile-angel--native-compile-when-jit-enabled t))
+            (do-native-compile nil))
         (if (not compile-angel-enable-byte-compile)
             ;; Byte-compile Disabled
             (when compile-angel-enable-native-compile
@@ -485,8 +474,8 @@ FEATURE-NAME is a string representing the feature name being loaded."
              "[compile-angel] Byte %scompilation: %s"
              (when compile-angel-enable-native-compile "and Native " "")
              el-file)
-            (setq compile-angel--native-compile-when-jit-enabled nil)
-            (setq do-native-compile (compile-angel--byte-compile el-file elc-file)))
+            (setq do-native-compile (compile-angel--byte-compile
+                                     el-file elc-file)))
 
            ;; .elc not writable
            (t
@@ -539,8 +528,7 @@ detected, it raises an error and returns nil."
   "Compile the current buffer."
   (when (derived-mode-p 'emacs-lisp-mode)
     (let ((el-file (buffer-file-name (buffer-base-buffer)))
-          (compile-angel--force-compilation t)
-          (compile-angel--native-compile-when-jit-enabled t))
+          (compile-angel--force-compilation t))
       (when (or (not compile-angel-on-save-check-parens)
                 (compile-angel--check-parens))
         (compile-angel--entry-point el-file)))))
@@ -640,22 +628,20 @@ FEATURE and FILENAME are the same arguments as the `require' function."
 
 (defun compile-angel--compile-load-history ()
   "Compile `load-history', which tracks all previously loaded files."
-  (let ((compile-angel--native-compile-when-jit-enabled t))
-    (dolist (entry load-history)
-      (let ((fname (car entry)))
-        (when (compile-angel--is-el-file fname)
-          (progn
-            (compile-angel--debug-message
-             "compile-angel--compile-load-history: %s" fname)
-            (compile-angel--entry-point fname)))))))
+  (dolist (entry load-history)
+    (let ((fname (car entry)))
+      (when (compile-angel--is-el-file fname)
+        (progn
+          (compile-angel--debug-message
+           "compile-angel--compile-load-history: %s" fname)
+          (compile-angel--entry-point fname))))))
 
 (defun compile-angel--compile-features ()
   "Compile all loaded features that are in the `features' variable."
-  (let ((compile-angel--native-compile-when-jit-enabled t))
-    (dolist (feature features)
-      (compile-angel--debug-message
-       "compile-angel-compile-features: %s" feature)
-      (compile-angel--entry-point nil feature))))
+  (dolist (feature features)
+    (compile-angel--debug-message
+     "compile-angel-compile-features: %s" feature)
+    (compile-angel--entry-point nil feature)))
 
 (defun compile-angel--find-el-file (file)
   "Find the .el file corresponding to FILE.
@@ -700,8 +686,7 @@ otherwise, return nil."
            "compile-angel--hook-after-load-functions: IGNORE: %s" file)
         (compile-angel--debug-message
          "compile-angel--hook-after-load-functions: COMPILE: %s" file)
-        (let ((compile-angel--native-compile-when-jit-enabled t)
-              (compile-angel--force-compilation t))
+        (let ((compile-angel--force-compilation t))
           (compile-angel--entry-point file))))))
 
 (defun compile-angel--update-el-file-regexp (symbol new-value
@@ -783,8 +768,7 @@ be JIT compiled."
         (maphash (lambda (el-file _value)
                    (compile-angel--debug-message
                     "Checking if Emacs really JIT Native-Compiled: %s" el-file)
-                   (let ((compile-angel--native-compile-when-jit-enabled t))
-                     (compile-angel--native-compile el-file)))
+                   (compile-angel--native-compile el-file))
                  compile-angel--list-jit-native-compiled-files)
       (clrhash compile-angel--list-jit-native-compiled-files))))
 
