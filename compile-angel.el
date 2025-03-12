@@ -96,7 +96,8 @@
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-excluded-files '("loaddefs.el")
+(defcustom compile-angel-excluded-files '("loaddefs.el"
+                                          "autoloads.el")
   "A list of path suffixes used to exclude specific .el files from compilation.
 
 Example: \\='(\"suffix.el\" \"/filename.el\") This excludes any path that ends
