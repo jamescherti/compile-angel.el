@@ -96,10 +96,7 @@
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-excluded-files '("loaddefs.el"
-                                          "/subdirs.el"
-                                          "/cus-load.el"
-                                          "/charprop.el")
+(defcustom compile-angel-excluded-files '("loaddefs.el")
   "A list of path suffixes used to exclude specific .el files from compilation.
 
 Example: \\='(\"suffix.el\" \"/filename.el\") This excludes any path that ends
@@ -272,14 +269,7 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
 
 (defun compile-angel--native-compile (el-file)
   "Native-compile EL-FILE."
-  (cond ((and (not compile-angel--force-compilation)
-              (and (boundp 'comp-files-queue)
-                   (assoc el-file comp-files-queue)))
-         (compile-angel--debug-message
-          "Native-compilation ignored (Already in the async compile queue): %s"
-          el-file))
-
-        (t
+  (cond (t
          (cond
           ((not (and (featurep 'native-compile)
                      (fboundp 'native-comp-available-p)
