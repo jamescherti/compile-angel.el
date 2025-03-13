@@ -66,7 +66,10 @@
 ;;   (compile-angel-verbose nil)
 ;;   :config
 ;;   (compile-angel-on-load-mode)
-;;   (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode))
+;;
+;;   ;; Uncomment the line below to auto compile when an .el file is saved
+;;   ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
+;;   )
 ;;
 ;; Links:
 ;; ------
