@@ -77,7 +77,7 @@ To install *compile-angel* on Emacs from MELPA:
   :demand t
   :config
   ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
-  ;; (When set to nil, the minibuffer won't show which file is being compiled.)
+  ;; (When set to nil, compile-angel won't show which file is being compiled.)
   (setq compile-angel-verbose t)
 
   ;; Uncomment the line below to compile automatically when an Elisp file is saved
@@ -99,7 +99,7 @@ Here is how to install *compile-angel* on Doom Emacs:
 2. Add to the top of `~/.doom.d/config.el`:
 ```elisp
 ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
-;; (When set to nil, the minibuffer won't show which file is being compiled.)
+;; (When set to nil, compile-angel won't show which file is being compiled.)
 (setq compile-angel-verbose t)
 
 ;; Uncomment the line below to compile automatically when an Elisp file is saved

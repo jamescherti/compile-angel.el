@@ -63,13 +63,17 @@
 ;;   :ensure t
 ;;   :demand t
 ;;   :custom
-;;   (compile-angel-verbose nil)
+;;   (compile-angel-verbose t)
+;;
 ;;   :config
-;;   (compile-angel-on-load-mode)
+;;   ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
+;;   ;; (When nil, compile-angel won't show which file is being compiled.)
+;;   (setq compile-angel-verbose t)
 ;;
 ;;   ;; Uncomment the line below to auto compile when an .el file is saved
 ;;   ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
-;;   )
+;;
+;;   (compile-angel-on-load-mode))
 ;;
 ;; Links:
 ;; ------
