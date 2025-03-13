@@ -539,9 +539,17 @@ detected, it raises an error and returns nil."
 
 (defun compile-angel--guess-el-file (el-file
                                      &optional feature-name nosuffix)
-  "Guess the EL-FILE or FEATURE-NAME path. NOSUFFIX is similar to `load'.
-Checks caches before performing computation."
-  (let* ((el-file (when (stringp el-file) el-file))
+  "Guess the path of the EL-FILE or FEATURE-NAME.
+
+EL-FILE must be an absolute path. If EL-FILE is not provided,
+FEATURE-NAME is used to search.
+
+NOSUFFIX behaves similarly to `load', controlling whether file suffixes are
+considered. Checks caches before performing any computation. Returns the
+resolved file path or nil if not found."
+  (let* ((el-file (when (and (stringp el-file)
+                             (file-name-absolute-p el-file))
+                    el-file))
          (result nil))
     ;; Return result
     (if result
