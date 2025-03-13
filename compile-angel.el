@@ -213,13 +213,10 @@ is not compiled, as the compilation would fail anyway."
 (defvar compile-angel--currently-compiling nil)
 (defvar compile-angel--force-compilation nil)
 (defvar compile-angel--el-file-regexp nil)
+(defvar compile-angel--el-file-extensions nil)
 (defvar compile-angel--excluded-path-suffixes-regexps nil)
 
 ;;; Functions
-
-(defun compile-angel--el-file-extensions ()
-  "Return a list of valid file extensions for uncompiled Elisp files."
-  (mapcar (lambda (ext) (concat ".el" ext)) load-file-rep-suffixes))
 
 (defun compile-angel--insert-message (buffer-name msg &rest args)
   "Insert formatted MSG with ARGS into BUFFER-NAME buffer."
@@ -562,7 +559,7 @@ resolved file path or nil if not found."
                                   load-path
                                   (if nosuffix
                                       load-file-rep-suffixes
-                                    (compile-angel--el-file-extensions)))))
+                                    compile-angel--el-file-extensions))))
       result)))
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix)
@@ -696,6 +693,8 @@ NEW-VALUE is the value of the variable."
   (when (eq symbol 'load-file-rep-suffixes)
     (compile-angel--debug-message
      "WATCHER: Update compile-angel--el-file-regexp: %s" new-value)
+    (setq compile-angel--el-file-extensions
+          (mapcar (lambda (ext) (concat ".el" ext)) load-file-rep-suffixes))
     (setq compile-angel--el-file-regexp
           (format "\\.el%s\\'" (regexp-opt new-value))))
 
