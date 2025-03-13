@@ -1,7 +1,7 @@
 # compile-angel.el - Speed up Emacs by Byte-compiling and Native-compiling all .el files
+![Build Status](https://github.com/jamescherti/compile-angel.el/actions/workflows/ci.yml/badge.svg)
 [![MELPA](https://melpa.org/packages/compile-angel-badge.svg)](https://melpa.org/#/compile-angel)
 [![MELPA Stable](https://stable.melpa.org/packages/compile-angel-badge.svg)](https://stable.melpa.org/#/compile-angel)
-![Build Status](https://github.com/jamescherti/compile-angel.el/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/github/license/jamescherti/compile-angel.el)
 ![](https://raw.githubusercontent.com/jamescherti/compile-angel.el/main/.images/made-for-gnu-emacs.svg)
 
