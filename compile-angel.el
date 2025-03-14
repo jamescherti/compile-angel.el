@@ -167,6 +167,18 @@ displayed accordingly."
   :type 'boolean
   :group 'compile-angel)
 
+(defcustom compile-angel-use-file-index t
+  "Non-nil to use a file index for faster feature-to-file lookups.
+
+When enabled, compile-angel builds a hash table mapping feature names to
+their corresponding file paths by scanning all directories in `load-path`.
+This significantly improves performance when looking up files, especially
+with large `load-path` values or when processing many features.
+
+The index is automatically rebuilt when `load-path` changes."
+  :type 'boolean
+  :group 'compile-angel)
+
 (defcustom compile-angel-predicate-function nil
   "Function that determines if an .el file should be compiled.
 It takes one argument (an .el file) and returns t if the file should be
@@ -225,6 +237,9 @@ is not compiled, as the compilation would fail anyway."
 (defvar compile-angel--el-file-regexp nil)
 (defvar compile-angel--el-file-extensions nil)
 (defvar compile-angel--excluded-path-suffixes-regexps nil)
+(defvar compile-angel--file-index (make-hash-table :test 'equal)
+  "Hash table mapping feature names to their file paths.
+This is used to speed up file lookups when `compile-angel-use-file-index` is enabled.")
 
 ;;; Functions
 
@@ -544,6 +559,30 @@ detected, it raises an error and returns nil."
      feature (type-of feature))
     nil)))
 
+(defun compile-angel--build-file-index ()
+  "Build an index of all Elisp files in `load-path'.
+This creates a mapping from feature names to their file paths."
+  (compile-angel--debug-message "Building Elisp file index from load-path...")
+  (clrhash compile-angel--file-index)
+
+  ;; Process each directory in load-path
+  (dolist (dir load-path)
+    (when (and dir (file-directory-p dir))
+      (dolist (suffix compile-angel--el-file-extensions)
+        (let ((pattern (concat "\\`[^.].*" (regexp-quote suffix) "\\'")))
+          (dolist (file (directory-files dir t pattern t))
+            ;; Extract the feature name from the filename
+            (let* ((base-name (file-name-base file))
+                   (feature-name base-name))
+              ;; Store in the index, with the first occurrence taking precedence
+              ;; (mimicking how `locate-file` works with load-path)
+              (unless (gethash feature-name compile-angel--file-index)
+                (puthash feature-name file compile-angel--file-index))))))))
+
+  (compile-angel--debug-message
+   "Elisp file index built with %d entries"
+   (hash-table-count compile-angel--file-index)))
+
 (defun compile-angel--guess-el-file (el-file
                                      &optional feature-name nosuffix)
   "Guess the path of the EL-FILE or FEATURE-NAME.
@@ -556,22 +595,28 @@ considered. Checks caches before performing any computation. Returns the
 resolved file path or nil if not found."
   (let* ((el-file (when (and (stringp el-file)
                              (file-name-absolute-p el-file))
-                    el-file))
-         (result nil))
-    ;; Return result
-    (if result
-        result
-      ;; Find result and return it
-      (setq result (if (and el-file
-                            (compile-angel--is-el-file el-file))
-                       el-file
-                     (let ((file-name-handler-alist))
-                       (locate-file (or el-file feature-name)
-                                    load-path
-                                    (if nosuffix
-                                        load-file-rep-suffixes
-                                      compile-angel--el-file-extensions)))))
-      result)))
+                    el-file)))
+    ;; If we have an absolute path that's an el file, just return it
+    (if (and el-file (compile-angel--is-el-file el-file))
+        el-file
+      ;; Otherwise, use the appropriate lookup method
+      (if (and compile-angel-use-file-index feature-name)
+          ;; Use the file index for feature lookups
+          (or (gethash feature-name compile-angel--file-index)
+              ;; Fall back to locate-file if not found in the index
+              (let ((file-name-handler-alist nil))
+                (locate-file feature-name
+                             load-path
+                             (if nosuffix
+                                 load-file-rep-suffixes
+                               compile-angel--el-file-extensions))))
+        ;; Use traditional locate-file method
+        (let ((file-name-handler-alist nil))
+          (locate-file (or el-file feature-name)
+                       load-path
+                       (if nosuffix
+                           load-file-rep-suffixes
+                         compile-angel--el-file-extensions)))))))
 
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix)
@@ -758,6 +803,29 @@ NEW-VALUE is the value of the variable."
                                           nil nil)
     (add-variable-watcher 'compile-angel-excluded-files
                           #'compile-angel--update-el-file-regexp)
+
+    ;; Build the file index if enabled
+    (when compile-angel-use-file-index
+      (compile-angel--build-file-index)
+
+      ;; Rebuild the file index when load-path changes
+      (add-variable-watcher 'load-path
+                            (lambda (_sym _newval _op _where)
+                              (when compile-angel-use-file-index
+                                (compile-angel--build-file-index))))
+
+      ;; Also rebuild when el-file-extensions changes
+      (add-variable-watcher 'compile-angel--el-file-extensions
+                            (lambda (_sym _newval _op _where)
+                              (when compile-angel-use-file-index
+                                (compile-angel--build-file-index)))))
+
+    ;; Watch for changes to compile-angel-use-file-index
+    (add-variable-watcher 'compile-angel-use-file-index
+                          (lambda (_sym newval _op _where)
+                            (when newval
+                              (compile-angel--build-file-index))))
+
     (setq compile-angel--init-completed t)))
 
 (defun compile-angel--is-el-file (file)
