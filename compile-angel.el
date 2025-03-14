@@ -390,19 +390,19 @@ FEATURE is a symbol representing the feature being loaded."
   (cond
    ((not el-file)
     (compile-angel--debug-message
-     "SKIP (el-file is nil): %s | %s" el-file feature-name)
+     "SKIP (el-file is nil): %s | %s" el-file feature)
     nil)
 
    ((not (compile-angel--is-el-file el-file))
     (compile-angel--debug-message
-     "SKIP (Does not end with the .el): %s | %s" el-file feature-name)
+     "SKIP (Does not end with the .el): %s | %s" el-file feature)
     nil)
 
    ((and (not compile-angel--force-compilation)
          (and compile-angel-on-load-mode-compile-once
               (gethash el-file compile-angel--list-compiled-files)))
     (compile-angel--debug-message
-     "SKIP (In the skip hash list): %s | %s" el-file feature-name)
+     "SKIP (In the skip hash list): %s | %s" el-file feature)
     nil)
 
    (t
@@ -450,7 +450,7 @@ FEATURE is a symbol representing the feature being loaded."
                   el-file (expand-file-name doom-modules-dir))))
         (compile-angel--debug-message
          "SKIP (Doom Emacs modules/emacs/user directory): %s | %s"
-         el-file feature-name)
+         el-file feature)
         nil)
 
        ((eq decision :compile)
@@ -459,12 +459,12 @@ FEATURE is a symbol representing the feature being loaded."
        ((eq decision :ignore)
         (compile-angel--debug-message
          "SKIP (Predicate function returned :ignore): %s | %s"
-         el-file feature-name)
+         el-file feature)
         nil)
 
        ((not decision)  ; nil = :ignore
         (compile-angel--debug-message
-         "SKIP (Predicate function returned nil): %s | %s" el-file feature-name)
+         "SKIP (Predicate function returned nil): %s | %s" el-file feature)
         nil)
 
        ;; :continue starts here:
