@@ -607,30 +607,15 @@ This creates a mapping from feature symbols to their file paths."
         (let ((evil-collection-modes-dir (expand-file-name "modes"
                                                           (file-name-directory evil-collection-file))))
           (when (file-directory-p evil-collection-modes-dir)
-            (compile-angel--debug-message
-             "Processing evil-collection modes directory: %s" evil-collection-modes-dir)
-
             ;; Process all mode directories in a single pass
-            (let ((mode-dirs (directory-files evil-collection-modes-dir t directory-files-no-dot-files-regexp t)))
-              ;; Filter to only include directories
-              (dolist (mode-dir (cl-remove-if-not #'file-directory-p mode-dirs))
-                (let* ((mode-name (file-name-nondirectory mode-dir))
+            (dolist (file (directory-files evil-collection-modes-dir t directory-files-no-dot-files-regexp t))
+              (when (file-directory-p file)
+                (let* ((mode-name (file-name-nondirectory file))
                        (feature-name (concat "evil-collection-" mode-name))
                        (feature-symbol (intern feature-name))
-                       ;; Check both possible file locations:
-                       ;; 1. modes/mode-name/evil-collection-mode-name.el (standard)
-                       ;; 2. modes/mode-name/evil-collection.el (alternative)
-                       (standard-file (expand-file-name (concat feature-name ".el") mode-dir))
-                       (alt-file (expand-file-name "evil-collection.el" mode-dir))
-                       (expected-file (cond ((file-exists-p standard-file) standard-file)
-                                            ((file-exists-p alt-file) alt-file)
-                                            (t nil))))
-
-                  ;; Only add if we found a valid file
-                  (when expected-file
-                    (compile-angel--debug-message
-                     "Adding evil-collection mode: %s -> %s" feature-name expected-file)
-                    (puthash feature-symbol expected-file compile-angel--file-index))))))))))
+                       (expected-file (concat file "/"
+                                             (concat "evil-collection-" mode-name ".el"))))
+                  (puthash feature-symbol expected-file compile-angel--file-index)))))))))
 
   (compile-angel--debug-message
    "Elisp file index built with %d entries"
