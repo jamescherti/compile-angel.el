@@ -613,43 +613,47 @@ FEATURE-NAME is used to search.
 NOSUFFIX behaves similarly to `load', controlling whether file suffixes are
 considered. Checks caches before performing any computation. Returns the
 resolved file path or nil if not found."
-  (let* ((el-file (when (and (stringp el-file)
-                             (file-name-absolute-p el-file))
-                    el-file)))
-    ;; If we have an absolute path that's an el file, just return it
-    (if (and el-file (compile-angel--is-el-file el-file))
-        el-file
-      ;; Otherwise, use the appropriate lookup method
-      (if (and compile-angel-use-file-index feature-name)
-          ;; Try to use the file index for feature lookups
-          (let ((cached-result (gethash feature-name compile-angel--file-index)))
-            (if cached-result
-                (progn
-                  ;; Cache hit
-                  (when compile-angel-track-file-index-stats
-                    (cl-incf compile-angel--file-index-hits)
-                    (compile-angel--debug-message 
-                     "File index cache HIT for feature: %s" feature-name))
-                  cached-result)
-              ;; Cache miss
-              (when compile-angel-track-file-index-stats
-                (cl-incf compile-angel--file-index-misses)
-                (compile-angel--debug-message 
-                 "File index cache MISS for feature: %s" feature-name))
-              ;; Fall back to locate-file
-              (let ((file-name-handler-alist nil))
-                (locate-file feature-name
-                             load-path
-                             (if nosuffix
-                                 load-file-rep-suffixes
-                               compile-angel--el-file-extensions)))))
-        ;; Use traditional locate-file method
+  ;; Fast path: if we have an absolute path that's an el file, just return it
+  (cond
+   ((and (stringp el-file)
+         (file-name-absolute-p el-file)
+         (compile-angel--is-el-file el-file))
+    el-file)
+   
+   ;; Use file index for feature lookups when available
+   ((and compile-angel-use-file-index feature-name)
+    (let ((cached-result (gethash feature-name compile-angel--file-index)))
+      (cond
+       (cached-result
+        ;; Cache hit
+        (when compile-angel-track-file-index-stats
+          (cl-incf compile-angel--file-index-hits)
+          (compile-angel--debug-message 
+           "File index cache HIT for feature: %s" feature-name))
+        cached-result)
+       
+       (t
+        ;; Cache miss
+        (when compile-angel-track-file-index-stats
+          (cl-incf compile-angel--file-index-misses)
+          (compile-angel--debug-message 
+           "File index cache MISS for feature: %s" feature-name))
+        ;; Fall back to locate-file
         (let ((file-name-handler-alist nil))
-          (locate-file (or el-file feature-name)
+          (locate-file feature-name
                        load-path
                        (if nosuffix
                            load-file-rep-suffixes
                          compile-angel--el-file-extensions)))))))
+   
+   ;; Default: use traditional locate-file method
+   (t
+    (let ((file-name-handler-alist nil))
+      (locate-file (or el-file feature-name)
+                   load-path
+                   (if nosuffix
+                       load-file-rep-suffixes
+                     compile-angel--el-file-extensions))))))
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix)
   "This function is called by all the :before advices.
