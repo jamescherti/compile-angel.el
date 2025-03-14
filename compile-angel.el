@@ -566,9 +566,8 @@ This creates a mapping from feature names to their file paths."
   (clrhash compile-angel--file-index)
   
   ;; Process each directory in load-path - use a filtered load-path
-  (let ((filtered-load-path (cl-remove-duplicates 
-                             (cl-remove-if-not #'file-directory-p load-path)
-                             :test #'equal)))
+  (let* ((file-name-handler-alist nil)
+        (filtered-load-path (cl-remove-if-not #'file-directory-p load-path)))
     (dolist (dir filtered-load-path)
       ;; Use a single directory-files call with a combined pattern
       (let* ((combined-pattern (concat "\\`[^.].*\\("
@@ -607,24 +606,15 @@ resolved file path or nil if not found."
     (if (and el-file (compile-angel--is-el-file el-file))
         el-file
       ;; Otherwise, use the appropriate lookup method
-      (if (and compile-angel-use-file-index feature-name)
-          ;; Use the file index for feature lookups
-          (or (gethash feature-name compile-angel--file-index)
-              ;; Fall back to locate-file if not found in the index
-              (let ((file-name-handler-alist nil))
-                (locate-file feature-name
-                             load-path
-                             (if nosuffix
-                                 load-file-rep-suffixes
-                               compile-angel--el-file-extensions))))
-        ;; Use traditional locate-file method
-        (let ((file-name-handler-alist nil))
-          (locate-file (or el-file feature-name)
-                       load-path
-                       (if nosuffix
-                           load-file-rep-suffixes
-                         compile-angel--el-file-extensions)))))))
-
+      (or (and compile-angel-use-file-index
+               (gethash feature-name compile-angel--file-index))
+          ;; Fall back to locate-file if not found in the index
+          (let ((file-name-handler-alist nil))
+            (locate-file feature-name
+                         load-path
+                         (if nosuffix
+                             load-file-rep-suffixes
+                           compile-angel--el-file-extensions)))))))
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix)
   "This function is called by all the :before advices.
