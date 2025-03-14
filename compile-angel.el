@@ -367,8 +367,8 @@ FEATURE-NAME is a string representing the feature name being loaded."
     nil)
 
    ((and (not compile-angel--force-compilation)
-         (or (not compile-angel-on-load-mode-compile-once)
-             (gethash el-file compile-angel--list-compiled-files)))
+         (and compile-angel-on-load-mode-compile-once
+              (gethash el-file compile-angel--list-compiled-files)))
     (compile-angel--debug-message
      "SKIP (In the skip hash list): %s | %s" el-file feature-name)
     nil)
@@ -602,7 +602,8 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
                                              &optional filename _noerror)
   "Recompile the library before `require'.
 FEATURE and FILENAME are the same arguments as the `require' function."
-  (if (featurep feature)
+  (if (and compile-angel-on-load-mode-compile-once
+           (featurep feature))
       (compile-angel--debug-message
        "SKIP: REQUIRE (Feature already provided): %s (%s) | %s (%s)"
        filename (type-of filename) feature (type-of feature))
