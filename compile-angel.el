@@ -600,16 +600,16 @@ This creates a mapping from feature symbols to their file paths."
             ;; Store in the index, with the first occurrence taking precedence
             (unless (gethash feature-symbol compile-angel--file-index)
               (puthash feature-symbol file compile-angel--file-index))))))
-    
+
     ;; Special handling for evil-collection package
     (let ((evil-collection-file (gethash 'evil-collection compile-angel--file-index)))
       (when evil-collection-file
-        (let ((evil-collection-modes-dir (expand-file-name "modes" 
+        (let ((evil-collection-modes-dir (expand-file-name "modes"
                                                           (file-name-directory evil-collection-file))))
           (when (file-directory-p evil-collection-modes-dir)
-            (compile-angel--debug-message 
+            (compile-angel--debug-message
              "Processing evil-collection modes directory: %s" evil-collection-modes-dir)
-            
+
             ;; Process all mode directories in a single pass
             (let ((mode-dirs (directory-files evil-collection-modes-dir t directory-files-no-dot-files-regexp t)))
               ;; Filter to only include directories
@@ -625,10 +625,10 @@ This creates a mapping from feature symbols to their file paths."
                        (expected-file (cond ((file-exists-p standard-file) standard-file)
                                             ((file-exists-p alt-file) alt-file)
                                             (t nil))))
-                  
+
                   ;; Only add if we found a valid file
                   (when expected-file
-                    (compile-angel--debug-message 
+                    (compile-angel--debug-message
                      "Adding evil-collection mode: %s -> %s" feature-name expected-file)
                     (puthash feature-symbol expected-file compile-angel--file-index))))))))))
 
