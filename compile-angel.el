@@ -813,25 +813,7 @@ NEW-VALUE is the value of the variable."
 
     ;; Build the file index if enabled
     (when compile-angel-use-file-index
-      (compile-angel--build-file-index)
-
-      ;; Rebuild the file index when load-path changes
-      (add-variable-watcher 'load-path
-                            (lambda (_sym _newval _op _where)
-                              (when compile-angel-use-file-index
-                                (compile-angel--build-file-index))))
-
-      ;; Also rebuild when el-file-extensions changes
-      (add-variable-watcher 'compile-angel--el-file-extensions
-                            (lambda (_sym _newval _op _where)
-                              (when compile-angel-use-file-index
-                                (compile-angel--build-file-index)))))
-
-    ;; Watch for changes to compile-angel-use-file-index
-    (add-variable-watcher 'compile-angel-use-file-index
-                          (lambda (_sym newval _op _where)
-                            (when newval
-                              (compile-angel--build-file-index))))
+      (compile-angel--build-file-index))
 
     (setq compile-angel--init-completed t)))
 
