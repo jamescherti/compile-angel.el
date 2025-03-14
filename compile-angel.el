@@ -564,21 +564,28 @@ detected, it raises an error and returns nil."
 This creates a mapping from feature names to their file paths."
   (compile-angel--debug-message "Building Elisp file index from load-path...")
   (clrhash compile-angel--file-index)
-
-  ;; Process each directory in load-path
-  (dolist (dir load-path)
-    (when (and dir (file-directory-p dir))
-      (dolist (suffix compile-angel--el-file-extensions)
-        (let ((pattern (concat "\\`[^.].*" (regexp-quote suffix) "\\'")))
-          (dolist (file (directory-files dir t pattern t))
-            ;; Extract the feature name from the filename
-            (let* ((base-name (file-name-base file))
-                   (feature-name base-name))
-              ;; Store in the index, with the first occurrence taking precedence
-              ;; (mimicking how `locate-file` works with load-path)
-              (unless (gethash feature-name compile-angel--file-index)
-                (puthash feature-name file compile-angel--file-index))))))))
-
+  
+  ;; Process each directory in load-path - use a filtered load-path
+  (let ((filtered-load-path (cl-remove-duplicates 
+                             (cl-remove-if-not #'file-directory-p load-path)
+                             :test #'equal)))
+    (dolist (dir filtered-load-path)
+      ;; Use a single directory-files call with a combined pattern
+      (let* ((combined-pattern (concat "\\`[^.].*\\("
+                                      (mapconcat 
+                                       (lambda (suffix) 
+                                         (regexp-quote suffix))
+                                       compile-angel--el-file-extensions
+                                       "\\|")
+                                      "\\)\\'")))
+        (dolist (file (directory-files dir t combined-pattern t))
+          ;; Extract the feature name from the filename
+          (let* ((base-name (file-name-base file))
+                 (feature-name base-name))
+            ;; Store in the index, with the first occurrence taking precedence
+            (unless (gethash feature-name compile-angel--file-index)
+              (puthash feature-name file compile-angel--file-index)))))))
+  
   (compile-angel--debug-message
    "Elisp file index built with %d entries"
    (hash-table-count compile-angel--file-index)))
