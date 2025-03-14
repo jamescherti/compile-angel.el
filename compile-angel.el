@@ -600,19 +600,32 @@ This creates a mapping from feature symbols to their file paths."
             ;; Store in the index, with the first occurrence taking precedence
             (unless (gethash feature-symbol compile-angel--file-index)
               (puthash feature-symbol file compile-angel--file-index))))))
-    (when (gethash 'evil-collection compile-angel--file-index)
-      (let ((evil-collection-modes-dir (concat
-                                        (file-name-directory
-                                         (gethash 'evil-collection
-                                                  compile-angel--file-index))
-                                        "modes")))
-        (dolist (file (directory-files evil-collection-modes-dir t nil t))
-          (unless (eq (aref file 0) ?.)
-            (puthash (intern (concat "evil-collection-" (file-name-base file)))
-                     (concat file "/"
-                             (concat "evil-collection-" (file-name-base file)
-                                     ".el"))
-                     compile-angel--file-index))))))
+    
+    ;; Special handling for evil-collection package
+    (let ((evil-collection-file (gethash 'evil-collection compile-angel--file-index)))
+      (when evil-collection-file
+        (let ((evil-collection-modes-dir (expand-file-name "modes" 
+                                                          (file-name-directory evil-collection-file))))
+          (when (file-directory-p evil-collection-modes-dir)
+            (compile-angel--debug-message 
+             "Processing evil-collection modes directory: %s" evil-collection-modes-dir)
+            
+            ;; First, find all subdirectories in the modes directory
+            (dolist (mode-dir (directory-files evil-collection-modes-dir t))
+              (when (and (file-directory-p mode-dir)
+                         (not (string-match-p "/\\.\\.?$" mode-dir)))
+                (let* ((mode-name (file-name-nondirectory mode-dir))
+                       (feature-name (concat "evil-collection-" mode-name))
+                       (feature-symbol (intern feature-name))
+                       (expected-file (expand-file-name 
+                                       (concat feature-name ".el") 
+                                       mode-dir)))
+                  
+                  ;; Only add if the file actually exists
+                  (when (file-exists-p expected-file)
+                    (compile-angel--debug-message 
+                     "Adding evil-collection mode: %s -> %s" feature-name expected-file)
+                    (puthash feature-symbol expected-file compile-angel--file-index))))))))))
 
   (compile-angel--debug-message
    "Elisp file index built with %d entries"
