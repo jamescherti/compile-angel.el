@@ -245,8 +245,8 @@ is not compiled, as the compilation would fail anyway."
 (defvar compile-angel--el-file-regexp nil)
 (defvar compile-angel--el-file-extensions nil)
 (defvar compile-angel--excluded-path-suffixes-regexps nil)
-(defvar compile-angel--file-index (make-hash-table :test 'equal)
-  "Hash table mapping feature names to their file paths.
+(defvar compile-angel--file-index (make-hash-table :test 'eq)
+  "Hash table mapping feature symbols to their file paths.
 This is used to speed up file lookups when `compile-angel-use-file-index` is enabled.")
 
 (defvar compile-angel--file-index-hits 0
@@ -383,10 +383,10 @@ Return non-nil to allow native compilation."
          "Byte-compilation successful: %s" el-file-abbreviated)
         t))))))
 
-(defun compile-angel--need-compilation-p (el-file feature-name)
-  "Return non-nil if EL-FILE or FEATURE-NAME need compilation.
+(defun compile-angel--need-compilation-p (el-file feature)
+  "Return non-nil if EL-FILE or FEATURE need compilation.
 EL-FILE is a String representing the path to the Elisp source file.
-FEATURE-NAME is a string representing the feature name being loaded."
+FEATURE is a symbol representing the feature being loaded."
   (cond
    ((not el-file)
     (compile-angel--debug-message
@@ -560,22 +560,24 @@ detected, it raises an error and returns nil."
                 (compile-angel--check-parens))
         (compile-angel--entry-point el-file)))))
 
-(defun compile-angel--feature-to-feature-name (feature)
-  "Convert a FEATURE symbol into a feature name and return it."
+(defun compile-angel--normalize-feature (feature)
+  "Normalize FEATURE to a symbol when possible.
+If FEATURE is a string, try to intern it. If it's already a symbol, return it.
+For other types, return nil and log a debug message."
   (cond
-   ((stringp feature)
-    feature)
    ((symbolp feature)
-    (symbol-name feature))
+    feature)
+   ((stringp feature)
+    (intern feature))
    (t
     (compile-angel--debug-message
-     "ISSUE: UNSUPPORTED Feature: Not a symbol: %s (type: %s)"
+     "ISSUE: UNSUPPORTED Feature: Not a symbol or string: %s (type: %s)"
      feature (type-of feature))
     nil)))
 
 (defun compile-angel--build-file-index ()
   "Build an index of all Elisp files in `load-path'.
-This creates a mapping from feature names to their file paths."
+This creates a mapping from feature symbols to their file paths."
   (compile-angel--debug-message "Building Elisp file index from load-path...")
   (clrhash compile-angel--file-index)
   
@@ -592,23 +594,23 @@ This creates a mapping from feature names to their file paths."
                                        "\\|")
                                       "\\)\\'")))
         (dolist (file (directory-files dir t combined-pattern t))
-          ;; Extract the feature name from the filename
+          ;; Extract the feature symbol from the filename
           (let* ((base-name (file-name-base file))
-                 (feature-name base-name))
+                 (feature-symbol (intern base-name)))
             ;; Store in the index, with the first occurrence taking precedence
-            (unless (gethash feature-name compile-angel--file-index)
-              (puthash feature-name file compile-angel--file-index)))))))
+            (unless (gethash feature-symbol compile-angel--file-index)
+              (puthash feature-symbol file compile-angel--file-index)))))))
   
   (compile-angel--debug-message
    "Elisp file index built with %d entries"
    (hash-table-count compile-angel--file-index)))
 
 (defun compile-angel--guess-el-file (el-file
-                                     &optional feature-name nosuffix)
-  "Guess the path of the EL-FILE or FEATURE-NAME.
+                                     &optional feature nosuffix)
+  "Guess the path of the EL-FILE or FEATURE.
 
 EL-FILE must be an absolute path. If EL-FILE is not provided,
-FEATURE-NAME is used to search.
+FEATURE is used to search. FEATURE can be a symbol or a string.
 
 NOSUFFIX behaves similarly to `load', controlling whether file suffixes are
 considered. Checks caches before performing any computation. Returns the
@@ -621,15 +623,17 @@ resolved file path or nil if not found."
     el-file)
    
    ;; Use file index for feature lookups when available
-   ((and compile-angel-use-file-index feature-name)
-    (let ((cached-result (gethash feature-name compile-angel--file-index)))
+   ((and compile-angel-use-file-index feature)
+    (let* ((feature-symbol (compile-angel--normalize-feature feature))
+           (cached-result (and feature-symbol 
+                              (gethash feature-symbol compile-angel--file-index))))
       (cond
        (cached-result
         ;; Cache hit
         (when compile-angel-track-file-index-stats
           (cl-incf compile-angel--file-index-hits)
           (compile-angel--debug-message 
-           "File index cache HIT for feature: %s" feature-name))
+           "File index cache HIT for feature: %s" feature))
         cached-result)
        
        (t
@@ -637,9 +641,12 @@ resolved file path or nil if not found."
         (when compile-angel-track-file-index-stats
           (cl-incf compile-angel--file-index-misses)
           (compile-angel--debug-message 
-           "File index cache MISS for feature: %s" feature-name))
+           "File index cache MISS for feature: %s" feature))
         ;; Fall back to locate-file
-        (let ((file-name-handler-alist nil))
+        (let ((file-name-handler-alist nil)
+              (feature-name (if (symbolp feature) 
+                               (symbol-name feature) 
+                             feature)))
           (locate-file feature-name
                        load-path
                        (if nosuffix
@@ -648,7 +655,10 @@ resolved file path or nil if not found."
    
    ;; Default: use traditional locate-file method
    (t
-    (let ((file-name-handler-alist nil))
+    (let ((file-name-handler-alist nil)
+          (feature-name (if (and feature (symbolp feature))
+                           (symbol-name feature)
+                         feature)))
       (locate-file (or el-file feature-name)
                    load-path
                    (if nosuffix
@@ -660,11 +670,11 @@ resolved file path or nil if not found."
 EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
   (when (or compile-angel-enable-byte-compile
             compile-angel-enable-native-compile)
-    (let* ((feature-name (compile-angel--feature-to-feature-name feature))
+    (let* ((feature-symbol (compile-angel--normalize-feature feature))
            (el-file (compile-angel--guess-el-file
-                     el-file feature-name nosuffix)))
+                     el-file feature-symbol nosuffix)))
       (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
-                                    el-file feature-name)
+                                    el-file feature-symbol)
       (cond
        ((not el-file)
         (compile-angel--debug-message
@@ -674,7 +684,7 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
         (compile-angel--debug-message
          "SKIP (To prevent recursive compilation): %s | %s" el-file feature))
 
-       ((not (compile-angel--need-compilation-p el-file feature-name))
+       ((not (compile-angel--need-compilation-p el-file feature-symbol))
         (compile-angel--debug-message
          "SKIP (Does not need compilation): %s | %s" el-file feature))
 
