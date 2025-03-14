@@ -854,21 +854,6 @@ NEW-VALUE is the value of the variable."
     ;; `load-file-rep-suffixes` is modified.
     (string-match-p compile-angel--el-file-regexp file)))
 
-(defun compile-angel--ensure-jit-compile ()
-  "When JIT is enabled, ensure that Emacs native-compiles the loaded .elc files.
-Occasionally, Emacs fails to `native-compile' certain `.elc` files that should
-be JIT compiled."
-  (when (and compile-angel-enable-native-compile
-             (> (hash-table-count compile-angel--list-jit-native-compiled-files)
-                0))
-    (unwind-protect
-        (maphash (lambda (el-file _value)
-                   (compile-angel--debug-message
-                    "Checking if Emacs really JIT Native-Compiled: %s" el-file)
-                   (compile-angel--native-compile el-file))
-                 compile-angel--list-jit-native-compiled-files)
-      (clrhash compile-angel--list-jit-native-compiled-files))))
-
 (defun compile-angel-display-file-index-stats ()
   "Display statistics about the file index cache hits and misses.
 This shows how effective the file index optimization has been."
