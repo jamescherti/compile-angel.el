@@ -179,6 +179,14 @@ The index is automatically rebuilt when `load-path` changes."
   :type 'boolean
   :group 'compile-angel)
 
+(defcustom compile-angel-track-file-index-stats nil
+  "Non-nil to track statistics about file index cache hits and misses.
+When enabled, compile-angel will count how many times the file index cache
+was hit or missed. This information can be displayed using the
+`compile-angel-display-file-index-stats' function."
+  :type 'boolean
+  :group 'compile-angel)
+
 (defcustom compile-angel-predicate-function nil
   "Function that determines if an .el file should be compiled.
 It takes one argument (an .el file) and returns t if the file should be
@@ -240,6 +248,12 @@ is not compiled, as the compilation would fail anyway."
 (defvar compile-angel--file-index (make-hash-table :test 'equal)
   "Hash table mapping feature names to their file paths.
 This is used to speed up file lookups when `compile-angel-use-file-index` is enabled.")
+
+(defvar compile-angel--file-index-hits 0
+  "Counter for file index cache hits.")
+
+(defvar compile-angel--file-index-misses 0
+  "Counter for file index cache misses.")
 
 ;;; Functions
 
@@ -606,15 +620,36 @@ resolved file path or nil if not found."
     (if (and el-file (compile-angel--is-el-file el-file))
         el-file
       ;; Otherwise, use the appropriate lookup method
-      (or (and compile-angel-use-file-index
-               (gethash feature-name compile-angel--file-index))
-          ;; Fall back to locate-file if not found in the index
-          (let ((file-name-handler-alist nil))
-            (locate-file feature-name
-                         load-path
-                         (if nosuffix
-                             load-file-rep-suffixes
-                           compile-angel--el-file-extensions)))))))
+      (if (and compile-angel-use-file-index feature-name)
+          ;; Try to use the file index for feature lookups
+          (let ((cached-result (gethash feature-name compile-angel--file-index)))
+            (if cached-result
+                (progn
+                  ;; Cache hit
+                  (when compile-angel-track-file-index-stats
+                    (cl-incf compile-angel--file-index-hits)
+                    (compile-angel--debug-message 
+                     "File index cache HIT for feature: %s" feature-name))
+                  cached-result)
+              ;; Cache miss
+              (when compile-angel-track-file-index-stats
+                (cl-incf compile-angel--file-index-misses)
+                (compile-angel--debug-message 
+                 "File index cache MISS for feature: %s" feature-name))
+              ;; Fall back to locate-file
+              (let ((file-name-handler-alist nil))
+                (locate-file feature-name
+                             load-path
+                             (if nosuffix
+                                 load-file-rep-suffixes
+                               compile-angel--el-file-extensions)))))
+        ;; Use traditional locate-file method
+        (let ((file-name-handler-alist nil))
+          (locate-file (or el-file feature-name)
+                       load-path
+                       (if nosuffix
+                           load-file-rep-suffixes
+                         compile-angel--el-file-extensions)))))))
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix)
   "This function is called by all the :before advices.
@@ -814,6 +849,37 @@ NEW-VALUE is the value of the variable."
     ;; dynamically updates `compile-angel--el-file-regexp` whenever
     ;; `load-file-rep-suffixes` is modified.
     (string-match-p compile-angel--el-file-regexp file)))
+
+(defun compile-angel--ensure-jit-compile ()
+  "When JIT is enabled, ensure that Emacs native-compiles the loaded .elc files.
+Occasionally, Emacs fails to `native-compile' certain `.elc` files that should
+be JIT compiled."
+  (when (and compile-angel-enable-native-compile
+             (> (hash-table-count compile-angel--list-jit-native-compiled-files)
+                0))
+    (unwind-protect
+        (maphash (lambda (el-file _value)
+                   (compile-angel--debug-message
+                    "Checking if Emacs really JIT Native-Compiled: %s" el-file)
+                   (compile-angel--native-compile el-file))
+                 compile-angel--list-jit-native-compiled-files)
+      (clrhash compile-angel--list-jit-native-compiled-files))))
+
+(defun compile-angel-display-file-index-stats ()
+  "Display statistics about the file index cache hits and misses.
+This shows how effective the file index optimization has been."
+  (interactive)
+  (let* ((total (+ compile-angel--file-index-hits compile-angel--file-index-misses))
+         (hit-percentage (if (> total 0)
+                             (* 100.0 (/ (float compile-angel--file-index-hits) total))
+                           0.0))
+         (miss-percentage (if (> total 0)
+                              (* 100.0 (/ (float compile-angel--file-index-misses) total))
+                            0.0)))
+    (message "File index stats: %d hits (%.2f%%), %d misses (%.2f%%), %d total lookups"
+             compile-angel--file-index-hits hit-percentage
+             compile-angel--file-index-misses miss-percentage
+             total)))
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
