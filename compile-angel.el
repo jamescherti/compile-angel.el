@@ -565,12 +565,14 @@ resolved file path or nil if not found."
       (setq result (if (and el-file
                             (compile-angel--is-el-file el-file))
                        el-file
-                     (locate-file (or el-file feature-name)
-                                  load-path
-                                  (if nosuffix
-                                      load-file-rep-suffixes
-                                    compile-angel--el-file-extensions))))
+                     (let ((file-name-handler-alist))
+                       (locate-file (or el-file feature-name)
+                                    load-path
+                                    (if nosuffix
+                                        load-file-rep-suffixes
+                                      compile-angel--el-file-extensions)))))
       result)))
+
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix)
   "This function is called by all the :before advices.
