@@ -658,16 +658,27 @@ resolved file path or nil if not found."
           (cl-incf compile-angel--file-index-misses)
           (compile-angel--debug-message
            "File index cache MISS for feature: %s" feature))
-        ;; Fall back to locate-file
-        (let ((file-name-handler-alist nil)
-              (feature-name (if (symbolp feature)
-                               (symbol-name feature)
-                             feature)))
-          (locate-file feature-name
-                       load-path
-                       (if nosuffix
-                           load-file-rep-suffixes
-                         compile-angel--el-file-extensions)))))))
+        
+        ;; Try load-history if the feature is loaded
+        (let ((history-file (and feature-symbol 
+                                (featurep feature-symbol)
+                                (car (alist-get feature-symbol load-history nil nil #'eq)))))
+          (if (and history-file (stringp history-file))
+              (progn
+                (compile-angel--debug-message
+                 "Found file in load-history for feature: %s -> %s" feature-symbol history-file)
+                history-file)
+            
+            ;; Fall back to locate-file
+            (let ((file-name-handler-alist nil)
+                  (feature-name (if (symbolp feature)
+                                   (symbol-name feature)
+                                 feature)))
+              (locate-file feature-name
+                           load-path
+                           (if nosuffix
+                               load-file-rep-suffixes
+                             compile-angel--el-file-extensions)))))))))
 
    ;; Default: use traditional locate-file method
    (t
