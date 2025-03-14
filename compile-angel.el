@@ -220,7 +220,6 @@ is not compiled, as the compilation would fail anyway."
 
 (defvar compile-angel--quiet-byte-compile-file t)
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
-(defvar compile-angel--list-jit-native-compiled-files (make-hash-table :test 'equal))
 (defvar compile-angel--currently-compiling nil)
 (defvar compile-angel--force-compilation nil)
 (defvar compile-angel--el-file-regexp nil)
@@ -767,21 +766,6 @@ NEW-VALUE is the value of the variable."
     ;; `load-file-rep-suffixes` is modified.
     (string-match-p compile-angel--el-file-regexp file)))
 
-(defun compile-angel--ensure-jit-compile ()
-  "When JIT is enabled, ensure that Emacs native-compiles the loaded .elc files.
-Occasionally, Emacs fails to `native-compile' certain `.elc` files that should
-be JIT compiled."
-  (when (and compile-angel-enable-native-compile
-             (> (hash-table-count compile-angel--list-jit-native-compiled-files)
-                0))
-    (unwind-protect
-        (maphash (lambda (el-file _value)
-                   (compile-angel--debug-message
-                    "Checking if Emacs really JIT Native-Compiled: %s" el-file)
-                   (compile-angel--native-compile el-file))
-                 compile-angel--list-jit-native-compiled-files)
-      (clrhash compile-angel--list-jit-native-compiled-files))))
-
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
   "Toggle `compile-angel-mode' then compiles .el files before they are loaded."
@@ -798,8 +782,6 @@ be JIT compiled."
         ;; After load hook
         (when compile-angel-on-load-hook-after-load-functions
           (add-hook 'after-load-functions #'compile-angel--hook-after-load-functions))
-        (when compile-angel-enable-native-compile
-          (add-hook 'native-comp-async-all-done-hook #'compile-angel--ensure-jit-compile))
         ;; Compile features
         (when compile-angel-on-load-compile-features
           (compile-angel--compile-features))
@@ -810,7 +792,6 @@ be JIT compiled."
           (advice-add 'load :before #'compile-angel--advice-before-load)))
     ;; Hooks
     (remove-hook 'after-load-functions #'compile-angel--hook-after-load-functions)
-    (remove-hook 'native-comp-async-all-done-hook #'compile-angel--ensure-jit-compile)
     ;; Advices
     (advice-remove 'require #'compile-angel--advice-before-require)
     (advice-remove 'load #'compile-angel--advice-before-load)))
