@@ -584,10 +584,8 @@ detected, it raises an error and returns nil."
 If FEATURE is a string, try to intern it. If it's already a symbol, return it.
 For other types, return nil and log a debug message."
   (cond
-   ((symbolp feature)
-    feature)
-   ((stringp feature)
-    (intern feature))
+   ((symbolp feature) feature)
+   ((stringp feature) (intern feature))
    (t
     (compile-angel--debug-message
      "ISSUE: UNSUPPORTED Feature: Not a symbol or string: %s (type: %s)"
@@ -603,24 +601,23 @@ This creates a mapping from feature symbols to their file paths."
     (setq compile-angel--file-index-hits 0
           compile-angel--file-index-misses 0)
 
-    ;; Process each directory in load-path - use a filtered load-path
-    (let* ((filtered-load-path (cl-remove-if-not #'file-directory-p load-path)))
+    ;; Pre-compute the combined pattern once
+    (let* ((combined-pattern (concat "\\`[^.].*\\("
+                                     (mapconcat #'regexp-quote
+                                                compile-angel--el-file-extensions
+                                                "\\|")
+                                     "\\)\\'"))
+           ;; Filter load-path once
+           (filtered-load-path (cl-remove-if-not #'file-directory-p load-path)))
+      
+      ;; Process each directory in load-path
       (dolist (dir filtered-load-path)
-        ;; Use a single directory-files call with a combined pattern
-        (let* ((combined-pattern (concat "\\`[^.].*\\("
-                                         (mapconcat
-                                          (lambda (suffix)
-                                            (regexp-quote suffix))
-                                          compile-angel--el-file-extensions
-                                          "\\|")
-                                         "\\)\\'")))
-          (dolist (file (directory-files dir t combined-pattern t))
-            ;; Extract the feature symbol from the filename
-            (let* ((base-name (file-name-base file))
-                   (feature-symbol (intern base-name)))
-              ;; Store in the index, with the first occurrence taking precedence
-              (unless (gethash feature-symbol compile-angel--file-index)
-                (puthash feature-symbol file compile-angel--file-index))))))
+        (dolist (file (directory-files dir t combined-pattern t))
+          ;; Extract the feature symbol from the filename - intern directly
+          (let ((feature-symbol (intern (file-name-base file))))
+            ;; Store in the index, with the first occurrence taking precedence
+            (unless (gethash feature-symbol compile-angel--file-index)
+              (puthash feature-symbol file compile-angel--file-index))))))
 
       ;; Special handling for evil-collection package
       (let ((evil-collection-file (gethash 'evil-collection compile-angel--file-index)))
@@ -632,10 +629,9 @@ This creates a mapping from feature symbols to their file paths."
               (dolist (file (directory-files evil-collection-modes-dir t directory-files-no-dot-files-regexp t))
                 (when (file-directory-p file)
                   (let* ((mode-name (file-name-nondirectory file))
-                         (feature-name (concat "evil-collection-" mode-name))
-                         (feature-symbol (intern feature-name))
-                         (expected-file (concat file "/"
-                                                (concat "evil-collection-" mode-name ".el"))))
+                         ;; Create symbol directly without intermediate string
+                         (feature-symbol (intern (format "evil-collection-%s" mode-name)))
+                         (expected-file (format "%s/evil-collection-%s.el" file mode-name)))
                     (puthash feature-symbol expected-file compile-angel--file-index)))))))))
 
     (compile-angel--debug-message
@@ -679,9 +675,11 @@ resolved file path or nil if not found."
             (cl-incf compile-angel--file-index-misses)
             (compile-angel--debug-message
              "File index cache MISS for feature: %s" feature))
+          ;; Store feature-name once to avoid repeated symbol-name calls
           (let* ((feature-name (symbol-name feature-symbol))
-                 (history-file (car (load-history-filename-element
-                                     (load-history-regexp feature-name)))))
+                 (history-regexp (load-history-regexp feature-name))
+                 (history-file (and (listp history-regexp)
+                                   (car (load-history-filename-element history-regexp)))))
             (when (stringp history-file)
               (compile-angel--find-el-file history-file))))
 
@@ -691,26 +689,32 @@ resolved file path or nil if not found."
             (cl-incf compile-angel--file-index-misses)
             (compile-angel--debug-message
              "File index cache MISS for feature: %s" feature))
+          ;; Avoid unnecessary symbol->string conversion
           (compile-angel--locate-feature-file
-           (if (symbolp feature) (symbol-name feature) feature)
+           (cond
+            ((symbolp feature) (symbol-name feature))
+            ((stringp feature) feature)
+            (t (symbol-name feature-symbol)))
            nosuffix)))))
 
      ;; Try load-history if feature is loaded
      ((let ((feature-symbol (compile-angel--normalize-feature feature)))
         (and feature-symbol (featurep feature-symbol)
              (let* ((feature-name (symbol-name feature-symbol))
-                    (history-file (load-history-filename-element
-                                   (load-history-regexp feature-name))))
+                    (history-regexp (load-history-regexp feature-name))
+                    (history-file (and (listp history-regexp)
+                                      (load-history-filename-element history-regexp))))
                (and (stringp history-file)
                     (compile-angel--find-el-file history-file))))))
 
      ;; If feature is not loaded, try to locate the file
-     (t (compile-angel--locate-feature-file
-         (let ((feature-symbol (compile-angel--normalize-feature feature)))
-           (if (symbolp feature-symbol)
-               (symbol-name feature-symbol)
-             feature))
-         nosuffix))))
+     (t (let ((feature-symbol (compile-angel--normalize-feature feature)))
+          (compile-angel--locate-feature-file
+           (cond
+            ((symbolp feature) (symbol-name feature))
+            ((stringp feature) feature)
+            (t (and (symbolp feature-symbol) (symbol-name feature-symbol))))
+           nosuffix)))))
 
 (defun compile-angel--locate-feature-file (feature-name nosuffix)
   "Locate a file for FEATURE-NAME using `locate-file'.
@@ -758,15 +762,18 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
                                              &optional filename _noerror)
   "Recompile the library before `require'.
 FEATURE and FILENAME are the same arguments as the `require' function."
-  (if (and compile-angel-on-load-mode-compile-once
-           (featurep feature))
+  ;; Avoid repeated calls to featurep by storing the result
+  (let ((feature-loaded (and compile-angel-on-load-mode-compile-once
+                             (featurep feature))))
+    (if feature-loaded
+        (compile-angel--debug-message
+         "SKIP: REQUIRE (Feature already provided): %s (%s) | %s (%s)"
+         filename (type-of filename) feature (type-of feature))
       (compile-angel--debug-message
-       "SKIP: REQUIRE (Feature already provided): %s (%s) | %s (%s)"
+       "REQUIRE: %s (%s) | %s (%s)"
        filename (type-of filename) feature (type-of feature))
-    (compile-angel--debug-message
-     "REQUIRE: %s (%s) | %s (%s)"
-     filename (type-of filename) feature (type-of feature))
-    (compile-angel--entry-point filename feature)))
+      ;; Pass feature directly without conversion
+      (compile-angel--entry-point filename feature))))
 
 (defun compile-angel--advice-before-load (el-file &optional _noerror _nomessage
                                                   nosuffix _must-suffix)
@@ -915,11 +922,12 @@ NEW-VALUE is the value of the variable."
 
 (defun compile-angel--is-el-file (file)
   "Return non-nil if FILE is an el-file."
-  (when compile-angel--el-file-regexp
-    ;; A variable watcher (the `compile-angel--update-el-file-regexp` function)
-    ;; dynamically updates `compile-angel--el-file-regexp` whenever
-    ;; `load-file-rep-suffixes` is modified.
-    (string-match-p compile-angel--el-file-regexp file)))
+  (and file
+       compile-angel--el-file-regexp
+       ;; A variable watcher (the `compile-angel--update-el-file-regexp` function)
+       ;; dynamically updates `compile-angel--el-file-regexp` whenever
+       ;; `load-file-rep-suffixes` is modified.
+       (string-match-p compile-angel--el-file-regexp file)))
 
 (defun compile-angel-display-file-index-stats ()
   "Display statistics about the file index cache hits and misses.
