@@ -93,6 +93,10 @@
   :group 'compile-angel
   :prefix "compile-angel-")
 
+;; Cache for Doom Emacs detection to avoid repeated checks
+(defconst compile-angel--doom-emacs-p (boundp 'doom-user-dir)
+  "Non-nil if Doom Emacs is detected.")
+
 (defcustom compile-angel-enable-byte-compile t
   "Non-nil to enable byte compilation of Emacs Lisp (.el) files."
   :type 'boolean
@@ -449,7 +453,7 @@ FEATURE is a symbol representing the feature being loaded."
        ;; compile-angel. This is important because `.el` files in these
        ;; directories should never be compiled, or Doom may fail to load some of
        ;; them correctly.
-       ((and (boundp 'doom-user-dir)
+       ((and compile-angel--doom-emacs-p
              (or (string-prefix-p doom-user-dir el-file)
                  (string-prefix-p doom-emacs-dir el-file)
                  (string-prefix-p doom-modules-dir el-file)))
