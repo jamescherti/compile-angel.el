@@ -605,7 +605,7 @@ This creates a mapping from feature symbols to their file paths."
                                      "\\)\\'"))
            ;; Filter load-path once
            (filtered-load-path (cl-remove-if-not #'file-directory-p load-path)))
-      
+
       ;; Process each directory in load-path
       (dolist (dir filtered-load-path)
         (dolist (file (directory-files dir t combined-pattern t))
@@ -615,20 +615,24 @@ This creates a mapping from feature symbols to their file paths."
             (unless (gethash feature-symbol compile-angel--file-index)
               (puthash feature-symbol file compile-angel--file-index))))))
 
-      ;; Special handling for evil-collection package
-      (let ((evil-collection-file (gethash 'evil-collection compile-angel--file-index)))
-        (when evil-collection-file
-          (let ((evil-collection-modes-dir (expand-file-name "modes"
-                                                             (file-name-directory evil-collection-file))))
-            (when (file-directory-p evil-collection-modes-dir)
-              ;; Process all mode directories in a single pass
-              (dolist (file (directory-files evil-collection-modes-dir t directory-files-no-dot-files-regexp t))
-                (when (file-directory-p file)
-                  (let* ((mode-name (file-name-nondirectory file))
-                         ;; Create symbol directly without intermediate string
-                         (feature-symbol (intern (format "evil-collection-%s" mode-name)))
-                         (expected-file (format "%s/evil-collection-%s.el" file mode-name)))
-                    (puthash feature-symbol expected-file compile-angel--file-index)))))))))
+    ;; `archive-mode' is a special case.
+    (puthash 'archive-mode (gethash 'arc-mode compile-angel--file-index)
+             compile-angel--file-index)
+
+    ;; Special handling for evil-collection package
+    (let ((evil-collection-file (gethash 'evil-collection compile-angel--file-index)))
+      (when evil-collection-file
+        (let ((evil-collection-modes-dir (expand-file-name "modes"
+                                                           (file-name-directory evil-collection-file))))
+          (when (file-directory-p evil-collection-modes-dir)
+            ;; Process all mode directories in a single pass
+            (dolist (file (directory-files evil-collection-modes-dir t directory-files-no-dot-files-regexp t))
+              (when (file-directory-p file)
+                (let* ((mode-name (file-name-nondirectory file))
+                       ;; Create symbol directly without intermediate string
+                       (feature-symbol (intern (format "evil-collection-%s" mode-name)))
+                       (expected-file (format "%s/evil-collection-%s.el" file mode-name)))
+                  (puthash feature-symbol expected-file compile-angel--file-index)))))))))
 
     (compile-angel--debug-message
      "Elisp file index built with %d entries"
