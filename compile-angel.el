@@ -587,48 +587,49 @@ For other types, return nil and log a debug message."
   "Build an index of all Elisp files in `load-path'.
 This creates a mapping from feature symbols to their file paths."
   (compile-angel--debug-message "Building Elisp file index from load-path...")
-  (clrhash compile-angel--file-index)
-  (setq compile-angel--file-index-hits 0
-        compile-angel--file-index-misses 0)
+  (compile-angel--with-fast-file-ops
+    (clrhash compile-angel--file-index)
+    (setq compile-angel--file-index-hits 0
+          compile-angel--file-index-misses 0)
 
-  ;; Process each directory in load-path - use a filtered load-path
-  (let* ((filtered-load-path (cl-remove-if-not #'file-directory-p load-path)))
-    (dolist (dir filtered-load-path)
-      ;; Use a single directory-files call with a combined pattern
-      (let* ((combined-pattern (concat "\\`[^.].*\\("
-                                       (mapconcat
-                                        (lambda (suffix)
-                                          (regexp-quote suffix))
-                                        compile-angel--el-file-extensions
-                                        "\\|")
-                                       "\\)\\'")))
-        (dolist (file (directory-files dir t combined-pattern t))
-          ;; Extract the feature symbol from the filename
-          (let* ((base-name (file-name-base file))
-                 (feature-symbol (intern base-name)))
-            ;; Store in the index, with the first occurrence taking precedence
-            (unless (gethash feature-symbol compile-angel--file-index)
-              (puthash feature-symbol file compile-angel--file-index))))))
+    ;; Process each directory in load-path - use a filtered load-path
+    (let* ((filtered-load-path (cl-remove-if-not #'file-directory-p load-path)))
+      (dolist (dir filtered-load-path)
+        ;; Use a single directory-files call with a combined pattern
+        (let* ((combined-pattern (concat "\\`[^.].*\\("
+                                         (mapconcat
+                                          (lambda (suffix)
+                                            (regexp-quote suffix))
+                                          compile-angel--el-file-extensions
+                                          "\\|")
+                                         "\\)\\'")))
+          (dolist (file (directory-files dir t combined-pattern t))
+            ;; Extract the feature symbol from the filename
+            (let* ((base-name (file-name-base file))
+                   (feature-symbol (intern base-name)))
+              ;; Store in the index, with the first occurrence taking precedence
+              (unless (gethash feature-symbol compile-angel--file-index)
+                (puthash feature-symbol file compile-angel--file-index))))))
 
-    ;; Special handling for evil-collection package
-    (let ((evil-collection-file (gethash 'evil-collection compile-angel--file-index)))
-      (when evil-collection-file
-        (let ((evil-collection-modes-dir (expand-file-name "modes"
-                                                           (file-name-directory evil-collection-file))))
-          (when (file-directory-p evil-collection-modes-dir)
-            ;; Process all mode directories in a single pass
-            (dolist (file (directory-files evil-collection-modes-dir t directory-files-no-dot-files-regexp t))
-              (when (file-directory-p file)
-                (let* ((mode-name (file-name-nondirectory file))
-                       (feature-name (concat "evil-collection-" mode-name))
-                       (feature-symbol (intern feature-name))
-                       (expected-file (concat file "/"
-                                              (concat "evil-collection-" mode-name ".el"))))
-                  (puthash feature-symbol expected-file compile-angel--file-index)))))))))
+      ;; Special handling for evil-collection package
+      (let ((evil-collection-file (gethash 'evil-collection compile-angel--file-index)))
+        (when evil-collection-file
+          (let ((evil-collection-modes-dir (expand-file-name "modes"
+                                                             (file-name-directory evil-collection-file))))
+            (when (file-directory-p evil-collection-modes-dir)
+              ;; Process all mode directories in a single pass
+              (dolist (file (directory-files evil-collection-modes-dir t directory-files-no-dot-files-regexp t))
+                (when (file-directory-p file)
+                  (let* ((mode-name (file-name-nondirectory file))
+                         (feature-name (concat "evil-collection-" mode-name))
+                         (feature-symbol (intern feature-name))
+                         (expected-file (concat file "/"
+                                                (concat "evil-collection-" mode-name ".el"))))
+                    (puthash feature-symbol expected-file compile-angel--file-index)))))))))
 
-  (compile-angel--debug-message
-   "Elisp file index built with %d entries"
-   (hash-table-count compile-angel--file-index)))
+    (compile-angel--debug-message
+     "Elisp file index built with %d entries"
+     (hash-table-count compile-angel--file-index))))
 
 (defun compile-angel--guess-el-file (el-file
                                      &optional feature nosuffix)
@@ -679,8 +680,8 @@ resolved file path or nil if not found."
             (cl-incf compile-angel--file-index-misses)
             (compile-angel--debug-message
              "File index cache MISS for feature: %s" feature))
-          (compile-angel--locate-feature-file 
-           (if (symbolp feature) (symbol-name feature) feature) 
+          (compile-angel--locate-feature-file
+           (if (symbolp feature) (symbol-name feature) feature)
            nosuffix)))))
 
      ;; Try load-history if feature is loaded
@@ -692,10 +693,10 @@ resolved file path or nil if not found."
                     (compile-angel--find-el-file history-file))))))
 
      ;; If feature is not loaded, try to locate the file
-     (t (compile-angel--locate-feature-file 
+     (t (compile-angel--locate-feature-file
          (let ((feature-symbol (compile-angel--normalize-feature feature)))
-           (if (symbolp feature-symbol) 
-               (symbol-name feature-symbol) 
+           (if (symbolp feature-symbol)
+               (symbol-name feature-symbol)
              feature))
          nosuffix))))
 
