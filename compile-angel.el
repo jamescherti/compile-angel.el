@@ -653,7 +653,7 @@ resolved file path or nil if not found."
      ((and (stringp el-file)
            (file-name-absolute-p el-file)
            (compile-angel--is-el-file el-file))
-      el-file)
+      (file-truename el-file))
 
      ;; Use file index for feature lookups when available
      ((and compile-angel-use-file-index feature)
@@ -708,13 +708,16 @@ resolved file path or nil if not found."
                     (compile-angel--find-el-file history-file))))))
 
      ;; If feature is not loaded, try to locate the file
-     (t (let ((feature-symbol (compile-angel--normalize-feature feature)))
-          (compile-angel--locate-feature-file
-           (cond
-            ((symbolp feature) (symbol-name feature))
-            ((stringp feature) feature)
-            (t (and (symbolp feature-symbol) (symbol-name feature-symbol))))
-           nosuffix)))))
+     (t (let ((feature-symbol (compile-angel--normalize-feature feature))
+              (feature-file (compile-angel--locate-feature-file
+                             (cond
+                              ((symbolp feature) (symbol-name feature))
+                              ((stringp feature) feature)
+                              (t (and (symbolp feature-symbol)
+                                      (symbol-name feature-symbol))))
+                             nosuffix)))
+          (when feature-file
+            (file-truename feature-file))))))
 
 (defun compile-angel--locate-feature-file (feature-name nosuffix)
   "Locate a file for FEATURE-NAME using `locate-file'.
