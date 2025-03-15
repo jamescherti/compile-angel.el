@@ -636,7 +636,7 @@ This creates a mapping from feature symbols to their file paths."
 
     (compile-angel--debug-message
      "Elisp file index built with %d entries"
-     (hash-table-count compile-angel--file-index))))
+     (hash-table-count compile-angel--file-index)))
 
 (defun compile-angel--guess-el-file (el-file
                                      &optional feature nosuffix)
