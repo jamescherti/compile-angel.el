@@ -663,15 +663,15 @@ resolved file path or nil if not found."
               (feature-name (if (symbolp feature)
                                 (symbol-name feature)
                               feature)))
-          (+log feature (featurep feature)
-                (if (featurep feature)
-                    (car (load-history-filename-element
-                          (concat "/" feature-name ".el")))
-                  (locate-file feature-name
-                               load-path
-                               (if nosuffix
-                                   load-file-rep-suffixes
-                                 compile-angel--el-file-extensions)))))))))
+          (if (featurep feature)
+              (when-let ((file (car (load-history-filename-element
+                                     (concat "/" feature-name ".el")))))
+                (string-replace ".elc" ".el" file))
+            (locate-file feature-name
+                         load-path
+                         (if nosuffix
+                             load-file-rep-suffixes
+                           compile-angel--el-file-extensions))))))))
 
    ;; Default: use traditional locate-file method
    (t
@@ -679,11 +679,15 @@ resolved file path or nil if not found."
           (feature-name (if (and feature (symbolp feature))
                            (symbol-name feature)
                          feature)))
-      (locate-file (or el-file feature-name)
-                   load-path
-                   (if nosuffix
-                       load-file-rep-suffixes
-                     compile-angel--el-file-extensions))))))
+      (if (featurep feature)
+              (when-let ((file (car (load-history-filename-element
+                                     (concat "/" feature-name ".el")))))
+                (string-replace ".elc" ".el" file))
+            (locate-file feature-name
+                         load-path
+                         (if nosuffix
+                             load-file-rep-suffixes
+                           compile-angel--el-file-extensions)))))))
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix)
   "This function is called by all the :before advices.
