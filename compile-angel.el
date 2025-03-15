@@ -681,7 +681,7 @@ resolved file path or nil if not found."
              "File index cache MISS for feature: %s" feature))
           (let* ((feature-name (symbol-name feature-symbol))
                  (history-file (car (load-history-filename-element
-                                    (concat "/" feature-name ".el")))))
+                                     (load-history-regexp feature-name)))))
             (when (stringp history-file)
               (compile-angel--find-el-file history-file))))
 
@@ -698,7 +698,9 @@ resolved file path or nil if not found."
      ;; Try load-history if feature is loaded
      ((let ((feature-symbol (compile-angel--normalize-feature feature)))
         (and feature-symbol (featurep feature-symbol)
-             (let* ((history-file (car (alist-get feature-symbol load-history nil nil #'eq))))
+             (let* ((feature-name (symbol-name feature-symbol))
+                    (history-file (load-history-filename-element
+                                   (load-history-regexp feature-name))))
                (and (stringp history-file)
                     (compile-angel--find-el-file history-file))))))
 
