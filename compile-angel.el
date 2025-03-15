@@ -833,14 +833,10 @@ otherwise, return nil."
      ((string-equal (file-name-extension file) "elc")
       (let* ((base (file-name-sans-extension file))
              (plain-el (concat base ".el")))
-        ;; First try plain .el as it's most common
-        (if (file-exists-p plain-el)
-            plain-el
-          ;; Then try with suffixes
-          (cl-some (lambda (suffix)
-                     (let ((candidate (concat base ".el" suffix)))
-                       (and (file-exists-p candidate) candidate)))
-                   load-file-rep-suffixes))))
+        (cl-some (lambda (suffix)
+                   (let ((candidate (concat base ".el" suffix)))
+                     (and (file-exists-p candidate) candidate)))
+                 load-file-rep-suffixes)))
      (t nil))))
 
 (defun compile-angel--hook-after-load-functions (file)
