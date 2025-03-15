@@ -247,7 +247,8 @@ is not compiled, as the compilation would fail anyway."
 (defvar compile-angel--excluded-path-suffixes-regexps nil)
 (defvar compile-angel--file-index (make-hash-table :test 'eq)
   "Hash table mapping feature symbols to their file paths.
-This is used to speed up file lookups when `compile-angel-use-file-index` is enabled.")
+This is used to speed up file lookups when `compile-angel-use-file-index` is
+enabled.")
 
 (defvar compile-angel--file-index-hits 0
   "Counter for file index cache hits.")
@@ -448,22 +449,22 @@ FEATURE is a symbol representing the feature being loaded."
        ;; compile-angel. This is important because `.el` files in these
        ;; directories should never be compiled, or Doom may fail to load some of
        ;; them correctly.
-       ((and (or (boundp 'doom-user-dir) 
+       ((and (or (boundp 'doom-user-dir)
                  (boundp 'doom-emacs-dir)
                  (boundp 'doom-modules-dir))
              (let* ((file-name-handler-alist nil)
                     (el-path (expand-file-name el-file))
-                    (doom-user (and (boundp 'doom-user-dir) 
+                    (doom-user (and (boundp 'doom-user-dir)
                                     (expand-file-name doom-user-dir)))
                     (doom-emacs-lisp (and (boundp 'doom-emacs-dir)
                                           (expand-file-name "lisp" doom-emacs-dir)))
                     (doom-modules (and (boundp 'doom-modules-dir)
                                        (expand-file-name doom-modules-dir))))
-               (or (and doom-user 
+               (or (and doom-user
                         (string-prefix-p doom-user el-path))
-                   (and doom-emacs-lisp 
+                   (and doom-emacs-lisp
                         (string-prefix-p doom-emacs-lisp el-path))
-                   (and doom-modules 
+                   (and doom-modules
                         (string-prefix-p doom-modules el-path)))))
         (compile-angel--debug-message
          "SKIP (Doom Emacs modules/emacs/user directory): %s | %s"
@@ -697,8 +698,7 @@ resolved file path or nil if not found."
      ;; Try load-history if feature is loaded
      ((let ((feature-symbol (compile-angel--normalize-feature feature)))
         (and feature-symbol (featurep feature-symbol)
-             (let* ((feature-name (symbol-name feature-symbol))
-                    (history-file (car (alist-get feature-symbol load-history nil nil #'eq))))
+             (let* ((history-file (car (alist-get feature-symbol load-history nil nil #'eq))))
                (and (stringp history-file)
                     (compile-angel--find-el-file history-file))))))
 
