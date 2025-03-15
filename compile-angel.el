@@ -259,13 +259,14 @@ enabled.")
 (defvar compile-angel--doom-emacs-p (boundp 'doom-emacs-dir))
 (defvar compile-angel--doom-user-dir
   (and compile-angel--doom-emacs-p
-       (file-truename (expand-file-name doom-user-dir))))
+       (file-truename (expand-file-name (bound-and-true-p doom-user-dir)))))
 (defvar compile-angel--doom-emacs-lisp-dir
   (and compile-angel--doom-emacs-p
-       (file-truename (expand-file-name "lisp" doom-emacs-dir))))
+       (file-truename (expand-file-name "lisp"
+                                        (bound-and-true-p doom-emacs-dir)))))
 (defvar compile-angel--doom-modules-dir
   (and compile-angel--doom-emacs-p
-       (file-truename (expand-file-name doom-modules-dir))))
+       (file-truename (expand-file-name (bound-and-true-p doom-modules-dir)))))
 
 ;;; Functions
 
