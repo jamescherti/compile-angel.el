@@ -313,7 +313,6 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
   (let ((eln-file (and (fboundp 'comp-el-to-eln-filename)
                        (funcall 'comp-el-to-eln-filename el-file))))
     (when (and eln-file
-               (file-exists-p eln-file)
                (file-newer-than-file-p eln-file el-file))
       t)))
 
@@ -349,8 +348,7 @@ Return non-nil to allow native compilation."
   (compile-angel--debug-message "Start: Byte-compilation: %s -> %s"
                                 el-file elc-file)
   (cond
-   ((and (file-exists-p elc-file)
-         (not (file-newer-than-file-p el-file elc-file)))
+   ((not (file-newer-than-file-p el-file elc-file))
     (compile-angel--debug-message
      "Byte-compilation Ignored (up-to-date): %s" el-file)
     t)
