@@ -216,16 +216,6 @@ is not compiled, as the compilation would fail anyway."
   :group 'compile-angel
   :type 'boolean)
 
-;;; Experimental features
-
-(defvar compile-angel-use-file-index nil
-  "EXPERIMENTAL: Enable a faster feature-to-file lookup.
-
-When non-nil, compile-angel constructs a hash table mapping feature names to
-their file paths by scanning all directories in `load-path'. This can improve
-lookup performance, particularly for large `load-path' values or when handling
-many features. The index updates automatically whenever `load-path' changes.")
-
 ;;; Internal variables
 
 (defvar compile-angel--quiet-byte-compile-file t)
@@ -246,19 +236,6 @@ many features. The index updates automatically whenever `load-path' changes.")
 (defvar compile-angel--doom-modules-dir
   (when (bound-and-true-p doom-modules-dir)
     (concat (directory-file-name (file-truename doom-modules-dir)) "/")))
-
-;; EXPERIMENTAL (Disabled by default):
-;; Speed up file lookups when `compile-angel-use-file-index' is non-nil.
-(defvar compile-angel--file-index (make-hash-table :test 'eq))
-(defvar compile-angel--file-index-hits 0)
-(defvar compile-angel--file-index-misses 0)
-(defvar compile-angel-track-file-index-stats nil
-  "Non-nil to track statistics about file index cache hits and misses.
-When enabled, compile-angel will count how many times the file index cache
-was hit or missed. This information can be displayed using the
-`compile-angel-display-file-index-stats' function."
-  :type 'boolean
-  :group 'compile-angel)
 
 
 ;;; Functions
@@ -652,48 +629,6 @@ resolved file path or nil if not found."
            (compile-angel--is-el-file el-file))
       (file-truename el-file))
 
-     ;; Use file index for feature lookups when available
-     ((and compile-angel-use-file-index feature)
-      (let* ((feature-symbol (compile-angel--normalize-feature feature))
-             (cached-result (and feature-symbol
-                                (gethash feature-symbol compile-angel--file-index))))
-        (cond
-         (cached-result
-          ;; Cache hit
-          (when compile-angel-track-file-index-stats
-            (cl-incf compile-angel--file-index-hits)
-            (compile-angel--debug-message
-             "File index cache HIT for feature: %s" feature))
-          cached-result)
-
-         ;; Try load-history if feature is loaded
-         ((and feature-symbol (featurep feature-symbol))
-          (when compile-angel-track-file-index-stats
-            (cl-incf compile-angel--file-index-misses)
-            (compile-angel--debug-message
-             "File index cache MISS for feature: %s" feature))
-          ;; Store feature-name once to avoid repeated symbol-name calls
-          (let* ((feature-name (symbol-name feature-symbol))
-                 (history-regexp (load-history-regexp feature-name))
-                 (history-file (and (listp history-regexp)
-                                   (car (load-history-filename-element history-regexp)))))
-            (when (stringp history-file)
-              (compile-angel--find-el-file history-file))))
-
-         ;; Cache miss and feature not loaded
-         (t
-          (when compile-angel-track-file-index-stats
-            (cl-incf compile-angel--file-index-misses)
-            (compile-angel--debug-message
-             "File index cache MISS for feature: %s" feature))
-          ;; Avoid unnecessary symbol->string conversion
-          (compile-angel--locate-feature-file
-           (cond
-            ((symbolp feature) (symbol-name feature))
-            ((stringp feature) feature)
-            (t (symbol-name feature-symbol)))
-           nosuffix)))))
-
      ;; Try load-history if feature is loaded
      ((let ((feature-symbol (compile-angel--normalize-feature feature)))
         (and feature-symbol (featurep feature-symbol)
@@ -912,10 +847,6 @@ NEW-VALUE is the value of the variable."
     (add-variable-watcher 'compile-angel-excluded-files
                           #'compile-angel--update-el-file-regexp)
 
-    ;; Build the file index if enabled
-    (when compile-angel-use-file-index
-      (compile-angel--build-file-index))
-
     (setq compile-angel--init-completed t)))
 
 (defun compile-angel--is-el-file (file)
@@ -926,21 +857,6 @@ NEW-VALUE is the value of the variable."
        ;; dynamically updates `compile-angel--el-file-regexp` whenever
        ;; `load-file-rep-suffixes` is modified.
        (string-match-p compile-angel--el-file-regexp file)))
-
-(defun compile-angel-display-file-index-stats ()
-  "Display statistics about the file index cache hits and misses.
-This shows how effective the file index optimization has been."
-  (let* ((total (+ compile-angel--file-index-hits compile-angel--file-index-misses))
-         (hit-percentage (if (> total 0)
-                             (* 100.0 (/ (float compile-angel--file-index-hits) total))
-                           0.0))
-         (miss-percentage (if (> total 0)
-                              (* 100.0 (/ (float compile-angel--file-index-misses) total))
-                            0.0)))
-    (message "File index stats: %d hits (%.2f%%), %d misses (%.2f%%), %d total lookups"
-             compile-angel--file-index-hits hit-percentage
-             compile-angel--file-index-misses miss-percentage
-             total)))
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
