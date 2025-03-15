@@ -261,7 +261,8 @@ This is used to speed up file lookups when `compile-angel-use-file-index` is ena
   "Execute BODY with optimized file operations.
 This disables file handlers temporarily for faster file operations."
   (declare (indent 0) (debug t))
-  `(let ((file-name-handler-alist nil))
+  `(let ((file-name-handler-alist nil)
+         (case-fold-search nil))
      ,@body))
 
 (defun compile-angel--insert-message (buffer-name msg &rest args)
