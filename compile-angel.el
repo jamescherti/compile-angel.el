@@ -682,8 +682,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
       ;; Unset the special init-file status to prevent recursive loads
       (let ((user-init-file (if (eq user-init-file t)
                                 nil
-                              user-init-file))
-            (file-name-handler-alist nil))
+                              user-init-file)))
         (compile-angel--entry-point (when el-file
                                       (expand-file-name
                                        (substitute-in-file-name el-file)))
