@@ -167,14 +167,6 @@ displayed accordingly."
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-track-file-index-stats nil
-  "Non-nil to track statistics about file index cache hits and misses.
-When enabled, compile-angel will count how many times the file index cache
-was hit or missed. This information can be displayed using the
-`compile-angel-display-file-index-stats' function."
-  :type 'boolean
-  :group 'compile-angel)
-
 (defcustom compile-angel-predicate-function nil
   "Function that determines if an .el file should be compiled.
 It takes one argument (an .el file) and returns t if the file should be
@@ -257,6 +249,14 @@ many features. The index updates automatically whenever `load-path' changes.")
 (defvar compile-angel--file-index (make-hash-table :test 'eq))
 (defvar compile-angel--file-index-hits 0)
 (defvar compile-angel--file-index-misses 0)
+(defvar compile-angel-track-file-index-stats nil
+  "Non-nil to track statistics about file index cache hits and misses.
+When enabled, compile-angel will count how many times the file index cache
+was hit or missed. This information can be displayed using the
+`compile-angel-display-file-index-stats' function."
+  :type 'boolean
+  :group 'compile-angel)
+
 
 ;;; Functions
 
@@ -927,7 +927,6 @@ NEW-VALUE is the value of the variable."
 (defun compile-angel-display-file-index-stats ()
   "Display statistics about the file index cache hits and misses.
 This shows how effective the file index optimization has been."
-  (interactive)
   (let* ((total (+ compile-angel--file-index-hits compile-angel--file-index-misses))
          (hit-percentage (if (> total 0)
                              (* 100.0 (/ (float compile-angel--file-index-hits) total))
