@@ -167,7 +167,7 @@ displayed accordingly."
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-use-file-index t
+(defcustom compile-angel-use-file-index nil
   "Non-nil to use a file index for faster feature-to-file lookups.
 
 When enabled, compile-angel builds a hash table mapping feature names to
