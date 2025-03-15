@@ -785,28 +785,20 @@ The function iterates through the extensions in `load-file-rep-suffixes` to
 construct possible .el file paths. If a matching file exists, return its path;
 otherwise, return nil."
   (cond
-   ((not file)
-    (compile-angel--debug-message
-     "compile-angel--find-el-file: nil file")
-    nil)
-
-   ((compile-angel--is-el-file file)
-    file)
-
+   ((not file) nil)
+   ((compile-angel--is-el-file file) file)
    ((string-equal (file-name-extension file) "elc")
-    (let ((base (file-name-sans-extension file))
-          (suffixes load-file-rep-suffixes)
-          result)
-      (while (and suffixes (not result))
-        (let ((candidate (concat base ".el")))
-          (when (file-exists-p candidate)
-            (setq result candidate)))
-        (setq suffixes (cdr suffixes)))
-      result))
-
-   (t
-    (compile-angel--debug-message
-     "compile-angel--find-el-file: NO .el FILE CORRESPONDS TO: %s" file))))
+    (let* ((base (file-name-sans-extension file))
+           (plain-el (concat base ".el")))
+      ;; First try plain .el as it's most common
+      (if (file-exists-p plain-el)
+          plain-el
+        ;; Then try with suffixes
+        (cl-some (lambda (suffix)
+                   (let ((candidate (concat base ".el" suffix)))
+                     (and (file-exists-p candidate) candidate)))
+                 load-file-rep-suffixes))))
+   (t nil)))
 
 (defun compile-angel--hook-after-load-functions (file)
   "Compile FILE after load."
