@@ -580,26 +580,35 @@ resolved file path or nil if not found."
       (file-truename el-file))
 
      ;; Try load-history if feature is loaded
-     ((let ((feature-symbol (compile-angel--normalize-feature feature)))
-        (and feature-symbol (featurep feature-symbol)
-             (let* ((feature-name (symbol-name feature-symbol))
-                    (history-regexp (load-history-regexp feature-name))
-                    (history-file (and (listp history-regexp)
-                                      (load-history-filename-element history-regexp))))
-               (and (stringp history-file)
-                    (compile-angel--find-el-file history-file))))))
+     ;; TODO test this before uncommenting
+     ;; ((let ((feature-symbol (compile-angel--normalize-feature feature)))
+     ;;    (and feature-symbol (featurep feature-symbol)
+     ;;         (let* ((feature-name (symbol-name feature-symbol))
+     ;;                (history-regexp (load-history-regexp feature-name))
+     ;;                (history-file (and (listp history-regexp)
+     ;;                                  (load-history-filename-element history-regexp))))
+     ;;           (and (stringp history-file)
+     ;;                (compile-angel--find-el-file history-file))))))
 
      ;; If feature is not loaded, try to locate the file
-     (t (let* ((feature-symbol (compile-angel--normalize-feature feature))
-               (feature-file (compile-angel--locate-feature-file
-                              (cond
-                               ((symbolp feature) (symbol-name feature))
-                               ((stringp feature) feature)
-                               (t (and (symbolp feature-symbol)
-                                       (symbol-name feature-symbol))))
-                              nosuffix)))
-          (when feature-file
-            (file-truename feature-file))))))
+     ;; TODO test this before uncommenting
+     ;; (t (let* ((feature-symbol (compile-angel--normalize-feature feature))
+     ;;           (feature-file (compile-angel--locate-feature-file
+     ;;                          (cond
+     ;;                           ((symbolp feature) (symbol-name feature))
+     ;;                           ((stringp feature) feature)
+     ;;                           (t (and (symbolp feature-symbol)
+     ;;                                   (symbol-name feature-symbol))))
+     ;;                          nosuffix)))
+     ;;      (when feature-file
+     ;;        (file-truename feature-file))))
+
+     (t
+      (locate-file (or el-file feature-name)
+                   load-path
+                   (if nosuffix
+                       load-file-rep-suffixes
+                     compile-angel--el-file-extensions)))))
 
 (defun compile-angel--locate-feature-file (feature-name nosuffix)
   "Locate a file for FEATURE-NAME using `locate-file'.
