@@ -252,7 +252,7 @@ many features. The index updates automatically whenever `load-path' changes.")
   (when (bound-and-true-p doom-modules-dir)
     (file-truename doom-modules-dir)))
 
-;; EXPERIMENTAL:
+;; EXPERIMENTAL (Disabled by default):
 ;; Speed up file lookups when `compile-angel-use-file-index' is non-nil.
 (defvar compile-angel--file-index (make-hash-table :test 'eq))
 (defvar compile-angel--file-index-hits 0)
