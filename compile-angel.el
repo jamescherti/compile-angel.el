@@ -256,17 +256,13 @@ enabled.")
 (defvar compile-angel--file-index-misses 0
   "Counter for file index cache misses.")
 
-(defvar compile-angel--doom-emacs-p (boundp 'doom-emacs-dir))
 (defvar compile-angel--doom-user-dir
-  (and compile-angel--doom-emacs-p
-       (file-truename (expand-file-name (bound-and-true-p doom-user-dir)))))
+  (when (bound-and-true-p doom-user-dir) (file-truename doom-user-dir)))
 (defvar compile-angel--doom-emacs-lisp-dir
-  (and compile-angel--doom-emacs-p
-       (file-truename (expand-file-name "lisp"
-                                        (bound-and-true-p doom-emacs-dir)))))
+  (when (bound-and-true-p doom-emacs-dir)
+    (file-truename (expand-file-name "lisp" doom-emacs-dir))))
 (defvar compile-angel--doom-modules-dir
-  (and compile-angel--doom-emacs-p
-       (file-truename (expand-file-name (bound-and-true-p doom-modules-dir)))))
+  (when (bound-and-true-p doom-modules-dir) (file-truename doom-modules-dir)))
 
 ;;; Functions
 
@@ -459,10 +455,13 @@ FEATURE is a symbol representing the feature being loaded."
        ;; compile-angel. This is important because `.el` files in these
        ;; directories should never be compiled, or Doom may fail to load some of
        ;; them correctly.
-       ((and compile-angel--doom-emacs-p
-             (or (string-prefix-p compile-angel--doom-user-dir el-file)
-                 (string-prefix-p compile-angel--doom-emacs-lisp-dir el-file)
-                 (string-prefix-p compile-angel--doom-modules-dir el-file)))
+       ((and
+         (or (and compile-angel--doom-user-dir
+                  (string-prefix-p compile-angel--doom-user-dir el-file))
+             (and compile-angel--doom-emacs-lisp-dir
+                  (string-prefix-p compile-angel--doom-emacs-lisp-dir el-file))
+             (and compile-angel--doom-modules-dir
+                  (string-prefix-p compile-angel--doom-modules-dir el-file))))
         (compile-angel--debug-message
          "SKIP (Doom Emacs modules/emacs/user directory): %s | %s"
          el-file feature)
