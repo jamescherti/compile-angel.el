@@ -825,7 +825,10 @@ construct possible .el file paths. If a matching file exists, return its path;
 otherwise, return nil."
   (compile-angel--with-fast-file-ops
     (cond
-     ((not file) nil)
+     ((not file)
+      (compile-angel--debug-message
+       "compile-angel--find-el-file: nil file")
+      nil)
      ((compile-angel--is-el-file file) file)
      ((string-equal (file-name-extension file) "elc")
       (let* ((base (file-name-sans-extension file))
