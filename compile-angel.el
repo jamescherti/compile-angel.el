@@ -236,13 +236,16 @@ many features. The index updates automatically whenever `load-path' changes.")
 (defvar compile-angel--el-file-extensions nil)
 (defvar compile-angel--excluded-path-suffixes-regexps nil)
 (defvar compile-angel--doom-user-dir
-  (when (bound-and-true-p doom-user-dir) (file-truename doom-user-dir)))
+  (when (bound-and-true-p doom-user-dir)
+    (concat (directory-file-name (file-truename doom-user-dir)) "/")))
 (defvar compile-angel--doom-emacs-lisp-dir
   (when (bound-and-true-p doom-emacs-dir)
-    (file-truename (expand-file-name "lisp" doom-emacs-dir))))
+    (concat (directory-file-name (file-truename
+                                  (expand-file-name "lisp" doom-emacs-dir)))
+            "/")))
 (defvar compile-angel--doom-modules-dir
   (when (bound-and-true-p doom-modules-dir)
-    (file-truename doom-modules-dir)))
+    (concat (directory-file-name (file-truename doom-modules-dir)) "/")))
 
 ;; EXPERIMENTAL (Disabled by default):
 ;; Speed up file lookups when `compile-angel-use-file-index' is non-nil.
