@@ -93,10 +93,6 @@
   :group 'compile-angel
   :prefix "compile-angel-")
 
-;; Cache for Doom Emacs detection to avoid repeated checks
-(defconst compile-angel--doom-emacs-p (boundp 'doom-user-dir)
-  "Non-nil if Doom Emacs is detected.")
-
 (defcustom compile-angel-enable-byte-compile t
   "Non-nil to enable byte compilation of Emacs Lisp (.el) files."
   :type 'boolean
@@ -259,6 +255,17 @@ enabled.")
 
 (defvar compile-angel--file-index-misses 0
   "Counter for file index cache misses.")
+
+(defvar compile-angel--doom-emacs-p (boundp 'doom-emacs-dir))
+(defvar compile-angel--doom-user-dir
+  (and compile-angel--doom-emacs-p
+       (expand-file-name doom-user-dir)))
+(defvar compile-angel--doom-emacs-lisp-dir
+  (and compile-angel--doom-emacs-p
+       (expand-file-name "lisp" doom-emacs-dir)))
+(defvar compile-angel--doom-modules-dir
+  (and compile-angel--doom-emacs-p
+       (expand-file-name doom-modules-dir)))
 
 ;;; Functions
 
@@ -452,9 +459,9 @@ FEATURE is a symbol representing the feature being loaded."
        ;; directories should never be compiled, or Doom may fail to load some of
        ;; them correctly.
        ((and compile-angel--doom-emacs-p
-             (or (string-prefix-p doom-user-dir el-file)
-                 (string-prefix-p doom-emacs-dir el-file)
-                 (string-prefix-p doom-modules-dir el-file)))
+             (or (string-prefix-p compile-angel--doom-user-dir el-file)
+                 (string-prefix-p compile-angel--doom-emacs-lisp-dir el-file)
+                 (string-prefix-p compile-angel--doom-modules-dir el-file)))
         (compile-angel--debug-message
          "SKIP (Doom Emacs modules/emacs/user directory): %s | %s"
          el-file feature)
