@@ -631,10 +631,8 @@ FEATURE is used to search. FEATURE can be a symbol or a string.
 NOSUFFIX behaves similarly to `load', controlling whether file suffixes are
 considered. Checks caches before performing any computation. Returns the
 resolved file path or nil if not found."
-  ;; Fast path: if we have an absolute path that's an el file, just return it
-  (let* ((file-name-handler-alist nil)
-         (feature-symbol (compile-angel--normalize-feature feature))
-         (feature-name (symbol-name feature-symbol)))
+  (let ((file-name-handler-alist nil))
+    ;; Fast path: if we have an absolute path that's an el file, just return it
     (cond
      ((and (stringp el-file)
            (file-name-absolute-p el-file)
@@ -643,8 +641,9 @@ resolved file path or nil if not found."
 
      ;; Use file index for feature lookups when available
      ((and compile-angel-use-file-index feature)
-      (let* ((cached-result (and feature-symbol
-                                 (gethash feature-symbol compile-angel--file-index))))
+      (let* ((feature-symbol (compile-angel--normalize-feature feature))
+             (cached-result (and feature-symbol
+                                (gethash feature-symbol compile-angel--file-index))))
         (cond
          (cached-result
           ;; Cache hit
@@ -671,29 +670,35 @@ resolved file path or nil if not found."
             (cl-incf compile-angel--file-index-misses)
             (compile-angel--debug-message
              "File index cache MISS for feature: %s" feature))
-          (compile-angel--locate-feature-file feature-name nosuffix)))))
+          (compile-angel--locate-feature-file 
+           (if (symbolp feature) (symbol-name feature) feature) 
+           nosuffix)))))
 
      ;; Try load-history if feature is loaded
-     ((and feature-symbol (featurep feature-symbol))
-      (let ((history-file (car (load-history-filename-element
-                                (concat "/" feature-name ".el")))))
-        (when (stringp history-file)
-          (compile-angel--find-el-file history-file))))
+     ((let ((feature-symbol (compile-angel--normalize-feature feature)))
+        (and feature-symbol (featurep feature-symbol)
+             (let* ((history-file (car (alist-get feature-symbol load-history nil nil #'eq))))
+               (and (stringp history-file)
+                    (compile-angel--find-el-file history-file))))))
 
      ;; If feature is not loaded, try to locate the file
-     (t (compile-angel--locate-feature-file feature nosuffix)))))
+     (t (compile-angel--locate-feature-file 
+         (let ((feature-symbol (compile-angel--normalize-feature feature)))
+           (if (symbolp feature-symbol) 
+               (symbol-name feature-symbol) 
+             feature))
+         nosuffix)))))
 
 (defun compile-angel--locate-feature-file (feature-name nosuffix)
   "Locate a file for FEATURE-NAME using `locate-file'.
 If NOSUFFIX is non-nil, use `load-file-rep-suffixes' instead of
 `compile-angel--el-file-extensions'."
-  (let ((file-name-handler-alist nil))
-    (when feature-name
-      (locate-file feature-name
-                   load-path
-                   (if nosuffix
-                       load-file-rep-suffixes
-                     compile-angel--el-file-extensions)))))
+  (when feature-name
+    (locate-file feature-name
+                 load-path
+                 (if nosuffix
+                     load-file-rep-suffixes
+                   compile-angel--el-file-extensions))))
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix)
   "This function is called by all the :before advices.
