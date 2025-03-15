@@ -652,42 +652,49 @@ resolved file path or nil if not found."
            "File index cache HIT for feature: %s" feature))
         cached-result)
 
-       (t
-        ;; Cache miss
+       ;; Try load-history if feature is loaded
+       ((and feature-symbol (featurep feature-symbol))
         (when compile-angel-track-file-index-stats
           (cl-incf compile-angel--file-index-misses)
           (compile-angel--debug-message
            "File index cache MISS for feature: %s" feature))
-        ;; Fall back to locate-file
-        (let ((file-name-handler-alist nil)
-              (feature-name (if (symbolp feature)
-                                (symbol-name feature)
-                              feature)))
-          (if (featurep feature)
-              (when-let ((file (car (load-history-filename-element
-                                     (concat "/" feature-name ".el")))))
-                (string-replace ".elc" ".el" file))
-            (locate-file feature-name
-                         load-path
-                         (if nosuffix
-                             load-file-rep-suffixes
-                           compile-angel--el-file-extensions))))))))
+        
+        (let ((history-file (car (alist-get feature-symbol load-history nil nil #'eq))))
+          (if (and history-file (stringp history-file))
+              (if (string-match-p "\\.elc\\'" history-file)
+                  (or (compile-angel--find-el-file history-file)
+                      (compile-angel--locate-feature-file feature nosuffix))
+                history-file)
+            (compile-angel--locate-feature-file feature nosuffix))))
+       
+       ;; Cache miss and feature not loaded
+       (t
+        (when compile-angel-track-file-index-stats
+          (cl-incf compile-angel--file-index-misses)
+          (compile-angel--debug-message
+           "File index cache MISS for feature: %s" feature))
+        (compile-angel--locate-feature-file feature nosuffix)))))
 
-   ;; Default: use traditional locate-file method
+   ;; Default: use traditional locate-file method for non-feature lookups
    (t
-    (let ((file-name-handler-alist nil)
-          (feature-name (if (and feature (symbolp feature))
-                           (symbol-name feature)
-                         feature)))
-      (if (featurep feature)
-              (when-let ((file (car (load-history-filename-element
-                                     (concat "/" feature-name ".el")))))
-                (string-replace ".elc" ".el" file))
-            (locate-file feature-name
-                         load-path
-                         (if nosuffix
-                             load-file-rep-suffixes
-                           compile-angel--el-file-extensions)))))))
+    (compile-angel--locate-feature-file feature nosuffix))))
+
+(defun compile-angel--locate-feature-file (feature nosuffix)
+  "Locate a file for FEATURE using `locate-file'.
+If NOSUFFIX is non-nil, use `load-file-rep-suffixes' instead of
+`compile-angel--el-file-extensions'."
+  (let ((file-name-handler-alist nil)
+        (feature-name (cond ((and feature (symbolp feature))
+                             (symbol-name feature))
+                            ((stringp feature)
+                             feature)
+                            (t nil))))
+    (when feature-name
+      (locate-file feature-name
+                   load-path
+                   (if nosuffix
+                       load-file-rep-suffixes
+                     compile-angel--el-file-extensions)))))
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix)
   "This function is called by all the :before advices.
