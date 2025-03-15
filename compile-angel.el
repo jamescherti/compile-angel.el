@@ -314,38 +314,28 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
 (defun compile-angel--native-compile (el-file)
   "Native-compile EL-FILE."
   (compile-angel--with-fast-file-ops
-    (cond
-          ((not (and (featurep 'native-compile)
-                     (fboundp 'native-comp-available-p)
-                     (fboundp 'native-compile-async)
-                     (native-comp-available-p)))
-           (compile-angel--debug-message
-            "Native-compilation ignored (native-comp unavailable): %s" el-file))
+   (cond
+    ((not (and (featurep 'native-compile)
+               (fboundp 'native-comp-available-p)
+               (fboundp 'native-compile-async)
+               (native-comp-available-p)))
+     (compile-angel--debug-message
+      "Native-compilation ignored (native-comp unavailable): %s" el-file))
 
-          ((compile-angel--elisp-native-compiled-p el-file)
-           (compile-angel--debug-message
-            "Native-compilation ignored (up-to-date): %s" el-file))
+    ((compile-angel--elisp-native-compiled-p el-file)
+     (compile-angel--debug-message
+      "Native-compilation ignored (up-to-date): %s" el-file))
 
-     ((not (and (featurep 'native-compile)
-                (fboundp 'native-comp-available-p)
-                (fboundp 'native-compile-async)
-                (native-comp-available-p)))
-      (compile-angel--debug-message
-       "Native-compilation ignored (native-comp unavailable): %s" el-file))
-
-     ((compile-angel--elisp-native-compiled-p el-file)
-      (compile-angel--debug-message
-       "Native-compilation ignored (up-to-date): %s" el-file))
-
-     (t
-      (let ((el-file-abbreviated (abbreviate-file-name el-file)))
-        (compile-angel--verbose-message
-         "Async native-compilation: %s" el-file-abbreviated))
-      (let ((inhibit-message (not (or (not compile-angel-verbose)
-                                      (not compile-angel-debug)))))
-        (when (and (featurep 'native-compile)
-                   (fboundp 'native-compile-async))
-          (funcall 'native-compile-async el-file)))))))
+    (t
+     (let ((el-file-abbreviated (abbreviate-file-name el-file)))
+       (compile-angel--verbose-message
+        "Async native-compilation: %s" el-file-abbreviated))
+     (let ((inhibit-message (not (or (not compile-angel-verbose)
+                                     (not compile-angel-debug)))))
+       ;; TODO: Move featurep before the first (cond in this function
+       (when (and (featurep 'native-compile)
+                  (fboundp 'native-compile-async))
+         (funcall 'native-compile-async el-file)))))))
 
 (defun compile-angel--byte-compile (el-file elc-file)
   "Byte-compile EL-FILE into ELC-FILE.
@@ -598,6 +588,8 @@ For other types, return nil and log a debug message."
 This creates a mapping from feature symbols to their file paths."
   (compile-angel--debug-message "Building Elisp file index from load-path...")
   (clrhash compile-angel--file-index)
+  (setq compile-angel--file-index-hits 0
+        compile-angel--file-index-misses 0)
 
   ;; Process each directory in load-path - use a filtered load-path
   (let* ((filtered-load-path (cl-remove-if-not #'file-directory-p load-path)))
@@ -622,7 +614,7 @@ This creates a mapping from feature symbols to their file paths."
     (let ((evil-collection-file (gethash 'evil-collection compile-angel--file-index)))
       (when evil-collection-file
         (let ((evil-collection-modes-dir (expand-file-name "modes"
-                                                          (file-name-directory evil-collection-file))))
+                                                           (file-name-directory evil-collection-file))))
           (when (file-directory-p evil-collection-modes-dir)
             ;; Process all mode directories in a single pass
             (dolist (file (directory-files evil-collection-modes-dir t directory-files-no-dot-files-regexp t))
@@ -631,7 +623,7 @@ This creates a mapping from feature symbols to their file paths."
                        (feature-name (concat "evil-collection-" mode-name))
                        (feature-symbol (intern feature-name))
                        (expected-file (concat file "/"
-                                             (concat "evil-collection-" mode-name ".el"))))
+                                              (concat "evil-collection-" mode-name ".el"))))
                   (puthash feature-symbol expected-file compile-angel--file-index)))))))))
 
   (compile-angel--debug-message
