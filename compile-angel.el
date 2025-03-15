@@ -605,10 +605,7 @@ resolved file path or nil if not found."
    (t
     (let ((feature-symbol (compile-angel--normalize-feature feature)))
       (and feature-symbol (featurep feature-symbol)
-           (let* ((feature-name (symbol-name feature-symbol))
-                  (history-regexp (load-history-regexp feature-name))
-                  (history-file (and (listp history-regexp)
-                                     (load-history-filename-element history-regexp))))
+           (let* ((feature-name (symbol-name feature-symbol)))
              (locate-file (or el-file feature-name)
                           load-path
                           (if nosuffix
