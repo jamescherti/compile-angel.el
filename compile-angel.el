@@ -167,18 +167,6 @@ displayed accordingly."
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-use-file-index nil
-  "Non-nil to use a file index for faster feature-to-file lookups.
-
-When enabled, compile-angel builds a hash table mapping feature names to
-their corresponding file paths by scanning all directories in `load-path`.
-This significantly improves performance when looking up files, especially
-with large `load-path` values or when processing many features.
-
-The index is automatically rebuilt when `load-path` changes."
-  :type 'boolean
-  :group 'compile-angel)
-
 (defcustom compile-angel-track-file-index-stats nil
   "Non-nil to track statistics about file index cache hits and misses.
 When enabled, compile-angel will count how many times the file index cache
@@ -236,6 +224,16 @@ is not compiled, as the compilation would fail anyway."
   :group 'compile-angel
   :type 'boolean)
 
+;;; Experimental features
+
+(defvar compile-angel-use-file-index nil
+  "EXPERIMENTAL: Enable a faster feature-to-file lookup.
+
+When non-nil, compile-angel constructs a hash table mapping feature names to
+their file paths by scanning all directories in `load-path'. This can improve
+lookup performance, particularly for large `load-path' values or when handling
+many features. The index updates automatically whenever `load-path' changes.")
+
 ;;; Internal variables
 
 (defvar compile-angel--quiet-byte-compile-file t)
@@ -245,24 +243,20 @@ is not compiled, as the compilation would fail anyway."
 (defvar compile-angel--el-file-regexp nil)
 (defvar compile-angel--el-file-extensions nil)
 (defvar compile-angel--excluded-path-suffixes-regexps nil)
-(defvar compile-angel--file-index (make-hash-table :test 'eq)
-  "Hash table mapping feature symbols to their file paths.
-This is used to speed up file lookups when `compile-angel-use-file-index` is
-enabled.")
-
-(defvar compile-angel--file-index-hits 0
-  "Counter for file index cache hits.")
-
-(defvar compile-angel--file-index-misses 0
-  "Counter for file index cache misses.")
-
 (defvar compile-angel--doom-user-dir
   (when (bound-and-true-p doom-user-dir) (file-truename doom-user-dir)))
 (defvar compile-angel--doom-emacs-lisp-dir
   (when (bound-and-true-p doom-emacs-dir)
     (file-truename (expand-file-name "lisp" doom-emacs-dir))))
 (defvar compile-angel--doom-modules-dir
-  (when (bound-and-true-p doom-modules-dir) (file-truename doom-modules-dir)))
+  (when (bound-and-true-p doom-modules-dir)
+    (file-truename doom-modules-dir)))
+
+;; EXPERIMENTAL:
+;; Speed up file lookups when `compile-angel-use-file-index' is non-nil.
+(defvar compile-angel--file-index (make-hash-table :test 'eq))
+(defvar compile-angel--file-index-hits 0)
+(defvar compile-angel--file-index-misses 0)
 
 ;;; Functions
 
