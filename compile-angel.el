@@ -604,11 +604,17 @@ resolved file path or nil if not found."
      ;;        (file-truename feature-file))))
 
      (t
-      (locate-file (or el-file feature-name)
-                   load-path
-                   (if nosuffix
-                       load-file-rep-suffixes
-                     compile-angel--el-file-extensions)))))
+      (let ((feature-symbol (compile-angel--normalize-feature feature)))
+        (and feature-symbol (featurep feature-symbol)
+             (let* ((feature-name (symbol-name feature-symbol))
+                    (history-regexp (load-history-regexp feature-name))
+                    (history-file (and (listp history-regexp)
+                                       (load-history-filename-element history-regexp))))
+               (locate-file (or el-file feature-name)
+                            load-path
+                            (if nosuffix
+                                load-file-rep-suffixes
+                              compile-angel--el-file-extensions))))))))
 
 (defun compile-angel--locate-feature-file (feature-name nosuffix)
   "Locate a file for FEATURE-NAME using `locate-file'.
