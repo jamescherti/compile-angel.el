@@ -823,7 +823,7 @@ existence.
 The function iterates through the extensions in `load-file-rep-suffixes` to
 construct possible .el file paths. If a matching file exists, return its path;
 otherwise, return nil."
-  (let ((file-name-handler-alist nil))
+  (compile-angel--with-fast-file-ops
     (cond
      ((not file) nil)
      ((compile-angel--is-el-file file) file)
