@@ -675,7 +675,8 @@ resolved file path or nil if not found."
             (cl-incf compile-angel--file-index-misses)
             (compile-angel--debug-message
              "File index cache MISS for feature: %s" feature))
-          (let ((history-file (car (load-history-filename-element
+          (let* ((feature-name (symbol-name feature-symbol))
+                 (history-file (car (load-history-filename-element
                                     (concat "/" feature-name ".el")))))
             (when (stringp history-file)
               (compile-angel--find-el-file history-file))))
@@ -693,7 +694,8 @@ resolved file path or nil if not found."
      ;; Try load-history if feature is loaded
      ((let ((feature-symbol (compile-angel--normalize-feature feature)))
         (and feature-symbol (featurep feature-symbol)
-             (let* ((history-file (car (alist-get feature-symbol load-history nil nil #'eq))))
+             (let* ((feature-name (symbol-name feature-symbol))
+                    (history-file (car (alist-get feature-symbol load-history nil nil #'eq))))
                (and (stringp history-file)
                     (compile-angel--find-el-file history-file))))))
 
@@ -703,7 +705,7 @@ resolved file path or nil if not found."
            (if (symbolp feature-symbol) 
                (symbol-name feature-symbol) 
              feature))
-         nosuffix)))))
+         nosuffix))))
 
 (defun compile-angel--locate-feature-file (feature-name nosuffix)
   "Locate a file for FEATURE-NAME using `locate-file'.
