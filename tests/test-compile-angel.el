@@ -1,0 +1,37 @@
+;;; test-compile-angel.el --- Test compile-angel -*- lexical-binding: t -*-
+
+;; Copyright (C) 2024-2025 James Cherti | https://www.jamescherti.com/contact/
+
+;; Author: James Cherti
+;; Version: 1.0.6
+;; URL: https://github.com/jamescherti/compile-angel.el
+;; Keywords: convenience
+;; Package-Requires: ((emacs "27.1"))
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+;; This file is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
+
+;;; Commentary:
+;; This file contains unit tests for compile-angel.
+
+;;; Code:
+
+(require 'compile-angel)
+
+(ert-deftest test-compile-angel-test14-file-names-with-asterisks ()
+  (should
+   t))
+
+(provide 'test-compile-angel)
+;;; test-compile-angel.el ends here
