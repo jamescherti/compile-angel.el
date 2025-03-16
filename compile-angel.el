@@ -106,7 +106,6 @@
 (defcustom compile-angel-excluded-files '("loaddefs.el"
                                           "autoloads.el"
                                           ;; Built-in no-byte-compile packages
-                                          "/charprop.el"
                                           "/cus-load.el"
                                           "/finder-inf.el")
   "A list of path suffixes used to exclude specific .el files from compilation.
@@ -125,7 +124,7 @@ include all extensions associated with .el files."
   :type '(repeat string)
   :group 'compile-angel)
 
-(defcustom compile-angel-excluded-files-regexps nil
+(defcustom compile-angel-excluded-files-regexps '("/lisp/international/.*\\.el")
   "A list of regular expressions to exclude certain .el files from compilation.
 
 It is advisable to use `compile-angel-excluded-files' instead of
