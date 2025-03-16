@@ -106,8 +106,10 @@
 (defcustom compile-angel-excluded-files '("loaddefs.el"
                                           "autoloads.el"
                                           ;; Built-in no-byte-compile packages
-                                          "/cus-load.el"
-                                          "/finder-inf.el")
+                                          "/lisp/leim/leim-list.el"
+                                          "lisp/org/org-version.el"
+                                          "/lisp/cus-load.el"
+                                          "/lisp/finder-inf.el")
   "A list of path suffixes used to exclude specific .el files from compilation.
 
 Example: \\='(\"suffix.el\" \"/filename.el\") This excludes any path that ends
