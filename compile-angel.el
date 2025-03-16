@@ -106,6 +106,7 @@
 (defcustom compile-angel-excluded-files '("loaddefs.el"
                                           "autoloads.el"
                                           ;; Built-in no-byte-compile packages
+                                          "/lisp/subdirs.el"
                                           "/lisp/leim/leim-list.el"
                                           "lisp/org/org-version.el"
                                           "/lisp/cus-load.el"
