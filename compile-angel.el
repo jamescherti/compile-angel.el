@@ -108,7 +108,7 @@
                                           ;; Built-in no-byte-compile packages
                                           "/lisp/subdirs.el"
                                           "/lisp/leim/leim-list.el"
-                                          "lisp/org/org-version.el"
+                                          "/lisp/org/org-version.el"
                                           "/lisp/cus-load.el"
                                           "/lisp/finder-inf.el")
   "A list of path suffixes used to exclude specific .el files from compilation.
