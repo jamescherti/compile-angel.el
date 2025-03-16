@@ -254,8 +254,10 @@ This disables file handlers temporarily for faster file operations."
   "Insert formatted MSG with ARGS into BUFFER-NAME buffer."
   (let ((inhibit-read-only t))
     (with-current-buffer (get-buffer-create buffer-name)
-      (goto-char (point-max))
-      (insert (apply 'format msg args) "\n"))))
+      (setq-local buffer-read-only t)
+      (save-excursion
+        (goto-char (point-max))
+        (insert (apply 'format msg args) "\n")))))
 
 (defmacro compile-angel--debug-message (&rest args)
   "Display a debug message with the same ARGS arguments as `message'.
