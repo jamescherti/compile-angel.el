@@ -530,6 +530,9 @@ detected, it raises an error and returns nil."
         t)
     (scan-error
      (let ((char (nth 2 data)))
+       (compile-angel--debug-message
+        "SKIP compile-angel--compile-on-save (Unmatched parenthesis): %s"
+        (buffer-file-name (buffer-base-buffer)))
        (user-error
         (concat "[compile-angel] Compilation aborted: Unmatched bracket or "
                 "quote in line %s, column %s in %s")
