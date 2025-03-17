@@ -568,7 +568,7 @@ For other types, return nil and log a debug message."
      feature (type-of feature))
     nil)))
 
-(defun compile-angel--find-el-file-in-history-from-feature (feature-name)
+(defun compile-angel--feature-el-file-from-load-history (feature-name)
   "Return the source file for FEATURE-NAME if it is loaded.
 Uses `load-history' to determine the file where the feature was loaded from."
   (when feature-name
@@ -578,64 +578,59 @@ Uses `load-history' to determine the file where the feature was loaded from."
       (and (listp history-file)
            (compile-angel--find-el-file (car history-file))))))
 
-(defun compile-angel--guess-el-file (el-file
-                                     &optional feature nosuffix)
-  "Guess the path of the EL-FILE or FEATURE.
-
-EL-FILE must be an absolute path. If EL-FILE is not provided,
-FEATURE is used to search. FEATURE can be a symbol or a string.
-
-NOSUFFIX behaves similarly to `load', controlling whether file suffixes are
-considered. Checks caches before performing any computation. Returns the
-resolved file path or nil if not found."
-  ;; Fast path: if we have an absolute path that's an el file, just return it
-  (cond
-   ((and (stringp el-file)
-         (file-name-absolute-p el-file)
-         (compile-angel--is-el-file el-file))
-    (file-truename el-file))
-
-   (t
-    (let* ((feature-symbol (compile-angel--normalize-feature feature))
-           (feature-name (when feature-symbol (symbol-name feature-symbol)))
-           (el-file-from-history
-            (compile-angel--find-el-file-in-history-from-feature feature-name)))
-      (cond
-       ;; Try load-history if feature is loaded
-       (el-file-from-history
-        el-file-from-history)
-
-       ;; If feature is not loaded, try to locate the file
-       ;; TODO test this before uncommenting
-       ;; (t (let* ((feature-symbol (compile-angel--normalize-feature feature))
-       ;;           (feature-file (compile-angel--locate-feature-file
-       ;;                          (cond
-       ;;                           ((symbolp feature) (symbol-name feature))
-       ;;                           ((stringp feature) feature)
-       ;;                           (t (and (symbolp feature-symbol)
-       ;;                                   (symbol-name feature-symbol))))
-       ;;                          nosuffix)))
-       ;;      (when feature-file
-       ;;        (file-truename feature-file))))
-
-       ((and feature-symbol (featurep feature-symbol))
-        (locate-file (or el-file feature-name)
-                     load-path
-                     (if nosuffix
-                         load-file-rep-suffixes
-                       compile-angel--el-file-extensions))))))))
-
-(defun compile-angel--locate-feature-file (feature-name nosuffix)
-  "Locate a file for FEATURE-NAME using `locate-file'.
+(defun compile-angel--locate-feature-file (feature-or-file nosuffix)
+  "Locate a file for FEATURE-OR-FILE using `locate-file'.
 If NOSUFFIX is non-nil, use `load-file-rep-suffixes' instead of
 `compile-angel--el-file-extensions'."
-  (when feature-name
+  (when feature-or-file
     (let ((file-name-handler-alist nil))
-      (locate-file feature-name
+      (locate-file feature-or-file
                    load-path
                    (if nosuffix
                        load-file-rep-suffixes
                      compile-angel--el-file-extensions)))))
+
+(defun compile-angel--guess-el-file (el-file
+                                     &optional feature-symbol nosuffix)
+  "Guess the path of the EL-FILE or FEATURE.
+
+EL-FILE must be an absolute path. If EL-FILE is not provided,
+FEATURE-SYMBOL is used to search. FEATURE-SYMBOL has to be a symbol.
+
+NOSUFFIX behaves similarly to `load', controlling whether file suffixes are
+considered. Checks caches before performing any computation. Returns the
+resolved file path or nil if not found."
+  (let ((feature-name (when feature-symbol
+                        (symbol-name feature-symbol))))
+    ;; Fast path: if we have an absolute path that's an el file, just return it
+    (let (result)
+      ;; El File
+      (when (and el-file
+                 (stringp el-file)
+                 (compile-angel--is-el-file el-file))
+        (setq result el-file))
+
+      ;; Try load-history if feature is loaded
+      (when (and (not result) feature-name)
+        (let* ((el-file-from-history
+                (compile-angel--feature-el-file-from-load-history feature-name)))
+          (when el-file-from-history
+            (setq result el-file-from-history))))
+
+      ;; Locate feature or file
+      (when (not result)
+        (let* ((feature-file
+                (compile-angel--locate-feature-file (or el-file feature-name)
+                                                    nosuffix)))
+          (when feature-file
+            (setq result feature-file))))
+
+      (if (and result
+               (file-name-absolute-p result))
+          ;; Return result
+          (file-truename result)
+        ;; Otherwise, return nil
+        nil))))
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix)
   "This function is called by all the :before advices.
