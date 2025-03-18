@@ -622,11 +622,12 @@ This creates a mapping from feature symbols to their file paths."
       ;; Process each directory in load-path
       (dolist (dir filtered-load-path)
         (dolist (file (directory-files dir t combined-pattern t))
-          ;; Extract the feature symbol from the filename - intern directly
-          (let ((feature-symbol (intern (file-name-base file))))
-            ;; Store in the index, with the first occurrence taking precedence
-            (unless (gethash feature-symbol compile-angel--file-index)
-              (puthash feature-symbol file compile-angel--file-index))))))
+          (when (file-regular-p file)
+            ;; Extract the feature symbol from the filename - intern directly
+            (let ((feature-symbol (intern (file-name-base file))))
+              ;; Store in the index, with the first occurrence taking precedence
+              (unless (gethash feature-symbol compile-angel--file-index)
+                (puthash feature-symbol file compile-angel--file-index)))))))
 
     ;; `archive-mode' is a special case.
     (puthash 'archive-mode (gethash 'arc-mode compile-angel--file-index)
