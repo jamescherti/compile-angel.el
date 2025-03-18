@@ -749,7 +749,7 @@ resolved file path or nil if not found."
            (compile-angel--is-el-file el-file))
       (compile-angel--debug-message
        "compile-angel--guess-el-file: File: %s" el-file)
-      (expand-file-name el-file))
+      el-file)
 
      ;; Experimental feature
      ((when-let* ((file-index-result
