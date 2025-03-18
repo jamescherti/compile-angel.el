@@ -228,13 +228,14 @@ by scanning all directories in `load-path' to improve lookup performance.")
 
 ;;; Internal variables
 
+(defvar compile-angel--quiet-byte-compile t)
+
 (defvar compile-angel--track-no-byte-compile-files t)
-(defvar compile-angel--list-no-byte-compile-files (make-hash-table :test 'equal))
-(defvar compile-angel--quiet-byte-compile-file t)
+(defvar compile-angel--no-byte-compile-files-list (make-hash-table :test 'equal))
+
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
 (defvar compile-angel--list-compiled-features (make-hash-table :test 'eq))
 (defvar compile-angel--currently-compiling nil)
-(defvar compile-angel--force-compilation nil)
 (defvar compile-angel--el-file-regexp nil)
 (defvar compile-angel--el-file-extensions nil)
 (defvar compile-angel--excluded-path-suffixes-regexps nil)
@@ -356,8 +357,9 @@ Return non-nil to allow native compilation."
      "Byte-compilation Ignored (up-to-date): %s" el-file)
     t)
 
-   ((and compile-angel--track-no-byte-compile-files
-         (gethash el-file compile-angel--list-no-byte-compile-files))
+   ((and compile-angel-on-load-mode-compile-once
+         compile-angel--track-no-byte-compile-files
+         (gethash el-file compile-angel--no-byte-compile-files-list))
     (compile-angel--debug-message
      "Byte-compilation Ignored (in the no-byte-compile list): %s" el-file)
     t)
@@ -380,8 +382,8 @@ Return non-nil to allow native compilation."
                          #'(lambda (format-string &rest messages-args)
                              (let ((combined-args (cons format-string
                                                         messages-args)))
-                               (when (or (not compile-angel--quiet-byte-compile-file)
-                                         (and compile-angel--quiet-byte-compile-file
+                               (when (or (not compile-angel--quiet-byte-compile)
+                                         (and compile-angel--quiet-byte-compile
                                               (and (not (string-prefix-p "Wrote" format-string))
                                                    (not (string-prefix-p "Compiling " format-string)))))
                                  ;; Show the message
@@ -389,7 +391,7 @@ Return non-nil to allow native compilation."
                 (byte-compile-file el-file)))))
       (cond
        ((eq byte-compile-result 'no-byte-compile)
-        (puthash el-file t compile-angel--list-no-byte-compile-files)
+        (puthash el-file t compile-angel--no-byte-compile-files-list)
         (compile-angel--debug-message
          "Byte-compilation Ignore (no-byte-compile): %s" el-file-abbreviated)
         nil)
@@ -571,7 +573,7 @@ detected, it raises an error and returns nil."
   "Compile the current buffer."
   (when (derived-mode-p 'emacs-lisp-mode)
     (let ((el-file (buffer-file-name (buffer-base-buffer)))
-          (compile-angel--force-compilation t))
+          (compile-angel-on-load-mode-compile-once nil))
       (when (or (not compile-angel-on-save-check-parens)
                 (compile-angel--check-parens))
         (compile-angel--entry-point el-file)))))
@@ -792,13 +794,11 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
           (compile-angel--debug-message
            "SKIP (To prevent recursive compilation): %s | %s" el-file feature))
 
-         ((and (not compile-angel--force-compilation)
-               (and compile-angel-on-load-mode-compile-once
-                    (or
-                     (gethash el-file compile-angel--list-compiled-files)
-                     (when feature-symbol
-                       (gethash feature-symbol
-                                compile-angel--list-compiled-features)))))
+         ((and compile-angel-on-load-mode-compile-once
+               (or (gethash el-file compile-angel--list-compiled-files)
+                   (when feature-symbol
+                     (gethash feature-symbol
+                              compile-angel--list-compiled-features))))
           (compile-angel--debug-message
            "SKIP (In the skip hash list): %s | %s" el-file feature)
           nil)
