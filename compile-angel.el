@@ -741,45 +741,46 @@ resolved file path or nil if not found."
   (let ((feature-name (when feature-symbol
                         (symbol-name feature-symbol))))
     ;; Fast path: if we have an absolute path that's an el file, just return it
-    (let (result)
-      ;; El File
-      (when (and el-file
-                 (stringp el-file)
-                 (compile-angel--is-el-file el-file))
-        (setq result el-file))
+    ;; El File
+    (cond
+     ((and el-file
+           (stringp el-file)
+           (file-name-absolute-p el-file)
+           (compile-angel--is-el-file el-file))
+      (compile-angel--debug-message
+       "compile-angel--guess-el-file: File: %s" el-file)
+      (expand-file-name el-file))
 
-      ;; Experimental feature
-      (when (and (not result) compile-angel-use-file-index feature-symbol)
-        (let ((file-index-result (compile-angel--guess-el-file-using-file-index
-                                  feature-symbol
-                                  nosuffix)))
-          (when file-index-result
-            (setq result file-index-result))))
+     ;; Experimental feature
+     ((when-let* ((file-index-result
+                   (and compile-angel-use-file-index
+                        feature-symbol
+                        (compile-angel--guess-el-file-using-file-index
+                         feature-symbol
+                         nosuffix))))
+        (compile-angel--debug-message
+         "compile-angel--guess-el-file: CACHE: %s" file-index-result)
+        file-index-result))
 
-      ;; Experimental feature
-      ;; Try load-history if feature is loaded
-      (when (and (not result)
-                 compile-angel-guess-el-file-use-load-history
-                 feature-name)
-        (let* ((el-file-from-history
-                (compile-angel--feature-el-file-from-load-history feature-name)))
-          (when el-file-from-history
-            (setq result el-file-from-history))))
+     ;; Experimental feature
+     ;; Try load-history if feature is loaded
+     ((when-let* ((el-file-from-history
+                   (and compile-angel-guess-el-file-use-load-history
+                        feature-name
+                        (compile-angel--feature-el-file-from-load-history
+                         feature-name))))
+        (compile-angel--debug-message
+         "compile-angel--guess-el-file: HIST: %s" el-file-from-history)
+        el-file-from-history))
 
-      ;; Locate feature or file
-      (when (not result)
-        (let* ((feature-file
-                (compile-angel--locate-feature-file (or el-file feature-name)
-                                                    nosuffix)))
-          (when feature-file
-            (setq result feature-file))))
+     ;; Locate feature or file
+     ((when-let* ((feature-file (compile-angel--locate-feature-file
+                                 (or el-file feature-name) nosuffix)))
 
-      (if (and result
-               (file-name-absolute-p result))
-          ;; Return result
-          (expand-file-name result)
-        ;; Otherwise, return nil
-        nil))))
+        (compile-angel--debug-message
+         "compile-angel--guess-el-file: %s: %s"
+         (if el-file "FILE" "FEATURE") (or el-file feature-name))
+        feature-file)))))
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix)
   "This function is called by all the :before advices.
