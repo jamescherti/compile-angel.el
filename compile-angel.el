@@ -712,10 +712,10 @@ argument as `load'."
       (when compile-angel-track-file-index-stats
         (cl-incf compile-angel--file-index-misses)
         (compile-angel--debug-message
-         "File index cache MISS for feature: %s" feature-name))
+         "File index cache MISS for feature: %s" feature-symbol))
 
       ;; Avoid unnecessary symbol->string conversion
-      (compile-angel--locate-feature-file feature-name
+      (compile-angel--locate-feature-file feature-symbol
                                           nosuffix)))))
 
 (defun compile-angel--guess-el-file (el-file
