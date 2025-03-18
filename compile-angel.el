@@ -706,7 +706,7 @@ resolved file path or nil if not found."
               (cl-incf compile-angel--file-index-hits)
               (compile-angel--debug-message
                "File index cache HIT for feature: %s" feature-name))
-            cached-result)
+            (setq result cached-result))
 
            ;; Try `load-history' if feature is loaded
            ((and feature-symbol (featurep feature-symbol))
@@ -721,7 +721,7 @@ resolved file path or nil if not found."
                    (history-file (and (listp history-regexp)
                                       (car (load-history-filename-element history-regexp)))))
               (when (stringp history-file)
-                (compile-angel--find-el-file history-file))))
+                (setq result (compile-angel--find-el-file history-file)))))
 
            ;; Cache miss and feature not loaded
            (t
@@ -731,8 +731,8 @@ resolved file path or nil if not found."
                "File index cache MISS for feature: %s" feature-name))
 
             ;; Avoid unnecessary symbol->string conversion
-            (compile-angel--locate-feature-file feature-name
-                                                nosuffix)))))
+            (setq result (compile-angel--locate-feature-file feature-name
+                                                             nosuffix))))))
 
       ;; Try load-history if feature is loaded
       (when (and (not result) feature-name)
