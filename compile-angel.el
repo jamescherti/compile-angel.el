@@ -220,6 +220,8 @@ is not compiled, as the compilation would fail anyway."
 
 ;;; Experimental features
 
+(defvar compile-angel-guess-el-file-use-load-history nil)
+
 (defvar compile-angel-use-file-index nil
   "EXPERIMENTAL: Enable a faster feature-to-file lookup.
 
@@ -675,6 +677,47 @@ If NOSUFFIX is non-nil, use `load-file-rep-suffixes' instead of
                        load-file-rep-suffixes
                      compile-angel--el-file-extensions)))))
 
+(defun compile-angel--guess-el-file-using-file-index (feature-symbol nosuffix)
+  "Locate the .el file using the file index.
+FEATURE-SYMBOL is the feature (string) and NOSUFFIX is the same NOSUFFIX
+argument as `load'."
+  (let* ((cached-result (and feature-symbol
+                             (gethash feature-symbol compile-angel--file-index))))
+    (cond
+     (cached-result
+      ;; Cache hit
+      (when compile-angel-track-file-index-stats
+        (cl-incf compile-angel--file-index-hits)
+        (compile-angel--debug-message
+         "File index cache HIT for feature: %s" feature-symbol))
+      cached-result)
+
+     ;; Try `load-history' if feature is loaded
+     ((and feature-symbol (featurep feature-symbol))
+      (when compile-angel-track-file-index-stats
+        (cl-incf compile-angel--file-index-misses)
+        (compile-angel--debug-message
+         "File index cache MISS for feature: %s" feature-symbol))
+
+      ;; Store feature-symbol once to avoid repeated symbol-name calls
+      (let* ((feature-name (symbol-name feature-symbol))
+             (history-regexp (load-history-regexp feature-name))
+             (history-file (and (listp history-regexp)
+                                (car (load-history-filename-element history-regexp)))))
+        (when (stringp history-file)
+          (compile-angel--find-el-file history-file))))
+
+     ;; Cache miss and feature not loaded
+     (t
+      (when compile-angel-track-file-index-stats
+        (cl-incf compile-angel--file-index-misses)
+        (compile-angel--debug-message
+         "File index cache MISS for feature: %s" feature-name))
+
+      ;; Avoid unnecessary symbol->string conversion
+      (compile-angel--locate-feature-file feature-name
+                                          nosuffix)))))
+
 (defun compile-angel--guess-el-file (el-file
                                      &optional feature-symbol nosuffix)
   "Guess the path of the EL-FILE or FEATURE.
@@ -696,46 +739,18 @@ resolved file path or nil if not found."
         (setq result el-file))
 
       ;; Experimental feature
-      (when (and (not result) compile-angel-use-file-index feature-name)
-        (let* ((cached-result (and feature-symbol
-                                   (gethash feature-symbol compile-angel--file-index))))
-          (cond
-           (cached-result
-            ;; Cache hit
-            (when compile-angel-track-file-index-stats
-              (cl-incf compile-angel--file-index-hits)
-              (compile-angel--debug-message
-               "File index cache HIT for feature: %s" feature-name))
-            (setq result cached-result))
+      (when (and (not result) compile-angel-use-file-index feature-symbol)
+        (let ((file-index-result (compile-angel--guess-el-file-using-file-index
+                                  feature-symbol
+                                  nosuffix)))
+          (when file-index-result
+            (setq result file-index-result))))
 
-           ;; Try `load-history' if feature is loaded
-           ((and feature-symbol (featurep feature-symbol))
-            (when compile-angel-track-file-index-stats
-              (cl-incf compile-angel--file-index-misses)
-              (compile-angel--debug-message
-               "File index cache MISS for feature: %s" feature-name))
-
-            ;; Store feature-name once to avoid repeated symbol-name calls
-            (let* ((feature-name (symbol-name feature-symbol))
-                   (history-regexp (load-history-regexp feature-name))
-                   (history-file (and (listp history-regexp)
-                                      (car (load-history-filename-element history-regexp)))))
-              (when (stringp history-file)
-                (setq result (compile-angel--find-el-file history-file)))))
-
-           ;; Cache miss and feature not loaded
-           (t
-            (when compile-angel-track-file-index-stats
-              (cl-incf compile-angel--file-index-misses)
-              (compile-angel--debug-message
-               "File index cache MISS for feature: %s" feature-name))
-
-            ;; Avoid unnecessary symbol->string conversion
-            (setq result (compile-angel--locate-feature-file feature-name
-                                                             nosuffix))))))
-
+      ;; Experimental feature
       ;; Try load-history if feature is loaded
-      (when (and (not result) feature-name)
+      (when (and (not result)
+                 compile-angel-guess-el-file-use-load-history
+                 feature-name)
         (let* ((el-file-from-history
                 (compile-angel--feature-el-file-from-load-history feature-name)))
           (when el-file-from-history
