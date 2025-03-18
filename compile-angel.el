@@ -696,7 +696,7 @@ resolved file path or nil if not found."
         (setq result el-file))
 
       ;; Experimental feature
-      (when (and compile-angel-use-file-index feature-name)
+      (when (and (not result) compile-angel-use-file-index feature-name)
         (let* ((cached-result (and feature-symbol
                                    (gethash feature-symbol compile-angel--file-index))))
           (cond
