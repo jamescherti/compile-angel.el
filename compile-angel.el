@@ -457,16 +457,17 @@ FEATURE is a symbol representing the feature being loaded."
        ;; compile-angel. This is important because `.el` files in these
        ;; directories should never be compiled, or Doom may fail to load some of
        ;; them correctly.
-       ((let ((el-file-truename (file-truename el-file)))
-          (or (and compile-angel--doom-user-dir
-                   (string-prefix-p compile-angel--doom-user-dir
-                                    el-file-truename))
-              (and compile-angel--doom-emacs-lisp-dir
-                   (string-prefix-p compile-angel--doom-emacs-lisp-dir
-                                    el-file-truename))
-              (and compile-angel--doom-modules-dir
-                   (string-prefix-p compile-angel--doom-modules-dir
-                                    el-file-truename))))
+       ((and compile-angel--doom-user-dir
+             (let ((el-file-truename (file-truename el-file)))
+               (or (and compile-angel--doom-user-dir
+                        (string-prefix-p compile-angel--doom-user-dir
+                                         el-file-truename))
+                   (and compile-angel--doom-emacs-lisp-dir
+                        (string-prefix-p compile-angel--doom-emacs-lisp-dir
+                                         el-file-truename))
+                   (and compile-angel--doom-modules-dir
+                        (string-prefix-p compile-angel--doom-modules-dir
+                                         el-file-truename)))))
         (compile-angel--debug-message
          "SKIP (Doom Emacs modules/emacs/user directory): %s | %s"
          el-file feature)
