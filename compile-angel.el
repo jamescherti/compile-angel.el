@@ -693,7 +693,8 @@ If NOSUFFIX is non-nil, use `load-file-rep-suffixes' instead of
   "Locate the .el file using the file index.
 FEATURE-SYMBOL is the feature (string) and NOSUFFIX is the same NOSUFFIX
 argument as `load'."
-  (let* ((cached-result (and feature-symbol
+  (let* ((feature-name (symbol-name feature-symbol))
+         (cached-result (and feature-symbol
                              (gethash feature-symbol compile-angel--file-index))))
     (cond
      (cached-result
@@ -712,8 +713,7 @@ argument as `load'."
          "File index cache MISS for feature: %s" feature-symbol))
 
       ;; Store feature-symbol once to avoid repeated symbol-name calls
-      (let* ((feature-name (symbol-name feature-symbol))
-             (history-regexp (load-history-regexp feature-name))
+      (let* ((history-regexp (load-history-regexp feature-name))
              (history-file (and (listp history-regexp)
                                 (car (load-history-filename-element history-regexp)))))
         (when (stringp history-file)
@@ -727,8 +727,7 @@ argument as `load'."
          "File index cache MISS for feature: %s" feature-symbol))
 
       ;; Avoid unnecessary symbol->string conversion
-      (compile-angel--locate-feature-file feature-symbol
-                                          nosuffix)))))
+      (compile-angel--locate-feature-file feature-name nosuffix)))))
 
 (defun compile-angel--guess-el-file (el-file
                                      &optional feature-symbol nosuffix)
