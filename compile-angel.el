@@ -727,7 +727,8 @@ argument as `load'."
          "File index cache MISS for feature: %s" feature-symbol))
 
       ;; Avoid unnecessary symbol->string conversion
-      (compile-angel--locate-feature-file feature-name nosuffix)))))
+      (compile-angel--locate-feature-file feature-symbol
+                                          nosuffix)))))
 
 (defun compile-angel--guess-el-file (el-file
                                      &optional feature-symbol nosuffix)
