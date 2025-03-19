@@ -675,7 +675,7 @@ Uses `load-history' to determine the file where the feature was loaded from."
            (history-file (and (stringp history-regexp)
                               (load-history-filename-element history-regexp))))
       (and (listp history-file)
-           (compile-angel--find-el-file (car history-file))))))
+           (compile-angel--normalize-el-file (car history-file))))))
 
 (defun compile-angel--locate-feature-file (feature-or-file nosuffix)
   "Locate a file for FEATURE-OR-FILE using `locate-file'.
@@ -717,7 +717,7 @@ argument as `load'."
              (history-file (and (listp history-regexp)
                                 (car (load-history-filename-element history-regexp)))))
         (when (stringp history-file)
-          (compile-angel--find-el-file history-file))))
+          (compile-angel--normalize-el-file history-file))))
 
      ;; Cache miss and feature not loaded
      (t
@@ -874,7 +874,7 @@ FEATURE and FILENAME are the same arguments as the `require' function."
        "\n[TASK] compile-angel--compile-loaded-features: %s" feature)
       (compile-angel--entry-point nil feature))))
 
-(defun compile-angel--find-el-file (file)
+(defun compile-angel--normalize-el-file (file)
   "Find the .el file corresponding to FILE.
 
 If FILE is already a .el file, return it. If FILE is a .elc file, check for the
@@ -888,32 +888,36 @@ otherwise, return nil."
     (cond
      ((not file)
       (compile-angel--debug-message
-       "compile-angel--find-el-file: nil file")
+       "compile-angel--normalize-el-file: nil file")
       nil)
+
      ((compile-angel--is-el-file file)
       file)
 
-     ((string-equal (file-name-extension file) "elc")
+     ((string-suffix-p ".elc" file)
+      (compile-angel--debug-message "compile-angel--normalize-el-file: elc file: %s"
+                                    file)
       (let* ((base (file-name-sans-extension file)))
         (cl-some (lambda (suffix)
                    (let ((candidate (concat base ".el" suffix)))
                      (and (file-exists-p candidate) candidate)))
                  load-file-rep-suffixes)))
-     (t nil))))
+
+     (t
+      (compile-angel--debug-message
+       "IGNORED: compile-angel--normalize-el-file: The file is not an .el or .elc: %s"
+       file)))))
 
 (defun compile-angel--hook-after-load-functions (file)
   "Compile FILE after load."
   (compile-angel--with-fast-file-ops
-    (let ((file (compile-angel--find-el-file file)))
+    (let ((file (compile-angel--normalize-el-file file))
+          (compile-angel-on-load-mode-compile-once t))
       (when file
-        (if (not (compile-angel--is-el-file file))
-            (compile-angel--debug-message
-             "\n[TASK] compile-angel--hook-after-load-functions: IGNORE: %s"
-             file)
-          (compile-angel--debug-message
-           "\n[TASK] compile-angel--hook-after-load-functions: COMPILE: %s"
-           file)
-          (compile-angel--entry-point file))))))
+        (compile-angel--debug-message
+         "\n[TASK] compile-angel--hook-after-load-functions: COMPILE: %s"
+         file)
+        (compile-angel--entry-point file)))))
 
 (defun compile-angel--update-el-file-regexp (symbol new-value
                                                     _operation _where)
