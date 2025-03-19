@@ -911,12 +911,12 @@ otherwise, return nil."
 (defun compile-angel--hook-after-load-functions (file)
   "Compile FILE after load."
   (compile-angel--with-fast-file-ops
+    (compile-angel--debug-message
+     "\n[TASK] compile-angel--hook-after-load-functions: %s"
+     file)
     (let ((file (compile-angel--normalize-el-file file))
           (compile-angel-on-load-mode-compile-once t))
       (when file
-        (compile-angel--debug-message
-         "\n[TASK] compile-angel--hook-after-load-functions: COMPILE: %s"
-         file)
         (compile-angel--entry-point file)))))
 
 (defun compile-angel--update-el-file-regexp (symbol new-value
