@@ -39,10 +39,17 @@
 
 (defvar test-compile-angel--test-dir (expand-file-name "~/.test-compile-angel"))
 (defvar test-compile-angel--el-file (expand-file-name "simple-el-file.el"))
-(defvar test-compile-angel--elc-file (expand-file-name "simple-el-file.el"))
+(defvar test-compile-angel--elc-file (expand-file-name "simple-el-file.elc"))
 
 (defun test-compile-angel--init ()
+  (compile-angel-on-load-mode -1)
+  (compile-angel-on-save-mode -1)
+  (compile-angel-on-save-local-mode -1)
+
+  (when (featurep 'simple-el-file)
+    (unload-feature 'simple-el-file))
   (delete-file test-compile-angel--elc-file)
+
   (with-temp-buffer
     (insert "(message \"Hello world\") (provide 'simple-el-file)")
     (let ((coding-system-for-write 'utf-8-emacs)
@@ -54,6 +61,9 @@
 (ert-deftest test-compile-angel--test-byte-compile ()
   "Test byte-compile."
   (test-compile-angel--init)
+  (should-not (file-exists-p test-compile-angel--elc-file))
+
+  (compile-angel-on-load-mode 1)
   (should (file-exists-p test-compile-angel--elc-file)))
 
 (provide 'test-compile-angel)
