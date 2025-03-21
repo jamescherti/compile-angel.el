@@ -1057,7 +1057,8 @@ be JIT compiled."
                            feature-el-file))))
           (when (and el-file
                      (not (compile-angel--el-file-excluded-p el-file)))
-            (if (and (comp-el-to-eln-filename el-file)
+            (if (and (and (fboundp 'comp-el-to-eln-filename)
+                          (comp-el-to-eln-filename el-file))
                      (not (compile-angel--elisp-native-compiled-p el-file)))
                 (push feature result)
               (compile-angel--debug-message
