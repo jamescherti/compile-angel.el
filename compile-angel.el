@@ -524,8 +524,7 @@ FEATURE is a symbol representing the feature being loaded."
                  el-file))
 
        (t
-        (let ((elc-writable (file-writable-p elc-file))
-              (do-native-compile nil)
+        (let ((do-native-compile nil)
               (compile-angel--native-compile-when-jit-enabled
                compile-angel--native-compile-when-jit-enabled))
           (if (not compile-angel-enable-byte-compile)
@@ -535,7 +534,7 @@ FEATURE is a symbol representing the feature being loaded."
                 (setq do-native-compile t))
             ;; Byte-compile enabled
             (cond
-             (elc-writable
+             ((file-writable-p elc-file)
               ;; Byte-compile
               (setq do-native-compile (compile-angel--byte-compile
                                        el-file elc-file)))
