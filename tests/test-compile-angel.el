@@ -37,9 +37,12 @@
 ;;                 (:report-format 'text)
 ;;                 (:send-report nil))))
 
+(defun test-compile-angel--test1 ()
+  t)
+
 (ert-deftest test-compile-angel ()
   "Test compile-angel."
-  (should (progn t)))
+  (should (test-compile-angel--test1)))
 
 (provide 'test-compile-angel)
 ;;; test-compile-angel.el ends here
