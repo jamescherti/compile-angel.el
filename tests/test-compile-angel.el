@@ -37,12 +37,24 @@
 ;;                 (:report-format 'text)
 ;;                 (:send-report nil))))
 
-(defun test-compile-angel--test1 ()
-  t)
+(defvar test-compile-angel--test-dir (expand-file-name "~/.test-compile-angel"))
+(defvar test-compile-angel--el-file (expand-file-name "simple-el-file.el"))
+(defvar test-compile-angel--elc-file (expand-file-name "simple-el-file.el"))
 
-(ert-deftest test-compile-angel ()
-  "Test compile-angel."
-  (should (test-compile-angel--test1)))
+(defun test-compile-angel--init ()
+  (delete-file test-compile-angel--elc-file)
+  (with-temp-buffer
+    (insert "(message \"Hello world\") (provide 'simple-el-file)")
+    (let ((coding-system-for-write 'utf-8-emacs)
+          (write-region-annotate-functions nil)
+          (write-region-post-annotation-function nil))
+      (write-region (point-min) (point-max)
+                    test-compile-angel--el-file nil 'silent))))
+
+(ert-deftest test-compile-angel--test-byte-compile ()
+  "Test byte-compile."
+  (test-compile-angel--init)
+  (should (file-exists-p test-compile-angel--elc-file)))
 
 (provide 'test-compile-angel)
 ;;; test-compile-angel.el ends here
