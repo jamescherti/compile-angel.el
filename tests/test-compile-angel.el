@@ -39,8 +39,7 @@
 
 (ert-deftest test-compile-angel ()
   "Test compile-angel."
-  (interactive)
-  (should t))
+  (should (progn t)))
 
 (provide 'test-compile-angel)
 ;;; test-compile-angel.el ends here
