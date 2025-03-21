@@ -127,7 +127,10 @@ include all extensions associated with .el files."
   :type '(repeat string)
   :group 'compile-angel)
 
-(defcustom compile-angel-excluded-files-regexps '("/lisp/international/.*\\.el")
+(defcustom compile-angel-excluded-files-regexps
+  (delq nil (list "/lisp/international/.*\\.el"
+                  (when (bound-and-true-p doom-user-dir)
+                    "/doom-snippets/.*")))
   "A list of regular expressions to exclude certain .el files from compilation.
 
 It is advisable to use `compile-angel-excluded-files' instead of
