@@ -52,15 +52,18 @@ It is highly recommended to set the following variables **at the very beginning 
 ;; Ensure Emacs loads the most recent byte-compiled files.
 (setq load-prefer-newer t)
 
-;; Ensure JIT compilation is enabled for improved performance by
-;; native-compiling loaded .elc files asynchronously
+;; There is no need to native-compile .elc files asynchronously
+;; because compile-angel will take care of it
 (setq native-comp-jit-compilation t)
-(setq native-comp-deferred-compilation t) ; Deprecated in Emacs > 29.1
+(setq native-comp-deferred-compilation t)  ; Deprecated in Emacs > 29.1
 ```
 
-Additionally, ensure that native compilation is enabled:
+If you set `native-comp-jit-compilation` to nil, compile-angel will fully replace Emacs' native JIT compilation feature. It will natively compile all files that need compilation (i.e., out-of-date files or those where the `.el` file is more recent than the `.eln` file), as it will no longer depend on Emacs to perform the compilation.
 
-This should return t: `(native-comp-available-p)`
+Additionally, ensure that native compilation is enabled: This should return t:
+```
+(native-comp-available-p)
+```
 
 ## Installation of compile-angel
 
