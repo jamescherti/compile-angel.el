@@ -1030,6 +1030,62 @@ be JIT compiled."
                  compile-angel--list-jit-native-compiled-files)
       (clrhash compile-angel--list-jit-native-compiled-files))))
 
+(defun compile-angel--get-list-non-native-compiled ()
+  "Return a list of the non natively-compiled features symbols."
+  (let ((result nil))
+    (dolist (feature features)
+      (when feature
+        (let* ((feature-name
+                (cond ((symbolp feature)
+                       (symbol-name feature))
+
+                      ((stringp feature)
+                       feature)
+
+                      (t
+                       (compile-angel--debug-message
+                        (concat "compile-angel--get-list-non-native-compiled: "
+                                "NON SUPPORTED TYPE: %s (%s)")
+                        feature (type-of feature))
+                       nil)))
+
+               (feature-el-file (when feature-name
+                                  (locate-library feature-name)))
+
+               (el-file (when feature-el-file
+                          (compile-angel--normalize-el-file
+                           feature-el-file))))
+          (when (and el-file
+                     (not (compile-angel--el-file-excluded-p el-file)))
+            (if (and (comp-el-to-eln-filename el-file)
+                     (not (compile-angel--elisp-native-compiled-p el-file)))
+                (push feature result)
+              (compile-angel--debug-message
+               (concat "compile-angel--get-list-non-native-compiled: "
+                       "UP TO DATE: %s (%s)")
+               feature (type-of feature)))))))
+    result))
+
+(defun compile-angel-report ()
+  "Create a buffer listing all features that are not native compiled."
+  (let ((buffer (get-buffer-create "*Non-Native-Compiled*")))
+    (when (buffer-live-p buffer)
+      (with-current-buffer (get-buffer-create "*Non-Native-Compiled*")
+        (erase-buffer)
+        (insert "Features not natively compiled\n")
+        (insert "-------------------------------\n\n")
+        (let ((count 0))
+          (dolist (feature (compile-angel--get-list-non-native-compiled))
+            (setq count (1+ count))
+            (insert (format "- %s\n" (symbol-name feature))))
+
+          (if (= count 0)
+              (insert "(All the features native compiled)")
+            (insert (format "\n(%s features are not native compiled)" count)))
+
+          (goto-char (point-min))
+          (display-buffer (current-buffer)))))))
+
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
   "Toggle `compile-angel-mode' then compiles .el files before they are loaded."
