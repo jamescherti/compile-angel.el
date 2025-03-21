@@ -38,8 +38,10 @@
 ;;                 (:send-report nil))))
 
 (defvar test-compile-angel--test-dir (expand-file-name "~/.test-compile-angel"))
-(defvar test-compile-angel--el-file (expand-file-name "simple-el-file.el"))
-(defvar test-compile-angel--elc-file (expand-file-name "simple-el-file.elc"))
+(defvar test-compile-angel--el-file
+  (expand-file-name "simple-el-file.el" test-compile-angel--test-dir))
+(defvar test-compile-angel--elc-file
+  (expand-file-name "simple-el-file.elc" test-compile-angel--test-dir))
 (defvar test-compile-angel--load-path (copy-sequence load-path))
 
 (defun test-compile-angel--init ()
