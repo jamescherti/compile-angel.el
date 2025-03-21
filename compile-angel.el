@@ -602,9 +602,8 @@ detected, it raises an error and returns nil."
   "Compile the current buffer."
   (when (derived-mode-p 'emacs-lisp-mode)
     (let ((el-file (buffer-file-name (buffer-base-buffer)))
-          ;; Set `native-comp-jit-compilation' to nil to ensure that
-          ;; compile-angel performs the native compilation itself, rather than
-          ;; waiting for Emacs to do it.
+          ;; Ensure that compile-angel performs the native compilation itself,
+          ;; rather than waiting for Emacs to do it.
           (compile-angel--native-compile-when-jit-enabled t)
           (compile-angel-on-load-mode-compile-once nil))
       (when (or (not compile-angel-on-save-check-parens)
