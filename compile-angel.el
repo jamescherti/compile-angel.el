@@ -395,7 +395,12 @@ Return non-nil to allow native compilation."
                                                    (not (string-prefix-p "Compiling " format-string)))))
                                  ;; Show the message
                                  (apply original-message combined-args))))))
-                (byte-compile-file el-file)))))
+                (condition-case err
+                    (byte-compile-file el-file)
+                  (permission-denied
+                   (compile-angel--debug-message
+                    "IGNORED: Permission denied: %s"
+                    (error-message-string err))))))))
       (cond
        ((eq byte-compile-result 'no-byte-compile)
         (puthash el-file t compile-angel--no-byte-compile-files-list)
