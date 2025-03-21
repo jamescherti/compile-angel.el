@@ -40,6 +40,7 @@
 (defvar test-compile-angel--test-dir (expand-file-name "~/.test-compile-angel"))
 (defvar test-compile-angel--el-file (expand-file-name "simple-el-file.el"))
 (defvar test-compile-angel--elc-file (expand-file-name "simple-el-file.elc"))
+(defvar test-compile-angel--load-path (copy-sequence load-path))
 
 (defun test-compile-angel--init ()
   (compile-angel-on-load-mode -1)
@@ -50,20 +51,26 @@
     (unload-feature 'simple-el-file))
   (delete-file test-compile-angel--elc-file)
 
+  (setq load-path (copy-sequence test-compile-angel--load-path))
+  (add-to-list 'load-path test-compile-angel--test-dir)
+
   (with-temp-buffer
     (insert "(message \"Hello world\") (provide 'simple-el-file)")
     (let ((coding-system-for-write 'utf-8-emacs)
           (write-region-annotate-functions nil)
           (write-region-post-annotation-function nil))
       (write-region (point-min) (point-max)
-                    test-compile-angel--el-file nil 'silent))))
-
-(ert-deftest test-compile-angel--test-byte-compile ()
-  "Test byte-compile."
-  (test-compile-angel--init)
-  (should-not (file-exists-p test-compile-angel--elc-file))
+                    test-compile-angel--el-file nil 'silent)))
 
   (compile-angel-on-load-mode 1)
+  (when (file-exists-p test-compile-angel--elc-file)
+    (error "This file should not exist during init: %s"
+           test-compile-angel--elc-file)))
+
+(ert-deftest test-compile-angel--test-byte-compile ()
+  (test-compile-angel--init)
+
+  (load test-compile-angel--elc-file)
   (should (file-exists-p test-compile-angel--elc-file)))
 
 (provide 'test-compile-angel)
