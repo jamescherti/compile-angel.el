@@ -52,8 +52,7 @@ It is highly recommended to set the following variables **at the very beginning 
 ;; Ensure Emacs loads the most recent byte-compiled files.
 (setq load-prefer-newer t)
 
-;; There is no need to native-compile .elc files asynchronously
-;; because compile-angel will take care of it
+;; Make Emacs Native-compile .elc files asynchronously
 (setq native-comp-jit-compilation t)
 (setq native-comp-deferred-compilation t)  ; Deprecated in Emacs > 29.1
 ```
