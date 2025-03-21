@@ -56,6 +56,7 @@
   (setq load-path (copy-sequence test-compile-angel--load-path))
   (add-to-list 'load-path test-compile-angel--test-dir)
 
+  (make-directory test-compile-angel--test-dir t)
   (with-temp-buffer
     (insert "(message \"Hello world\") (provide 'simple-el-file)")
     (let ((coding-system-for-write 'utf-8-emacs)
