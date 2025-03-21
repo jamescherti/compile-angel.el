@@ -520,18 +520,12 @@ FEATURE is a symbol representing the feature being loaded."
           (if (not compile-angel-enable-byte-compile)
               ;; Byte-compile Disabled
               (when compile-angel-enable-native-compile
-                ;; (compile-angel--debug-message
-                ;;  "Native-compilation only: %s" el-file)
                 (setq compile-angel--native-compile-when-jit-enabled t)
                 (setq do-native-compile t))
             ;; Byte-compile enabled
             (cond
              (elc-writable
               ;; Byte-compile
-              ;; (compile-angel--debug-message
-              ;;  "[compile-angel] Byte %scompilation: %s"
-              ;;  (when compile-angel-enable-native-compile "and Native " "")
-              ;;  el-file)
               (setq do-native-compile (compile-angel--byte-compile
                                        el-file elc-file)))
 
