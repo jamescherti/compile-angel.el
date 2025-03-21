@@ -238,6 +238,7 @@ by scanning all directories in `load-path' to improve lookup performance.")
 (defvar compile-angel--no-byte-compile-files-list (make-hash-table :test 'equal))
 
 (defvar compile-angel--list-jit-native-compiled-files (make-hash-table :test 'equal))
+(defvar compile-angel--native-compile-when-jit-enabled nil)
 
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
 (defvar compile-angel--list-compiled-features (make-hash-table :test 'eq))
@@ -514,12 +515,13 @@ FEATURE is a symbol representing the feature being loaded."
        (t
         (let ((elc-writable (file-writable-p elc-file))
               (do-native-compile nil)
-              (native-compile-even-when-jit-compilation-enabled t))
+              (native-compile-when-jit-enabled t))
           (if (not compile-angel-enable-byte-compile)
               ;; Byte-compile Disabled
               (when compile-angel-enable-native-compile
                 ;; (compile-angel--debug-message
                 ;;  "Native-compilation only: %s" el-file)
+                (setq native-compile-when-jit-enabled t)
                 (setq do-native-compile t))
             ;; Byte-compile enabled
             (cond
@@ -547,7 +549,8 @@ FEATURE is a symbol representing the feature being loaded."
                      do-native-compile)
             ;; When the .elc is not writable, force native compilation even when
             ;; JIT is enabled.
-            (if (or native-compile-even-when-jit-compilation-enabled
+            (if (or (or native-compile-when-jit-enabled
+                        compile-angel--native-compile-when-jit-enabled)
                     (and (not (bound-and-true-p native-comp-jit-compilation))
                          (not (bound-and-true-p native-comp-deferred-compilation))))
                 (compile-angel--native-compile el-file)
@@ -597,7 +600,7 @@ detected, it raises an error and returns nil."
           ;; Set `native-comp-jit-compilation' to nil to ensure that
           ;; compile-angel performs the native compilation itself, rather than
           ;; waiting for Emacs to do it.
-          (native-comp-jit-compilation nil)
+          (compile-angel--native-compile-when-jit-enabled t)
           (compile-angel-on-load-mode-compile-once nil))
       (when (or (not compile-angel-on-save-check-parens)
                 (compile-angel--check-parens))
