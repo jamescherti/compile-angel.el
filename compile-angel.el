@@ -515,13 +515,14 @@ FEATURE is a symbol representing the feature being loaded."
        (t
         (let ((elc-writable (file-writable-p elc-file))
               (do-native-compile nil)
-              (native-compile-when-jit-enabled t))
+              (compile-angel--native-compile-when-jit-enabled
+               compile-angel--native-compile-when-jit-enabled))
           (if (not compile-angel-enable-byte-compile)
               ;; Byte-compile Disabled
               (when compile-angel-enable-native-compile
                 ;; (compile-angel--debug-message
                 ;;  "Native-compilation only: %s" el-file)
-                (setq native-compile-when-jit-enabled t)
+                (setq compile-angel--native-compile-when-jit-enabled t)
                 (setq do-native-compile t))
             ;; Byte-compile enabled
             (cond
@@ -545,19 +546,18 @@ FEATURE is a symbol representing the feature being loaded."
                elc-file)
               (setq do-native-compile t))))
 
+          (unless (or compile-angel--native-compile-when-jit-enabled
+                      (and (not (bound-and-true-p native-comp-jit-compilation))
+                           (not (bound-and-true-p native-comp-deferred-compilation))))
+            (setq do-native-compile nil)
+            (puthash el-file t compile-angel--list-jit-native-compiled-files)
+            (compile-angel--debug-message
+             "Native-compilation ignored (JIT compilation will do it): %s"
+             el-file))
+
           (when (and compile-angel-enable-native-compile
                      do-native-compile)
-            ;; When the .elc is not writable, force native compilation even when
-            ;; JIT is enabled.
-            (if (or (or native-compile-when-jit-enabled
-                        compile-angel--native-compile-when-jit-enabled)
-                    (and (not (bound-and-true-p native-comp-jit-compilation))
-                         (not (bound-and-true-p native-comp-deferred-compilation))))
-                (compile-angel--native-compile el-file)
-              (puthash el-file t compile-angel--list-jit-native-compiled-files)
-              (compile-angel--debug-message
-               "Native-compilation ignored (JIT compilation will do it): %s"
-               el-file)))))))))
+            (compile-angel--native-compile el-file))))))))
 
 (defun compile-angel--check-parens ()
   "Check for unbalanced parentheses in the current buffer.
