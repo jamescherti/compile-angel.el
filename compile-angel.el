@@ -536,7 +536,7 @@ FEATURE is a symbol representing the feature being loaded."
               elc-file)
              (setq do-native-compile t))))
 
-         (when do-native-compile
+         (when (and compile-angel-enable-native-compile do-native-compile)
            ;; When the .elc is not writable, force native compilation even when
            ;; JIT is enabled.
            (compile-angel--native-compile el-file))))))))
