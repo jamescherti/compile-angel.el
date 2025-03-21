@@ -54,13 +54,16 @@ It is highly recommended to set the following variables **at the very beginning 
 
 ;; There is no need to native-compile .elc files asynchronously
 ;; because compile-angel will take care of it
-(setq native-comp-deferred-compilation nil)  ; Deprecated in Emacs > 29.1
-(setq native-comp-jit-compilation nil)
+(setq native-comp-jit-compilation t)
+(setq native-comp-deferred-compilation t)  ; Deprecated in Emacs > 29.1
 ```
 
-Additionally, ensure that native compilation is enabled:
+If you set `native-comp-jit-compilation` to nil, compile-angel will fully replace Emacs' native JIT compilation feature. It will natively compile all files, as it will no longer rely on Emacs to perform the compilation.
 
-This should return t: `(native-comp-available-p)`
+Additionally, ensure that native compilation is enabled: This should return t:
+```
+(native-comp-available-p)
+```
 
 ## Installation of compile-angel
 
