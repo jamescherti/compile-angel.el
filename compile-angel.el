@@ -513,12 +513,13 @@ FEATURE is a symbol representing the feature being loaded."
 
        (t
         (let ((elc-writable (file-writable-p elc-file))
-              (do-native-compile nil))
+              (do-native-compile nil)
+              (native-compile-even-when-jit-compilation-enabled t))
           (if (not compile-angel-enable-byte-compile)
               ;; Byte-compile Disabled
               (when compile-angel-enable-native-compile
-                (compile-angel--debug-message
-                 "Native-compilation only: %s" el-file)
+                ;; (compile-angel--debug-message
+                ;;  "Native-compilation only: %s" el-file)
                 (setq do-native-compile t))
             ;; Byte-compile enabled
             (cond
@@ -546,8 +547,9 @@ FEATURE is a symbol representing the feature being loaded."
                      do-native-compile)
             ;; When the .elc is not writable, force native compilation even when
             ;; JIT is enabled.
-            (if (and (not (bound-and-true-p native-comp-jit-compilation))
-                     (not (bound-and-true-p native-comp-deferred-compilation)))
+            (if (or native-compile-even-when-jit-compilation-enabled
+                    (and (not (bound-and-true-p native-comp-jit-compilation))
+                         (not (bound-and-true-p native-comp-deferred-compilation))))
                 (compile-angel--native-compile el-file)
               (puthash el-file t compile-angel--list-jit-native-compiled-files)
               (compile-angel--debug-message
