@@ -398,10 +398,16 @@ Return non-nil to allow native compilation."
                 (condition-case err
                     (byte-compile-file el-file)
                   (permission-denied
-                   (compile-angel--debug-message
-                    "IGNORED: Permission denied: %s"
-                    (error-message-string err))))))))
+                   (progn
+                     (compile-angel--debug-message
+                      "IGNORED: Permission denied: %s"
+                      (error-message-string err))
+                     ;; Try to native compile
+                     'compile-angel-ignore)))))))
       (cond
+       ((eq byte-compile-result 'compile-angel-ignore)
+        nil)
+
        ((eq byte-compile-result 'no-byte-compile)
         (puthash el-file t compile-angel--no-byte-compile-files-list)
         (compile-angel--debug-message
@@ -1058,7 +1064,7 @@ be JIT compiled."
           (when (and el-file
                      (not (compile-angel--el-file-excluded-p el-file)))
             (if (and (and (fboundp 'comp-el-to-eln-filename)
-                          (comp-el-to-eln-filename el-file))
+                          (funcall 'comp-el-to-eln-filename el-file))
                      (not (compile-angel--elisp-native-compiled-p el-file)))
                 (push feature result)
               (compile-angel--debug-message
