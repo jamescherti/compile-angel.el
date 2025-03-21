@@ -50,4 +50,4 @@ package-lint:
 
 .PHONY: test
 test:
-	if test -d tests; then cask emacs --batch -L . -L tests -l tests/test-compile-angel.el -f ert-run-tests-batch-and-exit; else true; fi
+	if test -d tests; then cask emacs --batch -L . -L tests -l tests/test-compile-angel.el -f ert-run-tests-batch-and-exit; test -f .coverage && cat .coverage; else true; fi

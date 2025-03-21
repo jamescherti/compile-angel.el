@@ -30,6 +30,13 @@
 (require 'ert)
 (require 'compile-angel)
 
+(with-no-warnings
+  (when (require 'undercover nil t)
+    (undercover "compile-angel.el"
+                (:report-file ".coverage")
+                (:report-format 'text)
+                (:send-report nil))))
+
 (ert-deftest test-compile-angel ()
   "Test compile-angel."
   (interactive)
