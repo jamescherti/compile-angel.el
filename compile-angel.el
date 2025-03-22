@@ -88,6 +88,20 @@
 
 ;;; Variables
 
+(defconst compile-angel--c-provided-features
+  '(tty-child-frames xwidget-internal move-toolbar dbusbind native-compile
+    font-render-setting system-font-setting dynamic-setting android inotify
+    x xinput2 x-toolkit motif gtk cairo gfilenotify haiku multi-tty
+    make-network-process threads w32notify pgtk w32 lcms2 kqueue)
+  "Features that are provided directly by C code without associated Elisp files.")
+
+(defvar compile-angel--c-provided-features-table
+  (let ((table (make-hash-table :test 'eq :size (length compile-angel--c-provided-features))))
+    (dolist (feature compile-angel--c-provided-features)
+      (puthash feature t table))
+    table)
+  "Hash table of features provided by C code for fast lookups.")
+
 (defgroup compile-angel nil
   "Compile Emacs Lisp libraries automatically."
   :group 'compile-angel
@@ -694,13 +708,20 @@ This shows how effective the file index optimization has been."
 
 (defun compile-angel--feature-el-file-from-load-history (feature-name)
   "Return the source file for FEATURE-NAME if it is loaded.
-Uses `load-history' to determine the file where the feature was loaded from."
+Uses `load-history' to determine the file where the feature was loaded from.
+Returns nil for features provided directly by C code."
   (when feature-name
-    (let* ((history-regexp (load-history-regexp feature-name))
-           (history-file (and (stringp history-regexp)
-                              (load-history-filename-element history-regexp))))
-      (and (listp history-file)
-           (compile-angel--normalize-el-file (car history-file))))))
+    (let ((feature-symbol (if (symbolp feature-name) 
+                             feature-name 
+                           (intern feature-name))))
+      ;; First check if it's a C-provided feature
+      (unless (gethash feature-symbol compile-angel--c-provided-features-table nil)
+        ;; Only do the expensive lookup if not a C-provided feature
+        (let* ((history-regexp (load-history-regexp feature-name))
+               (history-file (and (stringp history-regexp)
+                                 (load-history-filename-element history-regexp))))
+          (and (listp history-file)
+               (compile-angel--normalize-el-file (car history-file))))))))
 
 (defun compile-angel--locate-feature-file (feature-or-file nosuffix)
   "Locate a file for FEATURE-OR-FILE using `locate-file'.
@@ -769,6 +790,13 @@ resolved file path or nil if not found."
     ;; Fast path: if we have an absolute path that's an el file, just return it
     ;; El File
     (cond
+     ;; Skip C-provided features
+     ((and feature-symbol 
+           (gethash feature-symbol compile-angel--c-provided-features-table nil))
+      (compile-angel--debug-message
+       "compile-angel--guess-el-file: SKIP (C-provided feature): %s" feature-symbol)
+      nil)
+     
      ((and el-file
            (stringp el-file)
            (file-name-absolute-p el-file)
@@ -1003,6 +1031,15 @@ NEW-VALUE is the value of the variable."
                                           nil nil)
     (add-variable-watcher 'compile-angel-excluded-files
                           #'compile-angel--update-el-file-regexp)
+
+    ;; Ensure the C-provided features table is initialized
+    (unless (hash-table-p compile-angel--c-provided-features-table)
+      (setq compile-angel--c-provided-features-table
+            (let ((table (make-hash-table :test 'eq 
+                                         :size (length compile-angel--c-provided-features))))
+              (dolist (feature compile-angel--c-provided-features)
+                (puthash feature t table))
+              table)))
 
     ;; Build the file index if enabled
     (when compile-angel-use-file-index
