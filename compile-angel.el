@@ -720,8 +720,8 @@ This shows how effective the file index optimization has been."
 Uses `load-history' to determine the file where the feature was loaded from.
 Returns nil for features provided directly by C code."
   (when feature-name
-    (let ((feature-symbol (if (symbolp feature-name) 
-                             feature-name 
+    (let ((feature-symbol (if (symbolp feature-name)
+                             feature-name
                            (intern feature-name))))
       (let* ((history-regexp (load-history-regexp feature-name))
              (history-file (and (stringp history-regexp)
@@ -1037,15 +1037,6 @@ NEW-VALUE is the value of the variable."
                                           nil nil)
     (add-variable-watcher 'compile-angel-excluded-files
                           #'compile-angel--update-el-file-regexp)
-
-    ;; Ensure the built-in features table is initialized
-    (unless (hash-table-p compile-angel--builtin-features-table)
-      (setq compile-angel--builtin-features-table
-            (let ((table (make-hash-table :test 'eq 
-                                         :size (length compile-angel--builtin-features))))
-              (dolist (feature compile-angel--builtin-features)
-                (puthash feature t table))
-              table)))
 
     ;; Build the file index if enabled
     (when compile-angel-use-file-index
