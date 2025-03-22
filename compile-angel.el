@@ -382,8 +382,6 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
 (defun compile-angel--byte-compile (el-file elc-file)
   "Byte-compile EL-FILE into ELC-FILE.
 Return non-nil to allow native compilation."
-  ;; (compile-angel--debug-message "Start: Byte-compilation: %s -> %s"
-  ;;                               el-file elc-file)
   (cond
    ((not (file-newer-than-file-p el-file elc-file))
     (compile-angel--debug-message
@@ -973,8 +971,8 @@ otherwise, return nil."
       file)
 
      ((string-suffix-p ".elc" file)
-      (compile-angel--debug-message "compile-angel--normalize-el-file: elc file: %s"
-                                    file)
+      (compile-angel--debug-message
+       "compile-angel--normalize-el-file: elc file: %s" file)
       (let* ((base (file-name-sans-extension file)))
         (cl-some (lambda (suffix)
                    (let ((candidate (concat base ".el" suffix)))
