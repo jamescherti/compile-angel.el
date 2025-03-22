@@ -92,7 +92,10 @@
   '(tty-child-frames xwidget-internal move-toolbar dbusbind native-compile
     font-render-setting system-font-setting dynamic-setting android inotify
     x xinput2 x-toolkit motif gtk cairo gfilenotify haiku multi-tty
-    make-network-process threads w32notify pgtk w32 lcms2 kqueue)
+    make-network-process threads w32notify pgtk w32 lcms2 kqueue emacs mps
+    hashtable-print-readable code-pages base64 md5 sha1 overlay text-properties
+    lisp-float-type dynamic-modules jansson harfbuzz byte-compile :system
+    noutline multi-isearch dotassoc)
   "Features that are provided directly by C code without associated Elisp files.")
 
 (defvar compile-angel--c-provided-features-table
@@ -790,13 +793,6 @@ resolved file path or nil if not found."
     ;; Fast path: if we have an absolute path that's an el file, just return it
     ;; El File
     (cond
-     ;; Skip C-provided features
-     ((and feature-symbol 
-           (gethash feature-symbol compile-angel--c-provided-features-table nil))
-      (compile-angel--debug-message
-       "compile-angel--guess-el-file: SKIP (C-provided feature): %s" feature-symbol)
-      nil)
-     
      ((and el-file
            (stringp el-file)
            (file-name-absolute-p el-file)
@@ -815,6 +811,13 @@ resolved file path or nil if not found."
         (compile-angel--debug-message
          "compile-angel--guess-el-file: CACHE: %s" file-index-result)
         file-index-result))
+
+     ;; Skip C-provided features
+     ((and feature-symbol
+           (gethash feature-symbol compile-angel--c-provided-features-table nil))
+      (compile-angel--debug-message
+       "compile-angel--guess-el-file: SKIP (C-provided feature): %s" feature-symbol)
+      nil)
 
      ;; Experimental feature
      ;; Try load-history if feature is loaded
