@@ -73,6 +73,8 @@
 ;;   ;; Uncomment the line below to auto compile when an .el file is saved
 ;;   ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 ;;
+;;   ;; A global mode that compiles .el files before they are loaded
+;;   ;; using `load' or `require'.
 ;;   (compile-angel-on-load-mode))
 ;;
 ;; Links:

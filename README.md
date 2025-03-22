@@ -6,7 +6,7 @@
 ![](https://raw.githubusercontent.com/jamescherti/compile-angel.el/main/.images/made-for-gnu-emacs.svg)
 
 The **compile-angel** package automatically byte-compiles and native-compiles Emacs Lisp libraries. It offers:
-- `(compile-angel-on-load-mode)`: A global mode that compiles .el files before they are loaded.
+- `(compile-angel-on-load-mode)`: A global mode that compiles .el files before they are loaded with `load` or `require`.
 - `(compile-angel-on-save-local-mode)`: A local mode that compiles .el files whenever the user saves them.
 
 The *compile-angel* modes **speed up Emacs by ensuring all libraries are byte-compiled and native-compiled**. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
@@ -85,7 +85,8 @@ To install *compile-angel* on Emacs from MELPA:
   ;; Uncomment the line below to compile automatically when an Elisp file is saved
   ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 
-  ;; Compiles .el files before they are loaded.
+  ;; A global mode that compiles .el files before they are loaded
+  ;; using `load' or `require'.
   (compile-angel-on-load-mode))
 ```
 
@@ -107,7 +108,8 @@ Here is how to install *compile-angel* on Doom Emacs:
 ;; Uncomment the line below to compile automatically when an Elisp file is saved
 ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 
-;; Compiles .el files before they are loaded.
+;; A global mode that compiles .el files before they are loaded
+;; using `load' or `require'.
 (compile-angel-on-load-mode)
 ```
 
