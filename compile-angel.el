@@ -88,7 +88,7 @@
 
 ;;; Variables
 
-(defconst compile-angel--c-provided-features
+(defconst compile-angel--builtin-features
   '(tty-child-frames xwidget-internal move-toolbar dbusbind native-compile
     font-render-setting system-font-setting dynamic-setting android inotify
     x xinput2 x-toolkit motif gtk cairo gfilenotify haiku multi-tty
@@ -96,14 +96,20 @@
     hashtable-print-readable code-pages base64 md5 sha1 overlay text-properties
     lisp-float-type dynamic-modules jansson harfbuzz byte-compile :system
     noutline multi-isearch dotassoc)
-  "Features that are provided directly by C code without associated Elisp files.")
+  "Features provided by Emacs core without associated Elisp files.
+This includes features provided directly by C code as well as
+features provided by core Elisp that don't have their own .el files.
+These features are excluded from compilation attempts since they
+have no source files to compile.")
 
-(defvar compile-angel--c-provided-features-table
-  (let ((table (make-hash-table :test 'eq :size (length compile-angel--c-provided-features))))
-    (dolist (feature compile-angel--c-provided-features)
+(defvar compile-angel--builtin-features-table
+  (let ((table (make-hash-table :test 'eq :size (length compile-angel--builtin-features))))
+    (dolist (feature compile-angel--builtin-features)
       (puthash feature t table))
     table)
-  "Hash table of features provided by C code for fast lookups.")
+  "Hash table of built-in features for fast lookups.
+Contains features provided by Emacs core (both C and Elisp) that
+don't have associated .el files and therefore don't need compilation.")
 
 (defgroup compile-angel nil
   "Compile Emacs Lisp libraries automatically."
@@ -717,9 +723,9 @@ Returns nil for features provided directly by C code."
     (let ((feature-symbol (if (symbolp feature-name) 
                              feature-name 
                            (intern feature-name))))
-      ;; First check if it's a C-provided feature
-      (unless (gethash feature-symbol compile-angel--c-provided-features-table nil)
-        ;; Only do the expensive lookup if not a C-provided feature
+      ;; First check if it's a built-in feature
+      (unless (gethash feature-symbol compile-angel--builtin-features-table nil)
+        ;; Only do the expensive lookup if not a built-in feature
         (let* ((history-regexp (load-history-regexp feature-name))
                (history-file (and (stringp history-regexp)
                                  (load-history-filename-element history-regexp))))
@@ -812,11 +818,11 @@ resolved file path or nil if not found."
          "compile-angel--guess-el-file: CACHE: %s" file-index-result)
         file-index-result))
 
-     ;; Skip C-provided features
+     ;; Skip built-in features
      ((and feature-symbol
-           (gethash feature-symbol compile-angel--c-provided-features-table nil))
+           (gethash feature-symbol compile-angel--builtin-features-table nil))
       (compile-angel--debug-message
-       "compile-angel--guess-el-file: SKIP (C-provided feature): %s" feature-symbol)
+       "compile-angel--guess-el-file: SKIP (Built-in feature): %s" feature-symbol)
       nil)
 
      ;; Experimental feature
@@ -1035,12 +1041,12 @@ NEW-VALUE is the value of the variable."
     (add-variable-watcher 'compile-angel-excluded-files
                           #'compile-angel--update-el-file-regexp)
 
-    ;; Ensure the C-provided features table is initialized
-    (unless (hash-table-p compile-angel--c-provided-features-table)
-      (setq compile-angel--c-provided-features-table
+    ;; Ensure the built-in features table is initialized
+    (unless (hash-table-p compile-angel--builtin-features-table)
+      (setq compile-angel--builtin-features-table
             (let ((table (make-hash-table :test 'eq 
-                                         :size (length compile-angel--c-provided-features))))
-              (dolist (feature compile-angel--c-provided-features)
+                                         :size (length compile-angel--builtin-features))))
+              (dolist (feature compile-angel--builtin-features)
                 (puthash feature t table))
               table)))
 
