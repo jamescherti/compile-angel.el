@@ -723,14 +723,11 @@ Returns nil for features provided directly by C code."
     (let ((feature-symbol (if (symbolp feature-name) 
                              feature-name 
                            (intern feature-name))))
-      ;; First check if it's a built-in feature
-      (unless (gethash feature-symbol compile-angel--builtin-features-table nil)
-        ;; Only do the expensive lookup if not a built-in feature
-        (let* ((history-regexp (load-history-regexp feature-name))
-               (history-file (and (stringp history-regexp)
-                                 (load-history-filename-element history-regexp))))
-          (and (listp history-file)
-               (compile-angel--normalize-el-file (car history-file))))))))
+      (let* ((history-regexp (load-history-regexp feature-name))
+             (history-file (and (stringp history-regexp)
+                                (load-history-filename-element history-regexp))))
+        (and (listp history-file)
+             (compile-angel--normalize-el-file (car history-file)))))))
 
 (defun compile-angel--locate-feature-file (feature-or-file nosuffix)
   "Locate a file for FEATURE-OR-FILE using `locate-file'.
