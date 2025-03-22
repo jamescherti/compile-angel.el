@@ -265,6 +265,7 @@ This is one of the reasons why opening an issue or submitting a pull request reg
 - Compile-Angel checks for unbalanced parentheses before compiling a file in save mode, without altering the cursor position, making it less intrusive than the default check-parens used by auto-compile.
 - Compile-Angel double-checks after packages are loaded to ensure that Emacs properly performs native compilation when JIT is enabled, as Emacs sometimes skips native-compiling .elc files that should be JIT compiled.
 - Prevent `byte-compile-file` from displaying Wrote messages in the *Messages* buffer unless `compile-angel-verbose` customization is set to `t`.
+- It has the ability to skip compiling features provided by Emacs core without associated Elisp files (e.g., pgtk, w32, lcms2, kqueue, emacs, mps, etc.). This includes features provided directly by C code as well as features provided by core Elisp that don't have their own .el files. These features are excluded from compilation attempts since they have no source files to compile.
 
 ## Author and License
 
