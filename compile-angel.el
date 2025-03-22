@@ -88,6 +88,29 @@
 
 ;;; Variables
 
+(defconst compile-angel--builtin-features
+  '(tty-child-frames xwidget-internal move-toolbar dbusbind native-compile
+    font-render-setting system-font-setting dynamic-setting android inotify
+    x xinput2 x-toolkit motif gtk cairo gfilenotify haiku multi-tty
+    make-network-process threads w32notify pgtk w32 lcms2 kqueue emacs mps
+    hashtable-print-readable code-pages base64 md5 sha1 overlay text-properties
+    lisp-float-type dynamic-modules jansson harfbuzz byte-compile :system
+    noutline multi-isearch dotassoc)
+  "Features provided by Emacs core without associated Elisp files.
+This includes features provided directly by C code as well as
+features provided by core Elisp that don't have their own .el files.
+These features are excluded from compilation attempts since they
+have no source files to compile.")
+
+(defvar compile-angel--builtin-features-table
+  (let ((table (make-hash-table :test 'eq :size (length compile-angel--builtin-features))))
+    (dolist (feature compile-angel--builtin-features)
+      (puthash feature t table))
+    table)
+  "Hash table of built-in features for fast lookups.
+Contains features provided by Emacs core (both C and Elisp) that
+don't have associated .el files and therefore don't need compilation.")
+
 (defgroup compile-angel nil
   "Compile Emacs Lisp libraries automatically."
   :group 'compile-angel
@@ -694,13 +717,17 @@ This shows how effective the file index optimization has been."
 
 (defun compile-angel--feature-el-file-from-load-history (feature-name)
   "Return the source file for FEATURE-NAME if it is loaded.
-Uses `load-history' to determine the file where the feature was loaded from."
+Uses `load-history' to determine the file where the feature was loaded from.
+Returns nil for features provided directly by C code."
   (when feature-name
-    (let* ((history-regexp (load-history-regexp feature-name))
-           (history-file (and (stringp history-regexp)
-                              (load-history-filename-element history-regexp))))
-      (and (listp history-file)
-           (compile-angel--normalize-el-file (car history-file))))))
+    (let ((feature-symbol (if (symbolp feature-name)
+                             feature-name
+                           (intern feature-name))))
+      (let* ((history-regexp (load-history-regexp feature-name))
+             (history-file (and (stringp history-regexp)
+                                (load-history-filename-element history-regexp))))
+        (and (listp history-file)
+             (compile-angel--normalize-el-file (car history-file)))))))
 
 (defun compile-angel--locate-feature-file (feature-or-file nosuffix)
   "Locate a file for FEATURE-OR-FILE using `locate-file'.
@@ -787,6 +814,13 @@ resolved file path or nil if not found."
         (compile-angel--debug-message
          "compile-angel--guess-el-file: CACHE: %s" file-index-result)
         file-index-result))
+
+     ;; Skip built-in features
+     ((and feature-symbol
+           (gethash feature-symbol compile-angel--builtin-features-table nil))
+      (compile-angel--debug-message
+       "compile-angel--guess-el-file: SKIP (Built-in feature): %s" feature-symbol)
+      nil)
 
      ;; Experimental feature
      ;; Try load-history if feature is loaded
