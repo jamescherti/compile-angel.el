@@ -605,7 +605,6 @@ the file name.
 
 If the parentheses are balanced, it returns t. If unbalanced parentheses are
 detected, it raises an error and returns nil."
-  (interactive)
   (condition-case data
       (progn
         (scan-sexps (point-min) (point-max))
@@ -1128,6 +1127,7 @@ be JIT compiled."
 
 (defun compile-angel-report ()
   "Create a buffer listing all features that are not native compiled."
+  (interactive)
   (let ((buffer (get-buffer-create "*Non-Native-Compiled*")))
     (when (buffer-live-p buffer)
       (with-current-buffer (get-buffer-create "*Non-Native-Compiled*")
