@@ -6,7 +6,7 @@
 ![](https://raw.githubusercontent.com/jamescherti/compile-angel.el/main/.images/made-for-gnu-emacs.svg)
 
 The **compile-angel** package automatically byte-compiles and native-compiles Emacs Lisp libraries. It offers:
-- `(compile-angel-on-load-mode)`: A global mode that compiles .el files before they are loaded.
+- `(compile-angel-on-load-mode)`: A global mode that compiles .el files before they are loaded with `load` or `require`.
 - `(compile-angel-on-save-local-mode)`: A local mode that compiles .el files whenever the user saves them.
 
 The *compile-angel* modes **speed up Emacs by ensuring all libraries are byte-compiled and native-compiled**. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
@@ -85,7 +85,8 @@ To install *compile-angel* on Emacs from MELPA:
   ;; Uncomment the line below to compile automatically when an Elisp file is saved
   ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 
-  ;; Compiles .el files before they are loaded.
+  ;; A global mode that compiles .el files before they are loaded
+  ;; using `load' or `require'.
   (compile-angel-on-load-mode))
 ```
 
@@ -107,7 +108,8 @@ Here is how to install *compile-angel* on Doom Emacs:
 ;; Uncomment the line below to compile automatically when an Elisp file is saved
 ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 
-;; Compiles .el files before they are loaded.
+;; A global mode that compiles .el files before they are loaded
+;; using `load' or `require'.
 (compile-angel-on-load-mode)
 ```
 
@@ -265,6 +267,7 @@ This is one of the reasons why opening an issue or submitting a pull request reg
 - Compile-Angel checks for unbalanced parentheses before compiling a file in save mode, without altering the cursor position, making it less intrusive than the default check-parens used by auto-compile.
 - Compile-Angel double-checks after packages are loaded to ensure that Emacs properly performs native compilation when JIT is enabled, as Emacs sometimes skips native-compiling .elc files that should be JIT compiled.
 - Prevent `byte-compile-file` from displaying Wrote messages in the *Messages* buffer unless `compile-angel-verbose` customization is set to `t`.
+- It has the ability to skip compiling features provided by Emacs core without associated Elisp files (e.g., pgtk, w32, lcms2, kqueue, emacs, mps, etc.). This includes features provided directly by C code as well as features provided by core Elisp that don't have their own .el files. These features are excluded from compilation attempts since they have no source files to compile.
 
 ## Author and License
 
