@@ -243,7 +243,9 @@ There are many other use cases as well. For example, some Emacs users prefer sto
 
 ### What is the difference between auto-compile and compile-angel?
 
-Jonas Bernouli, the author of auto-compile, has made some design decisions that prevent it from guaranteeing that all .el packages are byte-compiled and native-compiled. For example, if the user deletes all the .elc files or if the .el files have never been compiled before, auto-compile won't recompile them. Here is a quote from Jonas Bernouli, aka *u/tarsius_*, the auto-compile author ([from this discussion](https://www.reddit.com/r/emacs/comments/1gmmnhn/comment/lwhtte2/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button)):
+Compile-angel offers more features and is more optimized than auto-compile (see details below). Furthermore, auto-compile does not guarantee that all .el files are compiled.
+
+The author of auto-compile has made some decisions that prevent it from guaranteeing that all .el packages are byte-compiled and native-compiled. For example, if the user deletes all the .elc files or if the .el files have never been compiled before, auto-compile won't recompile them. Here is a quote from Jonas Bernouli, aka *u/tarsius_*, the auto-compile author ([from this discussion](https://www.reddit.com/r/emacs/comments/1gmmnhn/comment/lwhtte2/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button)):
 > Both [autocompile] modes only ever re-compile a source file when the
 > respective byte code file already exists but is outdated. Otherwise
 > they do not compile the source file. By "otherwise" I mean if:
@@ -251,7 +253,7 @@ Jonas Bernouli, the author of auto-compile, has made some design decisions that 
 >   - The *.elc does not exist.
 > In both cases the source file is not compiled, by design.
 
-This is one of the reasons why opening an issue or submitting a pull request regarding the auto-compile issue above is pointless, as Jonas Bernouli is unlikely to merge it due to his design decision.
+Here are additional features provided by compile-angel that are not available in auto-compile:
 
 - Compile-angel ensures that even when when the .elc file doesn't exist, the .el source file is compiled. Auto-compile, on the other hand, requires (by design, as explained above) an existing .elc file in order to compile.
 - Compile-angel ensures that files are compiled before and after they are loaded, In addition to compiling the `.el` files loaded using *load* and *require*, also handles files that auto-compile misses, using the `after-load-functions` hook. This ensures that all files are byte-compiled and native-compiled.
