@@ -11,8 +11,6 @@ The **compile-angel** package automatically byte-compiles and native-compiles Em
 
 The *compile-angel* modes **speed up Emacs by ensuring all libraries are byte-compiled and native-compiled**. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
 
-The *compile-angel* author was previously an *auto-compile* user but encountered an issue where several .el files were not being compiled by auto-compile (see the explanation below), resulting in Emacs performance degradation due to the lack of native compilation.
-
 After extensive experimentation and research, the author developed *compile-angel* to address this problem. **The compile-angel package guarantees that all .el files are both byte-compiled and native-compiled, which significantly speeds up Emacs.**
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
@@ -244,6 +242,8 @@ There are many other use cases as well. For example, some Emacs users prefer sto
 ### What is the difference between auto-compile and compile-angel?
 
 Compile-angel offers more features and is more optimized than auto-compile (see details below). Furthermore, auto-compile does not guarantee that all .el files are compiled.
+
+The *compile-angel* author was previously an *auto-compile* user but encountered an issue where several .el files were not being compiled by auto-compile (see the explanation below), resulting in Emacs performance degradation due to the lack of native compilation.
 
 The author of auto-compile has made some decisions that prevent it from guaranteeing that all .el packages are byte-compiled and native-compiled. For example, if the user deletes all the .elc files or if the .el files have never been compiled before, auto-compile won't recompile them. Here is a quote from Jonas Bernouli, aka *u/tarsius_*, the auto-compile author ([from this discussion](https://www.reddit.com/r/emacs/comments/1gmmnhn/comment/lwhtte2/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button)):
 > Both [autocompile] modes only ever re-compile a source file when the
