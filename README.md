@@ -1,4 +1,4 @@
-# compile-angel.el - Speed up Emacs by Byte-compiling and Native-compiling all .el files
+# compile-angel.el - Speed up Emacs by Byte-compiling and Native-compiling all Elisp files
 ![Build Status](https://github.com/jamescherti/compile-angel.el/actions/workflows/ci.yml/badge.svg)
 [![MELPA](https://melpa.org/packages/compile-angel-badge.svg)](https://melpa.org/#/compile-angel)
 [![MELPA Stable](https://stable.melpa.org/packages/compile-angel-badge.svg)](https://stable.melpa.org/#/compile-angel)
@@ -16,7 +16,7 @@ After extensive experimentation and research, the author developed *compile-ange
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 ## Table of Contents
 
-- [compile-angel.el - Speed up Emacs by Byte-compiling and Native-compiling all .el files](#compile-angelel---speed-up-emacs-by-byte-compiling-and-native-compiling-all-el-files)
+- [compile-angel.el - Speed up Emacs by Byte-compiling and Native-compiling all Elisp files](#compile-angelel---speed-up-emacs-by-byte-compiling-and-native-compiling-all-elisp-files)
   - [Why use compile-angel?](#why-use-compile-angel)
   - [Before installing](#before-installing)
   - [Installation of compile-angel](#installation-of-compile-angel)
