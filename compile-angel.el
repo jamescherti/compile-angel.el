@@ -580,16 +580,21 @@ FEATURE is a symbol representing the feature being loaded."
                elc-file)
               (setq do-native-compile t))))
 
-          (unless
-              (or compile-angel--native-compile-when-jit-enabled
-                  (and
-                   (not (bound-and-true-p native-comp-jit-compilation))
-                   (not (bound-and-true-p native-comp-deferred-compilation))))
-            (setq do-native-compile nil)
-            (puthash el-file t compile-angel--list-jit-native-compiled-files)
-            (compile-angel--debug-message
-             "Native-compilation ignored (JIT compilation will do it): %s"
-             el-file))
+          (let ((jit-enabled (and (not (bound-and-true-p
+                                        native-comp-jit-compilation))
+                                  (not (bound-and-true-p
+                                        native-comp-deferred-compilation)))))
+            (when (and jit-enabled
+                       (not compile-angel--native-compile-when-jit-enabled))
+              ;; Do not native-compile. Let the JIT compiler do it.
+              (setq do-native-compile nil)
+              ;; The `compile-angel--list-jit-native-compiled-files' hash
+              ;; table serves as a safeguard to verify that the JIT compiler
+              ;; has not overlooked any files.
+              (puthash el-file t compile-angel--list-jit-native-compiled-files)
+              (compile-angel--debug-message
+               "Native-compilation ignored (JIT compilation will do it): %s"
+               el-file)))
 
           (when (and compile-angel-enable-native-compile
                      do-native-compile)
