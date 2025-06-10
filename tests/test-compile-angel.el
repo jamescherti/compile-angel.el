@@ -50,6 +50,11 @@
 ;;; Helper functions
 
 (defun test-compile-angel--init-default-vars ()
+  "Init the default variables."
+  ;; Force compile-angel to compile files
+  (setq native-comp-jit-compilation nil
+        native-comp-deferred-compilation nil)
+
   (setq compile-angel-verbose t)
   (clrhash compile-angel--no-byte-compile-files-list)
   (clrhash compile-angel--list-jit-native-compiled-files)
@@ -70,6 +75,7 @@
   (setq compile-angel-on-load-compile-load-history t))
 
 (defun test-compile-angel--init ()
+  "Init compile-angel unit test."
   (test-compile-angel--init-default-vars)
   (compile-angel-on-load-mode -1)
   (compile-angel-on-save-mode -1)
@@ -201,4 +207,9 @@
    (should-not (file-exists-p test-compile-angel--elc-file))))
 
 (provide 'test-compile-angel)
+
+;; Local variables:
+;; byte-compile-warnings: (not obsolete)
+;; End:
+
 ;;; test-compile-angel.el ends here
