@@ -3,7 +3,7 @@
 ;; Copyright (C) 2025 James Cherti | https://www.jamescherti.com/contact/
 
 ;; Author: James Cherti
-;; Version: 1.1.0
+;; Version: 1.1.1
 ;; URL: https://github.com/jamescherti/compile-angel.el
 ;; Keywords: abbrev
 ;; Package-Requires: ((emacs "24.1"))
