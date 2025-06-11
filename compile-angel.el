@@ -580,10 +580,8 @@ FEATURE is a symbol representing the feature being loaded."
                elc-file)
               (setq do-native-compile t))))
 
-          (let ((jit-enabled (and (not (bound-and-true-p
-                                        native-comp-jit-compilation))
-                                  (not (bound-and-true-p
-                                        native-comp-deferred-compilation)))))
+          (let ((jit-enabled (or (bound-and-true-p native-comp-jit-compilation)
+                                 (bound-and-true-p native-comp-deferred-compilation))))
             (when (and jit-enabled
                        (not compile-angel--native-compile-when-jit-enabled))
               ;; Do not native-compile. Let the JIT compiler do it.
