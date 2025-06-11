@@ -1119,6 +1119,7 @@ be JIT compiled."
                           (compile-angel--normalize-el-file
                            feature-el-file))))
           (when (and el-file
+                     (not (gethash el-file compile-angel--no-byte-compile-files-list))
                      (not (compile-angel--el-file-excluded-p el-file)))
             (if (and (and (fboundp 'comp-el-to-eln-filename)
                           (funcall 'comp-el-to-eln-filename el-file))
@@ -1133,23 +1134,31 @@ be JIT compiled."
 (defun compile-angel-report ()
   "Create a buffer listing all features that are not native compiled."
   (interactive)
-  (let ((buffer (get-buffer-create "*Non-Native-Compiled*")))
+  (let ((buffer (get-buffer-create "*Non-Native-Compiled*"))
+        (inhibit-read-only t))
     (when (buffer-live-p buffer)
-      (with-current-buffer (get-buffer-create "*Non-Native-Compiled*")
+      (with-current-buffer (get-buffer-create "*compile-angel:report*")
+        (read-only-mode 1)
         (erase-buffer)
-        (insert "Features not natively compiled\n")
+        (insert "Non-natively compiled features:\n")
         (insert "-------------------------------\n\n")
-        (let ((count 0))
-          (dolist (feature (compile-angel--get-list-non-native-compiled))
-            (setq count (1+ count))
-            (insert (format "- %s\n" (symbol-name feature))))
+        (goto-char (point-min))
 
-          (if (= count 0)
-              (insert "(All the features native compiled)")
-            (insert (format "\n(%s features are not native compiled)" count)))
+        (pop-to-buffer (current-buffer))
 
-          (goto-char (point-min))
-          (display-buffer (current-buffer)))))))
+        (save-excursion
+          (goto-char (point-max))
+          (let ((count 0))
+            (dolist (feature (compile-angel--get-list-non-native-compiled))
+              (setq count (1+ count))
+              (insert (format "- %s\n" (symbol-name feature))))
+
+            (if (= count 0)
+                (insert "(All features are natively-compiled.)")
+              (insert (format "\n(%s feature%s %s NOT natively compiled)"
+                              count
+                              (if (< count 2) "" "s")
+                              (if (< count 2) "is" "are"))))))))))
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
