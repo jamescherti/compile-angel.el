@@ -33,6 +33,7 @@ After extensive experimentation and research, the author developed *compile-ange
     - [What's the difference between native and byte compiled?](#whats-the-difference-between-native-and-byte-compiled)
     - [What are some use-cases of compile-angel?](#what-are-some-use-cases-of-compile-angel)
     - [What is the difference between auto-compile and compile-angel?](#what-is-the-difference-between-auto-compile-and-compile-angel)
+  - [Comments from users](#comments-from-users)
   - [Author and License](#author-and-license)
   - [Links](#links)
 
@@ -270,6 +271,10 @@ Here are additional features provided by compile-angel that are not available in
 - Compile-Angel double-checks after packages are loaded to ensure that Emacs properly performs native compilation when JIT is enabled, as Emacs sometimes skips native-compiling .elc files that should be JIT compiled.
 - Prevent `byte-compile-file` from displaying Wrote messages in the *Messages* buffer unless `compile-angel-verbose` customization is set to `t`.
 - It has the ability to skip compiling features provided by Emacs core without associated Elisp files (e.g., pgtk, w32, lcms2, kqueue, emacs, mps, etc.). This includes features provided directly by C code as well as features provided by core Elisp that don't have their own .el files. These features are excluded from compilation attempts since they have no source files to compile.
+
+## Comments from users
+
+-  [Leading_Ad6415](https://www.reddit.com/r/emacs/comments/1l860wd/comment/mxblysh/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button): "Thank you for your works. My start up time gone from ~2.5 seconds to ~1.9 seconds (~25%)"
 
 ## Author and License
 
