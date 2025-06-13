@@ -53,6 +53,10 @@ It is highly recommended to set the following variables **at the very beginning 
 
 ;; Make Emacs Native-compile .elc files asynchronously by setting
 ;; `native-comp-jit-compilation' to t.
+;;
+;; NOTE: You can also experiment with fully disabling
+;; `native-comp-jit-compilation' by setting it to nil, allowing `compile-angel'
+;; to completely replace the Emacs JIT compiler.
 (setq native-comp-jit-compilation t)
 (setq native-comp-deferred-compilation native-comp-jit-compilation)  ; Deprecated
 ```
