@@ -54,12 +54,16 @@ It is highly recommended to set the following variables **at the very beginning 
 
 ;; Make Emacs Native-compile .elc files asynchronously by setting
 ;; `native-comp-jit-compilation' to t.
-;;
-;; NOTE: You can also experiment with fully disabling
-;; `native-comp-jit-compilation' by setting it to nil, allowing `compile-angel'
-;; to completely replace the Emacs JIT compiler.
 (setq native-comp-jit-compilation t)
 (setq native-comp-deferred-compilation native-comp-jit-compilation)  ; Deprecated
+
+;; NOTE: You can also experiment with:
+;; - Fully disabling `native-comp-jit-compilation' by setting it to nil,
+;;   allowing `compile-angel' to completely replace the Emacs JIT compiler.
+;; - For users who do not require byte-compilation, it can be disabled by
+;;   setting `compile-angel-enable-byte-compile' to nil. Disabling
+;;   byte-compilation has minimal impact since native compilation is the primary
+;;   contributor to improved speed.
 ```
 
 If you set `native-comp-jit-compilation` to nil, compile-angel will fully replace Emacs' native JIT compilation feature. It will natively compile all files that need compilation (i.e., out-of-date files or those where the `.el` file is more recent than the `.eln` file), as it will no longer depend on Emacs to perform the compilation.
