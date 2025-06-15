@@ -28,6 +28,7 @@ After extensive experimentation and research, the author developed *compile-ange
     - [How to exclude custom-file, recentf, savehist files?](#how-to-exclude-custom-file-recentf-savehist-files)
     - [How to enable or disable byte-compilation and native-compilation?](#how-to-enable-or-disable-byte-compilation-and-native-compilation)
     - [What's the point of using compile-angel? My Emacs compiles packages automatically anyway!](#whats-the-point-of-using-compile-angel-my-emacs-compiles-packages-automatically-anyway)
+    - [Could compiling all Elisp files not be accomplished with a script—for example, using GNU Parallel along with Emacs's -batch mode?](#could-compiling-all-elisp-files-not-be-accomplished-with-a-scriptfor-example-using-gnu-parallel-along-with-emacss--batch-mode)
     - [Why not just use the package-recompile-all function?](#why-not-just-use-the-package-recompile-all-function)
     - [What is the impact on Emacs startup?](#what-is-the-impact-on-emacs-startup)
     - [What's the difference between native and byte compiled?](#whats-the-difference-between-native-and-byte-compiled)
@@ -218,6 +219,16 @@ Emacs often skips the compilation of certain Elisp files. To verify this:
 - Enable the mode: `(compile-angel-on-load-mode)`
 
 Observe whether `compile-angel` compiles any Elisp files (you will see "Wrote" `.elc` files in the `*Messages*` buffer). If it does, this indicates that Emacs missed compiling those files and that `compile-angel` can help improve the performance of your Emacs.
+
+### Could compiling all Elisp files not be accomplished with a script—for example, using GNU Parallel along with Emacs's -batch mode?
+
+Compiling a large number of Emacs Lisp files regardless of their actual usage is inefficient.
+
+One of the advantages of *compile-angel* is that it compiles files just before they are loaded, restricting the compilation process to only what is necessary and as a result significantly reducing compilation time.
+
+Moreover, *compile-angel* guarantees that all relevant files are transparently both byte-compiled and native-compiled without requiring the user to invoke any scripts manually, which simplifies maintenance and reduces the risk of outdated files.
+
+(If you are interested in compiling all Emacs Lisp files regardless of their actual usage, the author recommends trying [elispcomp](https://github.com/jamescherti/elispcomp), which performs precisely that task.)
 
 ### Why not just use the package-recompile-all function?
 
