@@ -228,7 +228,7 @@ One of the advantages of *compile-angel* is that it compiles files just before t
 
 Moreover, *compile-angel* guarantees that all relevant files are transparently both byte-compiled and native-compiled without requiring the user to invoke any scripts manually, which simplifies maintenance and reduces the risk of outdated files.
 
-(If you are interested in compiling all Emacs Lisp files regardless of their actual usage, the author recommends trying [elispcomp](https://github.com/jamescherti/elispcomp), which performs precisely that task.)
+(If you are interested in compiling all Emacs Lisp files regardless of their actual usage, the author recommends trying [elispcomp](https://github.com/jamescherti/elispcomp), which performs precisely that task. However, *compile-angel* offers greater efficiency.)
 
 ### Why not just use the package-recompile-all function?
 
