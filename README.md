@@ -272,9 +272,9 @@ There are many other use cases as well. For example, some Emacs users prefer sto
 
 ### What is the difference between auto-compile and compile-angel?
 
-Compile-angel offers more features and is more optimized than auto-compile (see details below). Furthermore, auto-compile does not guarantee that all .el files are compiled.
+Compile-angel offers more features and is more optimized than auto-compile (see details below).
 
-The *compile-angel* author was previously an *auto-compile* user but encountered an issue where several .el files were not being compiled by auto-compile (see the explanation below), resulting in Emacs performance degradation due to the lack of native compilation.
+The *compile-angel* author was previously an *auto-compile* user but encountered an issue where several Elisp files were not being compiled by auto-compile (see the explanation below), resulting in Emacs performance degradation due to the lack of native compilation.
 
 The author of auto-compile has made some decisions that prevent it from guaranteeing that all .el packages are byte-compiled and native-compiled. For example, if the user deletes all the .elc files or if the .el files have never been compiled before, auto-compile won't recompile them. Here is a quote from Jonas Bernouli, aka *u/tarsius_*, the auto-compile author ([from this discussion](https://www.reddit.com/r/emacs/comments/1gmmnhn/comment/lwhtte2/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button)):
 > Both [autocompile] modes only ever re-compile a source file when the
