@@ -6,7 +6,7 @@
 ![](https://raw.githubusercontent.com/jamescherti/compile-angel.el/main/.images/made-for-gnu-emacs.svg)
 
 The *compile-angel* package **speeds up Emacs by ensuring that all Elisp libraries are both byte-compiled and native-compiled**:
-- Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime.
+- Byte compilation reduces the overhead of loading Emacs Lisp code at runtime.
 - Native compilation improves performance by generating machine code that runs directly on the hardware, leveraging the full capabilities of the host CPU. The actual speedup varies with the characteristics of the Lisp code, but it is typically 2.5 to 5 times faster than the equivalent byte-compiled version.
 
 This package offers:
@@ -26,7 +26,7 @@ This package offers:
     - [What are some interesting Emacs customizations to consider alongside compile-angel?](#what-are-some-interesting-emacs-customizations-to-consider-alongside-compile-angel)
     - [How to exclude certain .el files from compilation in compile-angel?](#how-to-exclude-certain-el-files-from-compilation-in-compile-angel)
     - [How to exclude custom-file, recentf, savehist files?](#how-to-exclude-custom-file-recentf-savehist-files)
-    - [How to enable or disable byte-compilation and native-compilation?](#how-to-enable-or-disable-byte-compilation-and-native-compilation)
+    - [How to enable or disable byte compilation and native compilation?](#how-to-enable-or-disable-byte-compilation-and-native-compilation)
     - [What's the point of using compile-angel? My Emacs compiles packages automatically anyway!](#whats-the-point-of-using-compile-angel-my-emacs-compiles-packages-automatically-anyway)
     - [Could compiling all Elisp files not be accomplished with a script? (e.g., a GNU Parallel along with Emacs's -batch mode.)](#could-compiling-all-elisp-files-not-be-accomplished-with-a-script-eg-a-gnu-parallel-along-with-emacss--batch-mode)
     - [Why not just use the package-recompile-all function?](#why-not-just-use-the-package-recompile-all-function)
@@ -60,9 +60,9 @@ It is highly recommended to set the following variables **at the very beginning 
 ;; NOTE: You can also experiment with:
 ;; - Fully disabling `native-comp-jit-compilation' by setting it to nil,
 ;;   allowing `compile-angel' to completely replace the Emacs JIT compiler.
-;; - For users who do not need byte-compilation, it can be disabled by
+;; - For users who do not need byte compilation, it can be disabled by
 ;;   setting `compile-angel-enable-byte-compile' to nil. Disabling
-;;   byte-compilation has minimal impact since native compilation is the primary
+;;   byte compilation has minimal impact since native compilation is the primary
 ;;   contributor to improved speed.
 ```
 
@@ -91,8 +91,8 @@ To install *compile-angel* on Emacs from MELPA:
   ;; (When set to nil, compile-angel won't show which file is being compiled.)
   (setq compile-angel-verbose t)
 
-  ;; For users who don't need byte-compilation:
-  ;; Uncomment the sexp below to disable byte-compilation, so that
+  ;; For users who don't need byte compilation:
+  ;; Uncomment the sexp below to disable byte compilation, so that
   ;; compile-angel performs only native compilation.
   ;; (setq compile-angel-enable-byte-compile nil)
 
@@ -119,8 +119,8 @@ Here is how to install *compile-angel* on Doom Emacs:
 ;; (When set to nil, compile-angel won't show which file is being compiled.)
 (setq compile-angel-verbose t)
 
-;; For users who don't need byte-compilation:
-;; Uncomment the sexp below to disable byte-compilation, so that
+;; For users who don't need byte compilation:
+;; Uncomment the sexp below to disable byte compilation, so that
 ;; compile-angel performs only native compilation.
 ;; (setq compile-angel-enable-byte-compile nil)
 
@@ -211,15 +211,15 @@ You can exclude the custom-file, recentf, and savehist files using the following
 ;; Enable the (compile-angel-on-load-mode) mode after the above
 ```
 
-### How to enable or disable byte-compilation and native-compilation?
+### How to enable or disable byte compilation and native compilation?
 
-You can control whether *compile-angel* performs byte-compilation or native-compilation of your .el files by setting the following variables in your configuration:
-- **`compile-angel-enable-byte-compile`**: Set this variable to `t` to enable byte-compilation. When enabled, *compile-angel* will generate .elc files for your .el files, making them load faster by converting them into bytecode. Set it to `nil` to disable byte-compilation.
-- **`compile-angel-enable-native-compile`**: Set this variable to `t` to enable native-compilation, which generates machine code for supported systems, further improving performance. Set it to `nil` to disable native-compilation.
+You can control whether *compile-angel* performs byte compilation or native compilation of your .el files by setting the following variables in your configuration:
+- **`compile-angel-enable-byte-compile`**: Set this variable to `t` to enable byte compilation. When enabled, *compile-angel* will generate .elc files for your .el files, making them load faster by converting them into bytecode. Set it to `nil` to disable byte compilation.
+- **`compile-angel-enable-native-compile`**: Set this variable to `t` to enable native compilation, which generates machine code for supported systems, further improving performance. Set it to `nil` to disable native compilation.
 
 Example configuration:
 ```emacs-lisp
-;; Enable both byte-compilation and native-compilation (default)
+;; Enable both byte compilation and native compilation (default)
 (setq compile-angel-enable-byte-compile t)
 (setq compile-angel-enable-native-compile t)
 ```
@@ -258,9 +258,9 @@ Compile-angel is optimized. It is fast enough that it is nearly imperceptible to
 
 ### What's the difference between native and byte compiled?
 
-Byte-compilation translates Elisp code into an intermediate bytecode .elc that is faster to load than .el files.
+Byte compilation translates Elisp code into an intermediate bytecode .elc that is faster to load than .el files.
 
-Native-compilation goes a step further by converting this bytecode into machine code, which is directly executed by the CPU without the need for an interpreter. Native-compilation significantly improves performance.
+Native compilation goes a step further by converting this bytecode into machine code, which is directly executed by the CPU without the need for an interpreter. Native compilation significantly improves performance.
 
 ### What are some use-cases of compile-angel?
 
