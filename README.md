@@ -91,7 +91,8 @@ To install *compile-angel* on Emacs from MELPA:
   ;; (When set to nil, compile-angel won't show which file is being compiled.)
   (setq compile-angel-verbose t)
 
-  ;; Uncomment the sexp below to disable byte compilation, so that
+  ;; For users who don't need byte-compilation:
+  ;; Uncomment the sexp below to disable byte-compilation, so that
   ;; compile-angel performs only native compilation.
   ;; (setq compile-angel-enable-byte-compile nil)
 
@@ -118,7 +119,8 @@ Here is how to install *compile-angel* on Doom Emacs:
 ;; (When set to nil, compile-angel won't show which file is being compiled.)
 (setq compile-angel-verbose t)
 
-;; Uncomment the sexp below to disable byte compilation, so that
+;; For users who don't need byte-compilation:
+;; Uncomment the sexp below to disable byte-compilation, so that
 ;; compile-angel performs only native compilation.
 ;; (setq compile-angel-enable-byte-compile nil)
 
