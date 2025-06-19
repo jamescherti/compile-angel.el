@@ -234,6 +234,8 @@ Emacs often skips the compilation of certain Elisp files. To verify this:
 
 Observe whether `compile-angel` compiles any Elisp files (you will see "Wrote" `.elc` files in the `*Messages*` buffer). If it does, this indicates that Emacs missed compiling those files and that `compile-angel` can help improve the performance of your Emacs.
 
+You can also run `M-x compile-angel-report` to display features that were not native compiled by the Emacs JIT compiler.
+
 ### Could compiling all Elisp files not be accomplished with a script? (e.g., a GNU Parallel along with Emacs's -batch mode.)
 
 Compiling a large number of Emacs Lisp files regardless of their actual usage is inefficient.
