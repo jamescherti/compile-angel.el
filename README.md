@@ -5,13 +5,13 @@
 ![License](https://img.shields.io/github/license/jamescherti/compile-angel.el)
 ![](https://raw.githubusercontent.com/jamescherti/compile-angel.el/main/.images/made-for-gnu-emacs.svg)
 
-The **compile-angel** package automatically byte-compiles and native-compiles Emacs Lisp libraries. It offers:
+The *compile-angel* package **speeds up Emacs by ensuring that all Elisp libraries are both byte-compiled and native-compiled**:
+- Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime.
+- Native compilation improves performance by generating machine code that runs directly on the hardware, utilizing the full capabilities of the host CPU. The actual speedup varies with the characteristics of the Lisp code, but it is typically 2.5 to 5 times faster than the equivalent byte-compiled version.
+
+This package offers:
 - `(compile-angel-on-load-mode)`: A global mode that compiles .el files before they are loaded with `load` or `require`.
 - `(compile-angel-on-save-local-mode)`: A local mode that compiles .el files whenever the user saves them.
-
-The *compile-angel* modes **speed up Emacs by ensuring all libraries are byte-compiled and native-compiled**. Byte-compilation reduces the overhead of loading Emacs Lisp code at runtime, while native compilation optimizes performance by generating machine code specific to your system.
-
-After extensive experimentation and research, the author developed *compile-angel* to address this problem. **The compile-angel package guarantees that all .el files are both byte-compiled and native-compiled, which significantly speeds up Emacs.**
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 ## Table of Contents
