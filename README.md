@@ -60,7 +60,7 @@ It is highly recommended to set the following variables **at the very beginning 
 ;; NOTE: You can also experiment with:
 ;; - Fully disabling `native-comp-jit-compilation' by setting it to nil,
 ;;   allowing `compile-angel' to completely replace the Emacs JIT compiler.
-;; - For users who do not require byte-compilation, it can be disabled by
+;; - For users who do not need byte-compilation, it can be disabled by
 ;;   setting `compile-angel-enable-byte-compile' to nil. Disabling
 ;;   byte-compilation has minimal impact since native compilation is the primary
 ;;   contributor to improved speed.
@@ -91,6 +91,10 @@ To install *compile-angel* on Emacs from MELPA:
   ;; (When set to nil, compile-angel won't show which file is being compiled.)
   (setq compile-angel-verbose t)
 
+  ;; Uncomment the sexp below to disable byte compilation, so that
+  ;; compile-angel performs only native compilation.
+  ;; (setq compile-angel-enable-byte-compile nil)
+
   ;; Uncomment the line below to compile automatically when an Elisp file is saved
   ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 
@@ -113,6 +117,10 @@ Here is how to install *compile-angel* on Doom Emacs:
 ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
 ;; (When set to nil, compile-angel won't show which file is being compiled.)
 (setq compile-angel-verbose t)
+
+;; Uncomment the sexp below to disable byte compilation, so that
+;; compile-angel performs only native compilation.
+;; (setq compile-angel-enable-byte-compile nil)
 
 ;; Uncomment the line below to compile automatically when an Elisp file is saved
 ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
