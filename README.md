@@ -319,6 +319,8 @@ This program is free software: you can redistribute it and/or modify it under th
 - [compile-angel.el @GitHub](https://github.com/jamescherti/compile-angel.el)
 - [compile-angel.el @MELPA](https://melpa.org/#/compile-angel)
 - For users who prefer compiling .el files from the command line: [elispcomp](https://github.com/jamescherti/elispcomp)
+- [Emacs documentation: Native Compilation](https://www.gnu.org/software/emacs/manual/html_node/elisp/Native-Compilation.html)
+- [Emacs documentation: Byte Compilation](https://www.gnu.org/software/emacs/manual/html_node/elisp/Byte-Compilation.html)
 
 Other Emacs packages by the same author:
 - [minimal-emacs.d](https://github.com/jamescherti/minimal-emacs.d): This repository hosts a minimal Emacs configuration designed to serve as a foundation for your vanilla Emacs setup and provide a solid base for an enhanced Emacs experience.
