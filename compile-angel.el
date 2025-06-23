@@ -236,7 +236,7 @@ by scanning all directories in `load-path' to improve lookup performance.")
 
 (defconst compile-angel--builtin-features
   '(tty-child-frames xwidget-internal move-toolbar dbusbind native-compile
-                     font-render-setting system-font-setting dynamic-setting
+                     font-render-setting system-font-setting
                      android inotify x xinput2 x-toolkit motif gtk cairo
                      gfilenotify haiku multi-tty make-network-process threads
                      w32notify pgtk w32 lcms2 kqueue emacs mps
