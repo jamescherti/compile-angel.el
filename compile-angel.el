@@ -541,7 +541,10 @@ FEATURE is a symbol representing the feature being loaded."
 (defun compile-angel--compile-elisp (el-file)
   "Byte-compile and Native-compile the .el file EL-FILE."
   (compile-angel--with-fast-file-ops
-    (let* ((elc-file (byte-compile-dest-file el-file)))
+    (let* ((elc-file (byte-compile-dest-file el-file))
+           (do-native-compile nil)
+           (compile-angel--native-compile-when-jit-enabled
+            compile-angel--native-compile-when-jit-enabled))
       (cond
        ((not elc-file)
         (message "[compile-angel] Warning: The file is not an .el file: %s"
@@ -551,49 +554,47 @@ FEATURE is a symbol representing the feature being loaded."
         (message "[compile-angel] Warning: The file does not exist: %s" el-file))
 
        (t
-        (let ((do-native-compile nil)
-              (compile-angel--native-compile-when-jit-enabled
-               compile-angel--native-compile-when-jit-enabled))
-          (if (not compile-angel-enable-byte-compile)
-              ;; Byte-compile Disabled
-              (when compile-angel-enable-native-compile
-                (setq compile-angel--native-compile-when-jit-enabled t)
-                (setq do-native-compile t))
-            ;; Byte-compile enabled
-            (cond
-             ((file-writable-p elc-file)
-              ;; Byte-compile
-              (setq do-native-compile (compile-angel--byte-compile
-                                       el-file elc-file)))
+        (cond
+         ;; Byte-compile Disabled
+         ((not compile-angel-enable-byte-compile)
+          (when compile-angel-enable-native-compile
+            (setq compile-angel--native-compile-when-jit-enabled t)
+            (setq do-native-compile t)))
 
-             ;; .elc not writable
-             (t
-              ;; Do not byte-compile
-              (compile-angel--debug-message
-               "Byte-compilation ignored (not writable)%s: %s"
-               (if compile-angel-enable-native-compile
-                   ". Native-compilation only"
-                 "")
-               elc-file)
-              (setq do-native-compile t))))
+         ;; Byte-compile Enabled
+         ((file-writable-p elc-file)
+          ;; Byte-compile
+          (setq do-native-compile (compile-angel--byte-compile
+                                   el-file elc-file)))
 
-          (let ((jit-enabled (or (bound-and-true-p native-comp-jit-compilation)
-                                 (bound-and-true-p native-comp-deferred-compilation))))
-            (when (and jit-enabled
-                       (not compile-angel--native-compile-when-jit-enabled))
-              ;; Do not native-compile. Let the JIT compiler do it.
-              (setq do-native-compile nil)
-              ;; The `compile-angel--list-jit-native-compiled-files' hash
-              ;; table serves as a safeguard to verify that the JIT compiler
-              ;; has not overlooked any files.
-              (puthash el-file t compile-angel--list-jit-native-compiled-files)
-              (compile-angel--debug-message
-               "Native-compilation ignored (JIT compilation will do it): %s"
-               el-file)))
+         ;; .elc not writable
+         (t
+          ;; Do not byte-compile
+          (compile-angel--debug-message
+           "Byte-compilation ignored (not writable)%s: %s"
+           (if compile-angel-enable-native-compile
+               ". Native-compilation only"
+             "")
+           elc-file)
+          (setq do-native-compile t)))
 
-          (when (and compile-angel-enable-native-compile
-                     do-native-compile)
-            (compile-angel--native-compile el-file))))))))
+        (let ((jit-enabled (or (bound-and-true-p native-comp-jit-compilation)
+                               (bound-and-true-p native-comp-deferred-compilation))))
+          (when (and jit-enabled
+                     (not compile-angel--native-compile-when-jit-enabled))
+            ;; Do not native-compile. Let the JIT compiler do it.
+            (setq do-native-compile nil)
+            ;; The `compile-angel--list-jit-native-compiled-files' hash
+            ;; table serves as a safeguard to verify that the JIT compiler
+            ;; has not overlooked any files.
+            (puthash el-file t compile-angel--list-jit-native-compiled-files)
+            (compile-angel--debug-message
+             "Native-compilation ignored (JIT compilation will do it): %s"
+             el-file)))
+
+        (when (and compile-angel-enable-native-compile
+                   do-native-compile)
+          (compile-angel--native-compile el-file)))))))
 
 (defun compile-angel--check-parens ()
   "Check for unbalanced parentheses in the current buffer.
