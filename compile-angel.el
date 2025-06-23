@@ -376,7 +376,8 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
          "Async native-compilation: %s" el-file-abbreviated))
       (let ((inhibit-message (not (or (not compile-angel-verbose)
                                       (not compile-angel-debug)))))
-        (funcall 'native-compile-async el-file))))))
+        (when (fboundp 'native-compile-async)
+          (funcall 'native-compile-async el-file)))))))
 
 (defun compile-angel--byte-compile (el-file elc-file)
   "Byte-compile EL-FILE into ELC-FILE.
