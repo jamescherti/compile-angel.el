@@ -1094,42 +1094,36 @@ be JIT compiled."
                  compile-angel--list-jit-native-compiled-files)
       (clrhash compile-angel--list-jit-native-compiled-files))))
 
+(defvar compile-angel--report-native-compiled-features
+  (make-hash-table :test 'equal))
+
 (defun compile-angel--get-list-non-native-compiled ()
   "Return a list of the non natively-compiled features symbols."
   (let ((result nil))
     (dolist (feature features)
       (when feature
-        (let* ((feature-name
-                (cond ((symbolp feature)
-                       (symbol-name feature))
-
-                      ((stringp feature)
-                       feature)
-
-                      (t
-                       (compile-angel--debug-message
-                        (concat "compile-angel--get-list-non-native-compiled: "
-                                "NON SUPPORTED TYPE: %s (%s)")
-                        feature (type-of feature))
-                       nil)))
-
-               (feature-el-file (when feature-name
-                                  (locate-library feature-name)))
-
-               (el-file (when feature-el-file
-                          (compile-angel--normalize-el-file
-                           feature-el-file))))
-          (when (and el-file
-                     (not (gethash el-file compile-angel--no-byte-compile-files-list))
-                     (not (compile-angel--el-file-excluded-p el-file)))
-            (if (and (and (fboundp 'comp-el-to-eln-filename)
-                          (funcall 'comp-el-to-eln-filename el-file))
-                     (not (compile-angel--elisp-native-compiled-p el-file)))
-                (push feature result)
-              (compile-angel--debug-message
-               (concat "compile-angel--get-list-non-native-compiled: "
-                       "UP TO DATE: %s (%s)")
-               feature (type-of feature)))))))
+        (let* ((feature-symbol (compile-angel--normalize-feature feature)))
+          (when (and feature-symbol
+                     (not (gethash feature-symbol
+                                   compile-angel--report-native-compiled-features)))
+            (let* ((feature-el-file (when feature-symbol
+                                      (locate-library (symbol-name feature-symbol))))
+                   (el-file (when feature-el-file
+                              (compile-angel--normalize-el-file
+                               feature-el-file))))
+              (when (and el-file
+                         (not (gethash el-file
+                                       compile-angel--no-byte-compile-files-list))
+                         (not (compile-angel--el-file-excluded-p el-file)))
+                (if (and (and (fboundp 'comp-el-to-eln-filename)
+                              (funcall 'comp-el-to-eln-filename el-file))
+                         (not (compile-angel--elisp-native-compiled-p el-file)))
+                    (push feature result)
+                  (puthash feature t compile-angel--report-native-compiled-features)
+                  (compile-angel--debug-message
+                   (concat "compile-angel--get-list-non-native-compiled: "
+                           "UP TO DATE: %s (%s)")
+                   feature (type-of feature)))))))))
     result))
 
 (defun compile-angel-report ()
