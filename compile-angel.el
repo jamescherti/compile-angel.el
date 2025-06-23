@@ -424,7 +424,8 @@ Return non-nil to allow native compilation."
                                  ;; Show the message
                                  (apply original-message combined-args))))))
                 (condition-case err
-                    (byte-compile-file el-file)
+                    (let ((noninteractive t))
+                      (byte-compile-file el-file))
                   (permission-denied
                    (progn
                      (compile-angel--debug-message
