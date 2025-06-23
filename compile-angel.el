@@ -260,6 +260,9 @@ have no source files to compile.")
 Contains features provided by Emacs core (both C and Elisp) that
 don't have associated .el files and therefore don't need compilation.")
 
+(defvar compile-angel--init-completed nil)
+(defvar compile-angel--native-comp-available nil)
+
 (defvar compile-angel--quiet-byte-compile t)
 
 (defvar compile-angel--track-no-byte-compile-files t)
@@ -359,10 +362,7 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
   "Native-compile EL-FILE."
   (compile-angel--with-fast-file-ops
     (cond
-     ((not (and (featurep 'native-compile)
-                (fboundp 'native-comp-available-p)
-                (fboundp 'native-compile-async)
-                (native-comp-available-p)))
+     ((not compile-angel--native-comp-available)
       (compile-angel--debug-message
        "Native-compilation ignored (native-comp unavailable): %s" el-file))
 
@@ -1039,11 +1039,15 @@ NEW-VALUE is the value of the variable."
       (setq compile-angel--excluded-path-suffixes-regexps
             (nreverse path-suffixes-regexp)))))
 
-(defvar compile-angel--init-completed nil)
-
 (defun compile-angel--init ()
   "Initialize internal variables."
   (unless compile-angel--init-completed
+    (setq compile-angel--native-comp-available
+          (and (featurep 'native-compile)
+               (fboundp 'native-comp-available-p)
+               (fboundp 'native-compile-async)
+               (native-comp-available-p)))
+
     ;; load-file-rep-suffixes
     (compile-angel--update-el-file-regexp 'load-file-rep-suffixes
                                           load-file-rep-suffixes
