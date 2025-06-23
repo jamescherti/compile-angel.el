@@ -543,12 +543,12 @@ FEATURE is a symbol representing the feature being loaded."
   (compile-angel--with-fast-file-ops
     (let* ((elc-file (byte-compile-dest-file el-file)))
       (cond
-       ((not (file-exists-p el-file))
-        (message "[compile-angel] Warning: The file does not exist: %s" el-file))
-
        ((not elc-file)
         (message "[compile-angel] Warning: The file is not an .el file: %s"
                  el-file))
+
+       ((not (file-exists-p el-file))
+        (message "[compile-angel] Warning: The file does not exist: %s" el-file))
 
        (t
         (let ((do-native-compile nil)
