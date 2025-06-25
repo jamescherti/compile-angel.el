@@ -300,7 +300,7 @@ When enabled, compile-angel will count how many times the file index cache
 was hit or missed. This information can be displayed using the
 `compile-angel-display-file-index-stats' function.")
 
-;;; Functions
+;;; Internal functions
 
 (defmacro compile-angel--with-fast-file-ops (&rest body)
   "Execute BODY with optimized file operations.
@@ -333,6 +333,46 @@ The messages are displayed in the *compile-angel* buffer."
        (compile-angel--debug-message ,(car args) ,@(cdr args)))
      (when compile-angel-verbose
        (message (concat "[compile-angel] " ,(car args)) ,@(cdr args)))))
+
+(defun compile-angel--no-byte-compile-p (file-path)
+  "Return the value of the `no-byte-compile' local variable in FILE-PATH.
+This function inspects FILE-PATH for a file-local variable declaration
+of the form `no-byte-compile: t` and returns its value, or nil if the
+declaration is absent or not trusted under safe-local-variable rules."
+  (with-temp-buffer
+    (insert-file-contents file-path)
+    (let (;; Tell Emacs to parse and apply only *safe* file-local variables.
+          ;; This avoids running arbitrary code.
+          (enable-local-variables :safe)
+
+          ;; Explicitly allow file-local variables to be processed in this
+          ;; buffer.
+          (local-enable-local-variables t)
+
+          ;; Disable any influence from .dir-locals.el files in the directory.
+          ;; Ensures only variables from FILE-PATH are considered.
+          (enable-dir-local-variables nil)
+
+          ;; Disable remote directory-local variables via TRAMP or similar.
+          ;; Prevents remote configuration from influencing results.
+          (enable-remote-dir-locals nil)
+
+          ;; Explicitly disallow evaluation of eval: forms in local variables.
+          ;; Prevents execution of arbitrary code when inspecting the file.
+          (enable-local-eval nil)
+
+          ;; Ensure `no-byte-compile' is recognized even under restricted
+          ;; conditions.
+          (permanently-enabled-local-variables '(no-byte-compile))
+
+          ;; Prevent Emacs from silently skipping unsafe or blacklisted values.
+          ;; This ensures accurate reading of declared variables.
+          (ignored-local-variable-values nil))
+      ;; Read and apply local variables under the restricted settings above.
+      (hack-local-variables)
+
+      ;; Return the parsed value of `no-byte-compile', or nil if not present.
+      (alist-get 'no-byte-compile file-local-variables-alist))))
 
 (defun compile-angel--el-file-excluded-p (el-file)
   "Check if EL-FILE matches any regex in `compile-angel-excluded-files-regexps'.
@@ -385,14 +425,7 @@ Return non-nil to allow native compilation."
   (cond
    ((not (file-newer-than-file-p el-file elc-file))
     (compile-angel--debug-message
-     "Byte-compilation Ignored (up-to-date): %s" el-file)
-    t)
-
-   ((and compile-angel-on-load-mode-compile-once
-         compile-angel--track-no-byte-compile-files
-         (gethash el-file compile-angel--no-byte-compile-files-list))
-    (compile-angel--debug-message
-     "Byte-compilation Ignored (in the no-byte-compile list): %s" el-file)
+     "Byte-compilation ignored (up-to-date): %s" el-file)
     t)
 
    (t
@@ -560,8 +593,20 @@ FEATURE is a symbol representing the feature being loaded."
          ;; Byte-compile Disabled
          ((not compile-angel-enable-byte-compile)
           (when compile-angel-enable-native-compile
-            (setq compile-angel--native-compile-when-jit-enabled t)
-            (setq do-native-compile t)))
+            ;; Disable native compilation when no-byte-compile is set to t
+            (if (compile-angel--no-byte-compile-p el-file)
+                (progn
+                  (setq do-native-compile nil)
+                  (puthash el-file t compile-angel--no-byte-compile-files-list)
+                  (compile-angel--debug-message
+                   "Native-compilation ignored (no-byte-compile): %s"
+                   el-file))
+              ;; Native compile
+              (setq do-native-compile t)
+
+              ;; Ensure the files are native compiled, as JIT compilation depends
+              ;; on the presence of .elc files.
+              (setq compile-angel--native-compile-when-jit-enabled t))))
 
          ;; Byte-compile Enabled
          ((file-writable-p elc-file)
@@ -896,6 +941,12 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
           (compile-angel--debug-message
            "SKIP (Does not need compilation): %s | %s" el-file feature))
 
+         ((and compile-angel--track-no-byte-compile-files
+               (gethash el-file compile-angel--no-byte-compile-files-list))
+          (compile-angel--debug-message
+           "Compilation ignored (in the no-byte-compile list): %s" el-file)
+          t)
+
          (t
           (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
                                         el-file feature-symbol)
@@ -1127,6 +1178,9 @@ be JIT compiled."
                    feature (type-of feature)))))))))
     result))
 
+;;; Functions
+
+;;;###autoload
 (defun compile-angel-report ()
   "Create a buffer listing all features that are not native compiled."
   (interactive)
@@ -1217,5 +1271,6 @@ be JIT compiled."
         (add-hook 'after-save-hook #'compile-angel--compile-on-save 99 t))
     (remove-hook 'after-save-hook #'compile-angel--compile-on-save t)))
 
+;;; Provide 'compile-angel
 (provide 'compile-angel)
 ;;; compile-angel.el ends here

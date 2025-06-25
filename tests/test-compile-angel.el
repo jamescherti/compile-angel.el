@@ -206,6 +206,23 @@
        (setq compile-angel-predicate-function #'(lambda(&rest _) nil)))
    (should-not (file-exists-p test-compile-angel--elc-file))))
 
+(ert-deftest test-compile-angel--no-byte-compile-p ()
+  "Test `compile-angel--no-byte-compile-p'."
+  (let ((file-with (make-temp-file "test" nil ".el"))
+        (file-without (make-temp-file "test" nil ".el")))
+    (unwind-protect
+        (progn
+          (with-temp-file file-with
+            (insert ";;; -*- no-byte-compile: t -*-\n"))
+
+          (with-temp-file file-without
+            (insert ";;; This is a test file with no local variables\n"))
+
+          (should (eq (compile-angel--no-byte-compile-p file-with) t))
+          (should (eq (compile-angel--no-byte-compile-p file-without) nil)))
+      (delete-file file-with)
+      (delete-file file-without))))
+
 (provide 'test-compile-angel)
 
 ;; Local variables:
