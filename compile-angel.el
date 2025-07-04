@@ -334,6 +334,13 @@ The messages are displayed in the *compile-angel* buffer."
      (when compile-angel-verbose
        (message (concat "[compile-angel] " ,(car args)) ,@(cdr args)))))
 
+(defvar enable-local-variables)
+(defvar local-enable-local-variables)
+(defvar enable-dir-local-variables)
+(defvar enable-remote-dir-locals)
+(defvar enable-local-eval)
+(defvar permanently-enabled-local-variables)
+(defvar ignored-local-variable-values)
 (defun compile-angel--no-byte-compile-p (file-path)
   "Return the value of the `no-byte-compile' local variable in FILE-PATH.
 This function inspects FILE-PATH for a file-local variable declaration
