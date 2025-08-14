@@ -306,9 +306,16 @@ was hit or missed. This information can be displayed using the
   "Execute BODY with optimized file operations.
 This disables file handlers temporarily for faster file operations."
   (declare (indent 0) (debug t))
-  `(let ((file-name-handler-alist nil)
-         (case-fold-search nil))
+  `(progn
      ,@body))
+
+;; (defmacro compile-angel--with-fast-file-ops (&rest body)
+;;   "Execute BODY with optimized file operations.
+;; This disables file handlers temporarily for faster file operations."
+;;   (declare (indent 0) (debug t))
+;;   `(let ((file-name-handler-alist nil)
+;;          (case-fold-search nil))
+;;      ,@body))
 
 (defun compile-angel--insert-message (buffer-name msg &rest args)
   "Insert formatted MSG with ARGS into BUFFER-NAME buffer."
@@ -806,12 +813,13 @@ Returns nil for features provided directly by C code."
 If NOSUFFIX is non-nil, use `load-file-rep-suffixes' instead of
 `compile-angel--el-file-extensions'."
   (when feature-or-file
-    (let ((file-name-handler-alist nil))
-      (locate-file feature-or-file
-                   load-path
-                   (if nosuffix
-                       load-file-rep-suffixes
-                     compile-angel--el-file-extensions)))))
+    ;; TODO: put it back
+    ;; let ((file-name-handler-alist nil))
+    (locate-file feature-or-file
+                 load-path
+                 (if nosuffix
+                     load-file-rep-suffixes
+                   compile-angel--el-file-extensions))))
 
 (defun compile-angel--guess-el-file-using-file-index (feature-symbol nosuffix)
   "Locate the .el file using the file index.
