@@ -224,6 +224,23 @@ is not compiled, as the compilation would fail anyway."
   :group 'compile-angel
   :type 'boolean)
 
+(defcustom compile-angel-optimize-file-name-handlers 'safe
+  "Control optimization of `file-name-handler-alist' during compilation.
+
+The value determines how file name handlers are temporarily adjusted:
+
+- \\='all   Disable all handlers (NOT RECOMMENDED).
+- \\='safe  Disable all handlers except the compression handler
+  (`.el.gz' files).
+- \\='nil   Do not modify `file-name-handler-alist'.
+
+This setting is intended to improve performance by reducing the overhead
+associated with file-related operations during compilation."
+  :type '(choice (const :tag "Disable all (NOT RECOMMENDED)" all)
+                 (const :tag "Disable all except compression handler" safe)
+                 (const :tag "No optimization" nil))
+  :group 'compile-angel)
+
 ;;; Experimental features
 
 (defvar compile-angel-guess-el-file-use-load-history nil)
@@ -308,7 +325,20 @@ was hit or missed. This information can be displayed using the
   "Execute BODY with optimized file operations.
 This disables file handlers temporarily for faster file operations."
   (declare (indent 0) (debug t))
-  `(let ((file-name-handler-alist compile-angel--file-name-handler-alist)
+  `(let ((file-name-handler-alist
+          (cond
+           ;; Disable all handlers (NOT RECOMMENDED).
+           ((eq compile-angel-optimize-file-name-handlers 'all)
+            nil)
+
+           ;; Do not modify `file-name-handler-alist'
+           ((eq compile-angel-optimize-file-name-handlers nil)
+            file-name-handler-alist)
+
+           ;; Safe: Disable all handlers except the compression handler
+           ;; (`.el.gz' files).
+           (t
+            compile-angel--file-name-handler-alist)))
          (case-fold-search nil))
      ,@body))
 
@@ -1105,10 +1135,8 @@ NEW-VALUE is the value of the variable."
 (defun compile-angel--update-file-name-handler-alist (&rest _)
   "Update the `file-name-handler-alist' variable."
   (setq compile-angel--file-name-handler-alist
-        (if (locate-file-internal "calc-loaddefs.el" load-path)
-            nil
-          (list (rassq 'jka-compr-handler
-                       file-name-handler-alist))))
+        (list (rassq 'jka-compr-handler
+                     file-name-handler-alist)))
   (compile-angel--debug-message
    "WATCHER: Update compile-angel--file-name-handler-alist: %s" compile-angel--file-name-handler-alist))
 
