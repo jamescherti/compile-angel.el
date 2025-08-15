@@ -1136,9 +1136,7 @@ NEW-VALUE is the value of the variable."
   "Update the `file-name-handler-alist' variable."
   (setq compile-angel--file-name-handler-alist
         (list (rassq 'jka-compr-handler
-                     file-name-handler-alist)))
-  (compile-angel--debug-message
-   "WATCHER: Update compile-angel--file-name-handler-alist: %s" compile-angel--file-name-handler-alist))
+                     file-name-handler-alist))))
 
 (defun compile-angel--init ()
   "Initialize internal variables."
