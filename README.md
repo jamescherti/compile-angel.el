@@ -86,7 +86,7 @@ To install *compile-angel* on Emacs from MELPA:
 
   ;; A global mode that compiles .el files before they are loaded
   ;; using `load' or `require'.
-  (compile-angel-on-load-mode))
+  (compile-angel-on-load-mode 1))
 ```
 
 ### Doom Emacs
