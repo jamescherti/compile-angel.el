@@ -1228,10 +1228,8 @@ be JIT compiled."
 
 ;;; Functions
 
-;;;###autoload
 (defun compile-angel-report ()
   "Create a buffer listing all features that are not native compiled."
-  (interactive)
   (let ((buffer (get-buffer-create "*Non-Native-Compiled*"))
         (inhibit-read-only t))
     (when (buffer-live-p buffer)
