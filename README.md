@@ -23,6 +23,7 @@ This package offers:
     - [Emacs](#emacs)
     - [Doom Emacs](#doom-emacs)
   - [Frequently Asked Questions](#frequently-asked-questions)
+    - [Should files be compiled every time Emacs starts? How can I determine why compile-angel compiled a file?](#should-files-be-compiled-every-time-emacs-starts-how-can-i-determine-why-compile-angel-compiled-a-file)
     - [What are some interesting Emacs customizations to consider alongside compile-angel?](#what-are-some-interesting-emacs-customizations-to-consider-alongside-compile-angel)
     - [How to exclude certain .el files from compilation in compile-angel?](#how-to-exclude-certain-el-files-from-compilation-in-compile-angel)
     - [How to exclude custom-file, recentf, savehist files?](#how-to-exclude-custom-file-recentf-savehist-files)
@@ -118,6 +119,18 @@ doom sync
 ```
 
 ## Frequently Asked Questions
+
+### Should files be compiled every time Emacs starts? How can I determine why compile-angel compiled a file?
+
+The `compile-angel-on-load-mode` does not recompile packages every time Emacs starts; it only compiles a file when its `.el` source has changed.
+
+To determine why an Emacs Lisp file was compiled, add the following to your init file **before** enabling `compile-angel-on-load-mode`:
+
+```elisp
+(setq compile-angel-debug t)
+```
+
+Then restart Emacs and switch to the `*compile-angel:debug*` buffer. If `compile-angel` triggered the compilation, the buffer will indicate the reason. If you believe a file was compiled incorrectly, please consider [submitting an issue](https://github.com/jamescherti/compile-angel.el/issues) including the relevant lines from the `*compile-angel:debug*` buffer.
 
 ### What are some interesting Emacs customizations to consider alongside compile-angel?
 
