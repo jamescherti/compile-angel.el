@@ -612,8 +612,9 @@ FEATURE is a symbol representing the feature being loaded."
 
        (t t))))))
 
-(defun compile-angel--compile-elisp (el-file)
-  "Byte-compile and Native-compile the .el file EL-FILE."
+(defun compile-angel--compile-elisp (el-file &optional noerror)
+  "Byte-compile and Native-compile the .el file EL-FILE.
+When NOERROR is non-nil, suppress warnings if the file is absent."
   (compile-angel--with-fast-file-ops
     (let* ((elc-file (byte-compile-dest-file el-file))
            (do-native-compile nil)
@@ -621,11 +622,13 @@ FEATURE is a symbol representing the feature being loaded."
             compile-angel--native-compile-when-jit-enabled))
       (cond
        ((not elc-file)
-        (message "[compile-angel] Warning: The file is not an .el file: %s"
-                 el-file))
+        (unless noerror
+          (message "[compile-angel] Warning: The file is not an .el file: %s"
+                   el-file)))
 
        ((not (file-exists-p el-file))
-        (message "[compile-angel] Warning: The file does not exist: %s" el-file))
+        (unless noerror
+          (message "[compile-angel] Warning: The file does not exist: %s" el-file)))
 
        (t
         (cond
@@ -949,9 +952,10 @@ resolved file path or nil if not found."
          (if el-file "FILE" "FEATURE") (or el-file feature-name))
         feature-file)))))
 
-(defun compile-angel--entry-point (el-file &optional feature nosuffix)
+(defun compile-angel--entry-point (el-file &optional feature nosuffix noerror)
   "This function is called by all the :before advices.
-EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
+EL-FILE, FEATURE, NOERROR, and NOSUFFIX are the same arguments as
+`load' and `require'."
   (compile-angel--with-fast-file-ops
     (when (or compile-angel-enable-byte-compile
               compile-angel-enable-native-compile)
@@ -994,10 +998,10 @@ EL-FILE, FEATURE, and NOSUFFIX are the same arguments as `load' and `require'."
             (puthash feature-symbol t compile-angel--list-compiled-features))
           (let ((compile-angel--currently-compiling
                  (cons el-file compile-angel--currently-compiling)))
-            (compile-angel--compile-elisp el-file))))))))
+            (compile-angel--compile-elisp el-file noerror))))))))
 
 (defun compile-angel--advice-before-require (feature
-                                             &optional filename _noerror)
+                                             &optional filename noerror)
   "Recompile the library before `require'.
 FEATURE and FILENAME are the same arguments as the `require' function."
   ;; Avoid repeated calls to featurep by storing the result
@@ -1005,11 +1009,12 @@ FEATURE and FILENAME are the same arguments as the `require' function."
                                 filename (type-of filename)
                                 feature (type-of feature))
   ;; Pass feature directly without conversion
-  (compile-angel--entry-point filename feature))
+  (compile-angel--entry-point filename feature nil noerror))
 
-(defun compile-angel--advice-before-load (el-file &optional _noerror _nomessage
+(defun compile-angel--advice-before-load (el-file &optional noerror _nomessage
                                                   nosuffix _must-suffix)
-  "Recompile before `load'. EL-FILE and NOSUFFIX are the same args as `load'."
+  "Recompile before `load'.
+EL-FILE, NOERROR, and NOSUFFIX are the same args as `load'."
   (compile-angel--debug-message "\n[TASK] LOAD: %s (%s)" el-file
                                 (type-of el-file))
   (if (stringp el-file)
@@ -1020,7 +1025,9 @@ FEATURE and FILENAME are the same arguments as the `require' function."
         (compile-angel--entry-point (when el-file
                                       (expand-file-name
                                        (substitute-in-file-name el-file)))
-                                    nil nosuffix))
+                                    nil  ; Feature
+                                    nosuffix
+                                    noerror))
     (compile-angel--debug-message
      (concat "ISSUE: Wrong type passed to "
              "compile-angel--advice-before-require %s (%s)")
