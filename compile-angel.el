@@ -1010,8 +1010,6 @@ function."
   (compile-angel--debug-message "\n[TASK] REQUIRE: %s (%s) | %s (%s)"
                                 filename (type-of filename)
                                 feature (type-of feature))
-  ;; TODO: All other advices should do this
-  ;; (compile-angel--entry-point filename feature nil noerror)
   (setq feature (compile-angel--normalize-feature feature))
   (if (and feature
            (or
