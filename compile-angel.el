@@ -294,6 +294,7 @@ don't have associated .el files and therefore don't need compilation.")
 (defvar compile-angel--el-file-regexp nil)
 (defvar compile-angel--el-file-extensions nil)
 (defvar compile-angel--excluded-path-suffixes-regexps nil)
+(defvar compile-angel--advice-before-require-ignore-using-featurep t)
 (defvar compile-angel--doom-user-dir
   (when (bound-and-true-p doom-user-dir)
     (concat (directory-file-name (file-truename doom-user-dir)) "/")))
@@ -1003,13 +1004,29 @@ EL-FILE, FEATURE, NOERROR, and NOSUFFIX are the same arguments as
 (defun compile-angel--advice-before-require (feature
                                              &optional filename noerror)
   "Recompile the library before `require'.
-FEATURE and FILENAME are the same arguments as the `require' function."
+FEATURE, FILENAME, and NOERROR are the same arguments as the `require'
+function."
   ;; Avoid repeated calls to featurep by storing the result
   (compile-angel--debug-message "\n[TASK] REQUIRE: %s (%s) | %s (%s)"
                                 filename (type-of filename)
                                 feature (type-of feature))
-  ;; Pass feature directly without conversion
-  (compile-angel--entry-point filename feature nil noerror))
+  ;; TODO: All other advices should do this
+  ;; (compile-angel--entry-point filename feature nil noerror)
+  (setq feature (compile-angel--normalize-feature feature))
+  (if (and feature
+           (or
+            ;; The features were not compiled when `compile-angel' started
+            (not compile-angel-on-load-compile-features)
+            ;; Compile more than once
+            (not compile-angel-on-load-mode-compile-once)
+            ;; Ignore featurep
+            (not compile-angel--advice-before-require-ignore-using-featurep)
+            ;; The feature hasn't already been loaded
+            (not (featurep feature))))
+      ;; TODO err noerror
+      (compile-angel--entry-point filename feature nil noerror)
+    (compile-angel--debug-message "SKIP (Feature already loaded): %s | %s"
+                                  feature filename)))
 
 (defun compile-angel--advice-before-load (el-file &optional noerror _nomessage
                                                   nosuffix _must-suffix)
@@ -1050,7 +1067,8 @@ EL-FILE, NOERROR, and NOSUFFIX are the same args as `load'."
     (dolist (feature features)
       (compile-angel--debug-message
        "\n[TASK] compile-angel--compile-loaded-features: %s" feature)
-      (compile-angel--entry-point nil feature))))
+      (let ((compile-angel--advice-before-require-ignore-using-featurep nil))
+        (compile-angel--entry-point nil feature)))))
 
 (defun compile-angel--normalize-el-file (file)
   "Find the .el file corresponding to FILE.
