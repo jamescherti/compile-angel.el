@@ -355,12 +355,14 @@ This disables file handlers temporarily for faster file operations."
 (defmacro compile-angel--debug-message (&rest args)
   "Display a debug message with the same ARGS arguments as `message'.
 The messages are displayed in the *compile-angel* buffer."
+  (declare (indent 0) (debug t))
   `(when compile-angel-debug
      (compile-angel--insert-message "*compile-angel:debug*"
                                     ,(car args) ,@(cdr args))))
 
 (defmacro compile-angel--verbose-message (&rest args)
   "Display a verbose message with the same ARGS arguments as `message'."
+  (declare (indent 0) (debug t))
   `(progn
      (when compile-angel-debug
        (compile-angel--debug-message ,(car args) ,@(cdr args)))
