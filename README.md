@@ -299,6 +299,8 @@ Here are additional features provided by compile-angel that are not available in
 
 -  [Leading_Ad6415 on Reddit](https://www.reddit.com/r/emacs/comments/1l860wd/comment/mxblysh/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button): "Thank you for your works. My start up time gone from ~2.5 seconds to ~1.9 seconds (~25%)"
 
+- [drizzyhouse](https://www.reddit.com/r/emacs/comments/1mqzu3z/comment/n8vyaf2/): "Thanks for your work on this."
+
 ## Author and License
 
 The *compile-angel* Emacs package has been written by [James Cherti](https://www.jamescherti.com/) and is distributed under terms of the GNU General Public License version 3, or, at your choice, any later version.
