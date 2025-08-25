@@ -110,6 +110,7 @@
                                           "/lisp/org/org-version.el"
                                           "/lisp/cus-load.el"
                                           "/lisp/finder-inf.el"
+                                          "/.yas-setup.el"  ; Yasnippet
                                           ;; /lisp and /site-lisp: subdirs.el
                                           "lisp/subdirs.el"
                                           ;; Built-in no-byte-compile packages
@@ -428,7 +429,7 @@ Return non-nil if the file should be ignored, nil otherwise."
                             (string-match-p regex el-file))
                           compile-angel-excluded-files-regexps)))
     (compile-angel--debug-message
-     "SKIP (.el file excluded with a regex): %s" el-file)
+      "SKIP (.el file excluded with a regex): %s" el-file)
     t))
 
 (defun compile-angel--elisp-native-compiled-p (el-file)
@@ -446,16 +447,16 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
     (cond
      ((not compile-angel--native-comp-available)
       (compile-angel--debug-message
-       "Native-compilation ignored (native-comp unavailable): %s" el-file))
+        "Native-compilation ignored (native-comp unavailable): %s" el-file))
 
      ((compile-angel--elisp-native-compiled-p el-file)
       (compile-angel--debug-message
-       "Native-compilation ignored (up-to-date): %s" el-file))
+        "Native-compilation ignored (up-to-date): %s" el-file))
 
      (t
       (let ((el-file-abbreviated (abbreviate-file-name el-file)))
         (compile-angel--verbose-message
-         "Async native-compilation: %s" el-file-abbreviated))
+          "Async native-compilation: %s" el-file-abbreviated))
       (let ((inhibit-message (not (or (not compile-angel-verbose)
                                       (not compile-angel-debug)))))
         (when (fboundp 'native-compile-async)
@@ -467,7 +468,7 @@ Return non-nil to allow native compilation."
   (cond
    ((not (file-newer-than-file-p el-file elc-file))
     (compile-angel--debug-message
-     "Byte-compilation ignored (up-to-date): %s" el-file)
+      "Byte-compilation ignored (up-to-date): %s" el-file)
     t)
 
    (t
@@ -504,8 +505,8 @@ Return non-nil to allow native compilation."
                   (permission-denied
                    (progn
                      (compile-angel--debug-message
-                      "IGNORED: Permission denied: %s"
-                      (error-message-string err))
+                       "IGNORED: Permission denied: %s"
+                       (error-message-string err))
                      ;; Try to native compile
                      'compile-angel-ignore)))))))
       (cond
@@ -515,7 +516,7 @@ Return non-nil to allow native compilation."
        ((eq byte-compile-result 'no-byte-compile)
         (puthash el-file t compile-angel--no-byte-compile-files-list)
         (compile-angel--debug-message
-         "Byte-compilation Ignore (no-byte-compile): %s" el-file-abbreviated)
+          "Byte-compilation Ignore (no-byte-compile): %s" el-file-abbreviated)
         nil)
 
        ((not byte-compile-result)
@@ -525,7 +526,7 @@ Return non-nil to allow native compilation."
 
        (byte-compile-result
         (compile-angel--verbose-message
-         "Byte-compilation successful: %s" el-file-abbreviated)
+          "Byte-compilation successful: %s" el-file-abbreviated)
         t))))))
 
 (defun compile-angel--need-compilation-p (el-file feature)
@@ -535,12 +536,12 @@ FEATURE is a symbol representing the feature being loaded."
   (cond
    ((not el-file)
     (compile-angel--debug-message
-     "SKIP (el-file is nil): %s | %s" el-file feature)
+      "SKIP (el-file is nil): %s | %s" el-file feature)
     nil)
 
    ((not (compile-angel--is-el-file el-file))
     (compile-angel--debug-message
-     "SKIP (Does not end with the .el): %s | %s" el-file feature)
+      "SKIP (Does not end with the .el): %s | %s" el-file feature)
     nil)
 
    (t
@@ -591,8 +592,8 @@ FEATURE is a symbol representing the feature being loaded."
                         (string-prefix-p compile-angel--doom-modules-dir
                                          el-file-truename)))))
         (compile-angel--debug-message
-         "SKIP (Doom Emacs modules/emacs/user directory): %s | %s"
-         el-file feature)
+          "SKIP (Doom Emacs modules/emacs/user directory): %s | %s"
+          el-file feature)
         nil)
 
        ((eq decision :compile)
@@ -600,13 +601,13 @@ FEATURE is a symbol representing the feature being loaded."
 
        ((eq decision :ignore)
         (compile-angel--debug-message
-         "SKIP (Predicate function returned :ignore): %s | %s"
-         el-file feature)
+          "SKIP (Predicate function returned :ignore): %s | %s"
+          el-file feature)
         nil)
 
        ((not decision)  ; nil = :ignore
         (compile-angel--debug-message
-         "SKIP (Predicate function returned nil): %s | %s" el-file feature)
+          "SKIP (Predicate function returned nil): %s | %s" el-file feature)
         nil)
 
        ;; :continue starts here:
@@ -644,8 +645,8 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
                   (setq do-native-compile nil)
                   (puthash el-file t compile-angel--no-byte-compile-files-list)
                   (compile-angel--debug-message
-                   "Native-compilation ignored (no-byte-compile): %s"
-                   el-file))
+                    "Native-compilation ignored (no-byte-compile): %s"
+                    el-file))
               ;; Native compile
               (setq do-native-compile t)
 
@@ -663,11 +664,11 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
          (t
           ;; Do not byte-compile
           (compile-angel--debug-message
-           "Byte-compilation ignored (not writable)%s: %s"
-           (if compile-angel-enable-native-compile
-               ". Native-compilation only"
-             "")
-           elc-file)
+            "Byte-compilation ignored (not writable)%s: %s"
+            (if compile-angel-enable-native-compile
+                ". Native-compilation only"
+              "")
+            elc-file)
           (setq do-native-compile t)))
 
         (let ((jit-enabled (or (bound-and-true-p native-comp-jit-compilation)
@@ -681,8 +682,8 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
             ;; has not overlooked any files.
             (puthash el-file t compile-angel--list-jit-native-compiled-files)
             (compile-angel--debug-message
-             "Native-compilation ignored (JIT compilation will do it): %s"
-             el-file)))
+              "Native-compilation ignored (JIT compilation will do it): %s"
+              el-file)))
 
         (when (and compile-angel-enable-native-compile
                    do-native-compile)
@@ -706,8 +707,8 @@ detected, it raises an error and returns nil."
     (scan-error
      (let ((char (nth 2 data)))
        (compile-angel--debug-message
-        "SKIP compile-angel--compile-on-save (Unmatched parenthesis): %s"
-        (buffer-file-name (buffer-base-buffer)))
+         "SKIP compile-angel--compile-on-save (Unmatched parenthesis): %s"
+         (buffer-file-name (buffer-base-buffer)))
        (user-error
         (concat "[compile-angel] Compilation aborted: Unmatched bracket or "
                 "quote in line %s, column %s in %s")
@@ -746,8 +747,8 @@ For other types, return nil and log a debug message."
 
    (t
     (compile-angel--debug-message
-     "ISSUE: UNSUPPORTED Feature: Not a symbol or string: %s (type: %s)"
-     feature (type-of feature))
+      "ISSUE: UNSUPPORTED Feature: Not a symbol or string: %s (type: %s)"
+      feature (type-of feature))
     nil)))
 
 (defun compile-angel--build-file-index ()
@@ -805,8 +806,8 @@ This creates a mapping from feature symbols to their file paths."
                            compile-angel--file-index)))))))))
 
   (compile-angel--debug-message
-   "Elisp file index built with %d entries"
-   (hash-table-count compile-angel--file-index)))
+    "Elisp file index built with %d entries"
+    (hash-table-count compile-angel--file-index)))
 
 (defun compile-angel-display-file-index-stats ()
   "Display statistics about the file index cache hits and misses.
@@ -865,7 +866,7 @@ argument as `load'."
       (when compile-angel-track-file-index-stats
         (cl-incf compile-angel--file-index-hits)
         (compile-angel--debug-message
-         "File index cache HIT for feature: %s" feature-symbol))
+          "File index cache HIT for feature: %s" feature-symbol))
       cached-result)
 
      ;; Try `load-history' if feature is loaded
@@ -873,7 +874,7 @@ argument as `load'."
       (when compile-angel-track-file-index-stats
         (cl-incf compile-angel--file-index-misses)
         (compile-angel--debug-message
-         "File index cache MISS for feature: %s" feature-symbol))
+          "File index cache MISS for feature: %s" feature-symbol))
 
       ;; Store feature-symbol once to avoid repeated symbol-name calls
       (let* ((history-regexp (load-history-regexp feature-name))
@@ -888,7 +889,7 @@ argument as `load'."
       (when compile-angel-track-file-index-stats
         (cl-incf compile-angel--file-index-misses)
         (compile-angel--debug-message
-         "File index cache MISS for feature: %s" feature-symbol))
+          "File index cache MISS for feature: %s" feature-symbol))
 
       ;; Avoid unnecessary symbol->string conversion
       (compile-angel--locate-feature-file feature-name nosuffix)))))
@@ -913,15 +914,15 @@ resolved file path or nil if not found."
            (file-name-absolute-p el-file)
            (compile-angel--is-el-file el-file))
       (compile-angel--debug-message
-       "compile-angel--guess-el-file: File: %s" el-file)
+        "compile-angel--guess-el-file: File: %s" el-file)
       el-file)
 
      ;; Skip built-in features
      ((and feature-symbol
            (gethash feature-symbol compile-angel--builtin-features-table nil))
       (compile-angel--debug-message
-       "compile-angel--guess-el-file: SKIP (Built-in feature): %s"
-       feature-symbol)
+        "compile-angel--guess-el-file: SKIP (Built-in feature): %s"
+        feature-symbol)
       nil)
 
      ;; Experimental feature
@@ -932,7 +933,7 @@ resolved file path or nil if not found."
                          feature-symbol
                          nosuffix))))
         (compile-angel--debug-message
-         "compile-angel--guess-el-file: CACHE: %s" file-index-result)
+          "compile-angel--guess-el-file: CACHE: %s" file-index-result)
         file-index-result))
 
      ;; Experimental feature
@@ -943,7 +944,7 @@ resolved file path or nil if not found."
                         (compile-angel--feature-el-file-from-load-history
                          feature-name))))
         (compile-angel--debug-message
-         "compile-angel--guess-el-file: HIST: %s" el-file-from-history)
+          "compile-angel--guess-el-file: HIST: %s" el-file-from-history)
         el-file-from-history))
 
      ;; Locate feature or file
@@ -951,8 +952,8 @@ resolved file path or nil if not found."
                                  (or el-file feature-name) nosuffix)))
 
         (compile-angel--debug-message
-         "compile-angel--guess-el-file: %s: %s"
-         (if el-file "FILE" "FEATURE") (or el-file feature-name))
+          "compile-angel--guess-el-file: %s: %s"
+          (if el-file "FILE" "FEATURE") (or el-file feature-name))
         feature-file)))))
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix noerror)
@@ -968,11 +969,11 @@ EL-FILE, FEATURE, NOERROR, and NOSUFFIX are the same arguments as
         (cond
          ((not el-file)
           (compile-angel--debug-message
-           "SKIP (Returned a nil .el file): %s | %s" el-file feature))
+            "SKIP (Returned a nil .el file): %s | %s" el-file feature))
 
          ((member el-file compile-angel--currently-compiling)
           (compile-angel--debug-message
-           "SKIP (To prevent recursive compilation): %s | %s" el-file feature))
+            "SKIP (To prevent recursive compilation): %s | %s" el-file feature))
 
          ((and compile-angel-on-load-mode-compile-once
                (or (gethash el-file compile-angel--list-compiled-files)
@@ -980,17 +981,17 @@ EL-FILE, FEATURE, NOERROR, and NOSUFFIX are the same arguments as
                      (gethash feature-symbol
                               compile-angel--list-compiled-features))))
           (compile-angel--debug-message
-           "SKIP (In the skip hash list): %s | %s" el-file feature)
+            "SKIP (In the skip hash list): %s | %s" el-file feature)
           nil)
 
          ((not (compile-angel--need-compilation-p el-file feature-symbol))
           (compile-angel--debug-message
-           "SKIP (Does not need compilation): %s | %s" el-file feature))
+            "SKIP (Does not need compilation): %s | %s" el-file feature))
 
          ((and compile-angel--track-no-byte-compile-files
                (gethash el-file compile-angel--no-byte-compile-files-list))
           (compile-angel--debug-message
-           "Compilation ignored (in the no-byte-compile list): %s" el-file)
+            "Compilation ignored (in the no-byte-compile list): %s" el-file)
           t)
 
          (t
@@ -1046,9 +1047,9 @@ EL-FILE, NOERROR, and NOSUFFIX are the same args as `load'."
                                     nosuffix
                                     noerror))
     (compile-angel--debug-message
-     (concat "ISSUE: Wrong type passed to "
-             "compile-angel--advice-before-require %s (%s)")
-     el-file (type-of el-file))))
+      (concat "ISSUE: Wrong type passed to "
+              "compile-angel--advice-before-require %s (%s)")
+      el-file (type-of el-file))))
 
 (defun compile-angel--compile-load-history ()
   "Compile `load-history', which tracks all previously loaded files."
@@ -1058,7 +1059,7 @@ EL-FILE, NOERROR, and NOSUFFIX are the same args as `load'."
         (when (compile-angel--is-el-file fname)
           (progn
             (compile-angel--debug-message
-             "\n[TASK] compile-angel--compile-load-history: %s" fname)
+              "\n[TASK] compile-angel--compile-load-history: %s" fname)
             (compile-angel--entry-point fname)))))))
 
 (defun compile-angel--compile-loaded-features ()
@@ -1066,7 +1067,7 @@ EL-FILE, NOERROR, and NOSUFFIX are the same args as `load'."
   (compile-angel--with-fast-file-ops
     (dolist (feature features)
       (compile-angel--debug-message
-       "\n[TASK] compile-angel--compile-loaded-features: %s" feature)
+        "\n[TASK] compile-angel--compile-loaded-features: %s" feature)
       (let ((compile-angel--advice-before-require-ignore-using-featurep nil))
         (compile-angel--entry-point nil feature)))))
 
@@ -1084,7 +1085,7 @@ otherwise, return nil."
     (cond
      ((not file)
       (compile-angel--debug-message
-       "compile-angel--normalize-el-file: nil file")
+        "compile-angel--normalize-el-file: nil file")
       nil)
 
      ((compile-angel--is-el-file file)
@@ -1092,7 +1093,7 @@ otherwise, return nil."
 
      ((string-suffix-p ".elc" file)
       (compile-angel--debug-message
-       "compile-angel--normalize-el-file: elc file: %s" file)
+        "compile-angel--normalize-el-file: elc file: %s" file)
       (let* ((base (file-name-sans-extension file)))
         (cl-some (lambda (suffix)
                    (let ((candidate (concat base ".el" suffix)))
@@ -1101,15 +1102,15 @@ otherwise, return nil."
 
      (t
       (compile-angel--debug-message
-       "IGNORED: compile-angel--normalize-el-file: Not an .el or .elc: %s"
-       file)))))
+        "IGNORED: compile-angel--normalize-el-file: Not an .el or .elc: %s"
+        file)))))
 
 (defun compile-angel--hook-after-load-functions (file)
   "Compile FILE after load."
   (compile-angel--with-fast-file-ops
     (compile-angel--debug-message
-     "\n[TASK] compile-angel--hook-after-load-functions: %s"
-     file)
+      "\n[TASK] compile-angel--hook-after-load-functions: %s"
+      file)
     (let ((file (compile-angel--normalize-el-file file))
           (compile-angel-on-load-mode-compile-once t))
       (when file
@@ -1122,7 +1123,7 @@ SYMBOL is the symbol.
 NEW-VALUE is the value of the variable."
   (when (eq symbol 'load-file-rep-suffixes)
     (compile-angel--debug-message
-     "WATCHER: Update compile-angel--el-file-regexp: %s" new-value)
+      "WATCHER: Update compile-angel--el-file-regexp: %s" new-value)
     (setq compile-angel--el-file-extensions
           (mapcar (lambda (ext) (concat ".el" ext)) load-file-rep-suffixes))
     (setq compile-angel--el-file-regexp
@@ -1130,8 +1131,8 @@ NEW-VALUE is the value of the variable."
 
   (when (eq symbol 'compile-angel-excluded-files)
     (compile-angel--debug-message
-     "WATCHER: Update compile-angel-excluded-files: %s"
-     compile-angel-excluded-files)
+      "WATCHER: Update compile-angel-excluded-files: %s"
+      compile-angel-excluded-files)
     (let ((path-suffixes-regexp nil))
       ;; Process `compile-angel-excluded-files' to generate regular
       ;; expressions.
@@ -1214,7 +1215,7 @@ be JIT compiled."
     (unwind-protect
         (maphash (lambda (el-file _value)
                    (compile-angel--debug-message
-                    "Checking if Emacs really JIT Native-Compiled: %s" el-file)
+                     "Checking if Emacs really JIT Native-Compiled: %s" el-file)
                    (compile-angel--native-compile el-file))
                  compile-angel--list-jit-native-compiled-files)
       (clrhash compile-angel--list-jit-native-compiled-files))))
@@ -1246,9 +1247,9 @@ be JIT compiled."
                     (push feature result)
                   (puthash feature t compile-angel--report-native-compiled-features)
                   (compile-angel--debug-message
-                   (concat "compile-angel--get-list-non-native-compiled: "
-                           "UP TO DATE: %s (%s)")
-                   feature (type-of feature)))))))))
+                    (concat "compile-angel--get-list-non-native-compiled: "
+                            "UP TO DATE: %s (%s)")
+                    feature (type-of feature)))))))))
     result))
 
 ;;; Functions
