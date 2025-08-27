@@ -13,6 +13,8 @@ This package offers:
 - `(compile-angel-on-load-mode)`: A global mode that compiles `.el` files both before they are loaded via `load` or `require`, and after they are loaded, using `after-load-functions`.
 - `(compile-angel-on-save-local-mode)`: A local mode that compiles .el files whenever the user saves them.
 
+If this package enhances your workflow, please show your support by **⭐ starring compile-angel on GitHub** to help more users discover its benefits.
+
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 ## Table of Contents
 
