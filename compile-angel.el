@@ -1040,7 +1040,6 @@ function."
             (not compile-angel--advice-before-require-ignore-using-featurep)
             ;; The feature hasn't already been loaded
             (not (featurep feature))))
-      ;; TODO err noerror
       (compile-angel--entry-point filename feature nil noerror)
     (compile-angel--debug-message "SKIP (Feature already loaded): %s | %s"
                                   feature filename)))
