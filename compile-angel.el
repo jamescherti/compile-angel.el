@@ -620,7 +620,11 @@ FEATURE is a symbol representing the feature being loaded."
   "Byte-compile and Native-compile the .el file EL-FILE.
 When NOERROR is non-nil, suppress warnings if the file is absent."
   (compile-angel--with-fast-file-ops
-    (let* ((elc-file (byte-compile-dest-file el-file))
+    (let* ((elc-file (funcall (if (bound-and-true-p
+                                   byte-compile-dest-file-function)
+                                  byte-compile-dest-file-function
+                                #'byte-compile-dest-file)
+                              el-file))
            (do-native-compile nil)
            (compile-angel--native-compile-when-jit-enabled
             compile-angel--native-compile-when-jit-enabled))
@@ -630,7 +634,10 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
           (message "[compile-angel] Warning: The file is not an .el file: %s"
                    el-file)))
 
-       ((not (file-exists-p el-file))
+       ;; TODO: This check may be redundant, as both `byte-compile-file' and
+       ;; `native-compile' already verify that the file exists before attempting
+       ;; compilation.
+       ((not (file-readable-p el-file))
         (unless noerror
           (message "[compile-angel] Warning: The file does not exist: %s" el-file)))
 
