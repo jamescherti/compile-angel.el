@@ -469,7 +469,7 @@ Return the byte compile result."
    ((not (file-newer-than-file-p el-file elc-file))
     (compile-angel--debug-message
       "Byte-compilation ignored (up-to-date): %s" el-file)
-    'compile-angel-ignore)
+    'byte-compile-up-to-date)
 
    (t
     (let* ((byte-compile-warnings
@@ -501,13 +501,20 @@ Return the byte compile result."
                 (condition-case err
                     (let ((noninteractive t))
                       (byte-compile-file el-file))
+                  ;; TODO ignore all errors
                   (permission-denied
                    (progn
                      (compile-angel--debug-message
-                       "IGNORED: Permission denied: %s"
+                       "Byte-compilation ignored: Permission denied: %s"
                        (error-message-string err))
                      ;; Try to native compile
-                     'compile-angel-ignore)))))))
+                     'byte-compile-exception-error))
+
+                  (t
+                   (compile-angel--debug-message
+                     "Byte-compilation ignored: Error: %s"
+                     (error-message-string err))
+                   'byte-compile-exception-error))))))
       byte-compile-result))))
 
 (defun compile-angel--need-compilation-p (el-file feature)
@@ -651,8 +658,15 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
                  (compile-angel--byte-compile el-file elc-file))
                 (el-file-abbreviated (abbreviate-file-name el-file)))
             (cond
-             ((eq byte-compile-result 'compile-angel-ignore)
-              (setq do-native-compile nil))
+             ((eq byte-compile-result 'byte-compile-up-to-date)
+              ;; Even if the .elc file is up to date, the native-compiled
+              ;; version may be absent
+              (setq do-native-compile t))
+
+             ((eq byte-compile-result 'byte-compile-exception-error)
+              ;; An exception does not necessarily indicate that the file cannot
+              ;; be natively compiled
+              (setq do-native-compile t))
 
              ((eq byte-compile-result 'no-byte-compile)
               (puthash el-file t compile-angel--no-byte-compile-files-list)
@@ -1040,7 +1054,6 @@ function."
             (not compile-angel--advice-before-require-ignore-using-featurep)
             ;; The feature hasn't already been loaded
             (not (featurep feature))))
-      ;; TODO err noerror
       (compile-angel--entry-point filename feature nil noerror)
     (compile-angel--debug-message "SKIP (Feature already loaded): %s | %s"
                                   feature filename)))
