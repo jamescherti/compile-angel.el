@@ -464,12 +464,12 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
 
 (defun compile-angel--byte-compile (el-file elc-file)
   "Byte-compile EL-FILE into ELC-FILE.
-Return non-nil to allow native compilation."
+Return the byte compile result."
   (cond
    ((not (file-newer-than-file-p el-file elc-file))
     (compile-angel--debug-message
       "Byte-compilation ignored (up-to-date): %s" el-file)
-    t)
+    'compile-angel-ignore)
 
    (t
     (let* ((byte-compile-warnings
@@ -480,7 +480,6 @@ Return non-nil to allow native compilation."
                  (list 'global-font-lock-mode-enable-in-buffer)))
            (inhibit-message (not (or (not compile-angel-verbose)
                                      (not compile-angel-debug))))
-           (el-file-abbreviated (abbreviate-file-name el-file))
            (prog-mode-hook nil)
            (emacs-lisp-mode-hook nil)
            (byte-compile-result
@@ -509,25 +508,7 @@ Return non-nil to allow native compilation."
                        (error-message-string err))
                      ;; Try to native compile
                      'compile-angel-ignore)))))))
-      (cond
-       ((eq byte-compile-result 'compile-angel-ignore)
-        nil)
-
-       ((eq byte-compile-result 'no-byte-compile)
-        (puthash el-file t compile-angel--no-byte-compile-files-list)
-        (compile-angel--debug-message
-          "Byte-compilation Ignore (no-byte-compile): %s" el-file-abbreviated)
-        nil)
-
-       ((not byte-compile-result)
-        (compile-angel--verbose-message "Byte-compilation error: %s"
-                                        el-file-abbreviated)
-        nil)
-
-       (byte-compile-result
-        (compile-angel--verbose-message
-          "Byte-compilation successful: %s" el-file-abbreviated)
-        t))))))
+      byte-compile-result))))
 
 (defun compile-angel--need-compilation-p (el-file feature)
   "Return non-nil if EL-FILE or FEATURE need compilation.
@@ -627,7 +608,8 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
                               el-file))
            (do-native-compile nil)
            (compile-angel--native-compile-when-jit-enabled
-            compile-angel--native-compile-when-jit-enabled))
+            compile-angel--native-compile-when-jit-enabled)
+           no-byte-compile-defined)
       (cond
        ((not elc-file)
         (unless noerror
@@ -651,6 +633,7 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
                 (progn
                   (setq do-native-compile nil)
                   (puthash el-file t compile-angel--no-byte-compile-files-list)
+                  (setq no-byte-compile-defined t)
                   (compile-angel--debug-message
                     "Native-compilation ignored (no-byte-compile): %s"
                     el-file))
@@ -664,8 +647,33 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
          ;; Byte-compile Enabled
          ((file-writable-p elc-file)
           ;; Byte-compile
-          (setq do-native-compile (compile-angel--byte-compile
-                                   el-file elc-file)))
+          (let ((byte-compile-result
+                 (compile-angel--byte-compile el-file elc-file))
+                (el-file-abbreviated (abbreviate-file-name el-file)))
+            (cond
+             ((eq byte-compile-result 'compile-angel-ignore)
+              (setq do-native-compile nil))
+
+             ((eq byte-compile-result 'no-byte-compile)
+              (puthash el-file t compile-angel--no-byte-compile-files-list)
+              (setq no-byte-compile-defined t)
+              (compile-angel--debug-message
+                "Byte-compilation Ignore (no-byte-compile): %s"
+                el-file-abbreviated)
+              (setq do-native-compile nil))
+
+             ((not byte-compile-result)
+              (compile-angel--verbose-message "Byte-compilation error: %s"
+                                              el-file-abbreviated)
+              (setq do-native-compile nil))
+
+             ((eq byte-compile-result t)
+              (compile-angel--verbose-message
+                "Byte-compilation successful: %s" el-file-abbreviated)
+              (setq do-native-compile t))
+
+             (t
+              (error "Invalid value returned by compile-angel--byte-compile")))))
 
          ;; .elc not writable
          (t
@@ -684,10 +692,11 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
                      (not compile-angel--native-compile-when-jit-enabled))
             ;; Do not native-compile. Let the JIT compiler do it.
             (setq do-native-compile nil)
-            ;; The `compile-angel--list-jit-native-compiled-files' hash
-            ;; table serves as a safeguard to verify that the JIT compiler
-            ;; has not overlooked any files.
-            (puthash el-file t compile-angel--list-jit-native-compiled-files)
+            (unless no-byte-compile-defined
+              ;; The `compile-angel--list-jit-native-compiled-files' hash table
+              ;; serves as a safeguard to verify later that the JIT compiler has
+              ;; not overlooked any files.
+              (puthash el-file t compile-angel--list-jit-native-compiled-files))
             (compile-angel--debug-message
               "Native-compilation ignored (JIT compilation will do it): %s"
               el-file)))
