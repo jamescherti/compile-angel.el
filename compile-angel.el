@@ -1183,6 +1183,7 @@ NEW-VALUE is the value of the variable."
 (defun compile-angel--init ()
   "Initialize internal variables."
   (unless compile-angel--init-completed
+    (compile-angel--debug-message "Init")
     (setq compile-angel--native-comp-available
           (and (featurep 'native-compile)
                (fboundp 'native-comp-available-p)
