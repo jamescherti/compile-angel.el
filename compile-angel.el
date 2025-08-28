@@ -501,6 +501,7 @@ Return the byte compile result."
                 (condition-case err
                     (let ((noninteractive t))
                       (byte-compile-file el-file))
+                  ;; TODO ignore all errors
                   (permission-denied
                    (progn
                      (compile-angel--debug-message
