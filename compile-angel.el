@@ -1084,12 +1084,11 @@ EL-FILE, NOERROR, and NOSUFFIX are the same args as `load'."
   "Compile `load-history', which tracks all previously loaded files."
   (compile-angel--with-fast-file-ops
     (dolist (entry load-history)
-      (let ((fname (car entry)))
-        (when (compile-angel--is-el-file fname)
-          (progn
-            (compile-angel--debug-message
-              "\n[TASK] compile-angel--compile-load-history: %s" fname)
-            (compile-angel--entry-point fname)))))))
+      (when-let* ((fname (car entry))
+                  (el-file (compile-angel--normalize-el-file fname)))
+        (compile-angel--debug-message
+          "\n[TASK] compile-angel--compile-load-history: %s" el-file)
+        (compile-angel--entry-point el-file)))))
 
 (defun compile-angel--compile-loaded-features ()
   "Compile all loaded features that are in the `features' variable."
@@ -1255,64 +1254,78 @@ be JIT compiled."
 (defvar compile-angel--report-native-compiled-features
   (make-hash-table :test 'equal))
 
+(defun compile-angel--report-is-native-compiled (el-file)
+  "Return non-nil if EL-FILE is natively compiled."
+  (when-let* ((el-file (compile-angel--normalize-el-file el-file)))
+    (when (and (not (gethash el-file
+                             compile-angel--no-byte-compile-files-list))
+               (not (compile-angel--el-file-excluded-p el-file)))
+      (if (not (compile-angel--elisp-native-compiled-p el-file))
+          t
+        nil))))
+
 (defun compile-angel--get-list-non-native-compiled ()
-  "Return a list of the non natively-compiled features symbols."
-  (let ((result nil))
+  "Return a list of non natively compiled feature symbols."
+  (let ((list-el-files (make-hash-table :test 'equal))
+        (result nil))
+
+    ;; Collect .el files from load-history
+    (dolist (entry load-history)
+      (when-let* ((fname (compile-angel--normalize-el-file (car entry))))
+        (puthash fname t list-el-files)))
+
+    ;; Collect .el files from features
     (dolist (feature features)
       (when feature
         (let* ((feature-symbol (compile-angel--normalize-feature feature)))
           (when (and feature-symbol
                      (not (gethash feature-symbol
                                    compile-angel--report-native-compiled-features)))
-            (let* ((feature-el-file (when feature-symbol
-                                      (locate-library (symbol-name feature-symbol))))
-                   (el-file (when feature-el-file
-                              (compile-angel--normalize-el-file
-                               feature-el-file))))
-              (when (and el-file
-                         (not (gethash el-file
-                                       compile-angel--no-byte-compile-files-list))
-                         (not (compile-angel--el-file-excluded-p el-file)))
-                (if (and (and (fboundp 'comp-el-to-eln-filename)
-                              (funcall 'comp-el-to-eln-filename el-file))
-                         (not (compile-angel--elisp-native-compiled-p el-file)))
-                    (push feature result)
-                  (puthash feature t compile-angel--report-native-compiled-features)
-                  (compile-angel--debug-message
-                    (concat "compile-angel--get-list-non-native-compiled: "
-                            "UP TO DATE: %s (%s)")
-                    feature (type-of feature)))))))))
+            (when-let* ((feature-el-file
+                         (locate-library (symbol-name feature-symbol))))
+              (puthash feature-el-file t list-el-files))))))
+
+    ;; Check each file and build result
+    (maphash
+     (lambda (el-file _)
+       (if (compile-angel--report-is-native-compiled el-file)
+           (push el-file result)
+         (puthash el-file t compile-angel--report-native-compiled-features)
+         (compile-angel--debug-message
+           "compile-angel--get-list-non-native-compiled: UP TO DATE: %s (%s)"
+           el-file (type-of el-file))))
+     list-el-files)
+
     result))
 
 ;;; Functions
 
 (defun compile-angel-report ()
-  "Create a buffer listing all features that are not native compiled."
-  (let ((buffer (get-buffer-create "*Non-Native-Compiled*"))
-        (inhibit-read-only t))
-    (when (buffer-live-p buffer)
-      (with-current-buffer (get-buffer-create "*compile-angel:report*")
-        (read-only-mode 1)
-        (erase-buffer)
-        (insert "Non-natively compiled features:\n")
-        (insert "-------------------------------\n\n")
-        (goto-char (point-min))
+  "Create a buffer listing all Elisp files that are not native compiled."
+  (with-current-buffer (get-buffer-create "*compile-angel:report*")
+    (let ((inhibit-read-only t))
+      (read-only-mode 1)
+      (erase-buffer)
+      (insert "Non-natively compiled features:\n")
+      (insert "-------------------------------\n\n")
+      (goto-char (point-min))
 
-        (pop-to-buffer (current-buffer))
+      (pop-to-buffer (current-buffer))
 
-        (save-excursion
-          (goto-char (point-max))
-          (let ((count 0))
-            (dolist (feature (compile-angel--get-list-non-native-compiled))
-              (setq count (1+ count))
-              (insert (format "- %s\n" (symbol-name feature))))
+      (save-excursion
+        (goto-char (point-max))
+        (let ((count 0))
+          (dolist (el-file (compile-angel--get-list-non-native-compiled))
+            (setq count (1+ count))
+            (insert (format "- %s\n" el-file)))
 
-            (if (= count 0)
-                (insert "(All features are natively-compiled.)")
-              (insert (format "\n(%s feature%s %s NOT natively compiled)"
-                              count
-                              (if (< count 2) "" "s")
-                              (if (< count 2) "is" "are"))))))))))
+          (if (= count 0)
+              (insert "(All Elisp files have been natively compiled.)")
+            (insert (format
+                     "\n(%s file%s %s NOT successfully natively compiled.)"
+                     count
+                     (if (< count 2) "" "s")
+                     (if (< count 2) "was" "were")))))))))
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
