@@ -1121,13 +1121,15 @@ otherwise, return nil."
       file)
 
      ((string-suffix-p ".elc" file)
-      (compile-angel--debug-message
-        "compile-angel--normalize-el-file: elc file: %s" file)
-      (let* ((base (file-name-sans-extension file)))
-        (cl-some (lambda (suffix)
-                   (let ((candidate (concat base ".el" suffix)))
-                     (and (file-exists-p candidate) candidate)))
-                 load-file-rep-suffixes)))
+      (let ((el-file (let* ((base (file-name-sans-extension file)))
+                       (cl-some (lambda (suffix)
+                                  (let ((candidate (concat base ".el" suffix)))
+                                    (and (file-exists-p candidate) candidate)))
+                                load-file-rep-suffixes))))
+        (compile-angel--debug-message
+          "compile-angel--normalize-el-file: elc file: %s -> %s"
+          file el-file)
+        el-file))
 
      (t
       (compile-angel--debug-message
