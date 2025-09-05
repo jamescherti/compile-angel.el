@@ -1281,8 +1281,8 @@ be JIT compiled."
           (when (and feature-symbol
                      (not (gethash feature-symbol
                                    compile-angel--report-native-compiled-features)))
-            (when-let* ((feature-el-file
-                         (locate-library (symbol-name feature-symbol))))
+            (when-let* ((feature-el-file (compile-angel--guess-el-file
+                                          nil feature-symbol)))
               (puthash feature-el-file t list-el-files))))))
 
     ;; Check each file and build result
