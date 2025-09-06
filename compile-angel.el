@@ -291,7 +291,11 @@ don't have associated .el files and therefore don't need compilation.")
 
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
 (defvar compile-angel--list-compiled-features (make-hash-table :test 'eq))
-(defvar compile-angel--currently-compiling nil)
+
+(defvar compile-angel--legacy-currently-compiling nil)
+(defvar compile-angel--currently-compiling-files (make-hash-table :test 'equal))
+(defvar compile-angel--currently-compiling-features (make-hash-table :test 'eq))
+
 (defvar compile-angel--el-file-regexp nil)
 (defvar compile-angel--el-file-extensions nil)
 (defvar compile-angel--excluded-path-suffixes-regexps nil)
@@ -928,8 +932,8 @@ argument as `load'."
                                      &optional feature-symbol nosuffix)
   "Guess the path of the EL-FILE or FEATURE.
 
-EL-FILE must be an absolute path. If EL-FILE is not provided,
-FEATURE-SYMBOL is used to search. FEATURE-SYMBOL has to be a symbol.
+If EL-FILE is not provided, FEATURE-SYMBOL is used to search. FEATURE-SYMBOL has
+to be a symbol.
 
 NOSUFFIX behaves similarly to `load', controlling whether file suffixes are
 considered. Checks caches before performing any computation. Returns the
@@ -939,6 +943,7 @@ resolved file path or nil if not found."
     ;; Fast path: if we have an absolute path that's an el file, just return it
     ;; El File
     (cond
+     ;; Return abolute path as it is
      ((and el-file
            (stringp el-file)
            (file-name-absolute-p el-file)
@@ -999,11 +1004,23 @@ EL-FILE, FEATURE, NOERROR, and NOSUFFIX are the same arguments as
         (cond
          ((not el-file)
           (compile-angel--debug-message
-            "SKIP (Returned a nil .el file): %s | %s" el-file feature))
+            "SKIP file (Returned a nil .el file): %s | %s" el-file feature))
 
-         ((member el-file compile-angel--currently-compiling)
+         ((member el-file compile-angel--legacy-currently-compiling)
           (compile-angel--debug-message
-            "SKIP (To prevent recursive compilation): %s | %s" el-file feature))
+            "SKIP file - LEGACY (To prevent recursive compilation): %s | %s"
+            el-file feature))
+
+         ((and feature-symbol
+               (gethash feature-symbol compile-angel--currently-compiling-features))
+          (compile-angel--debug-message
+            "SKIP feature (To prevent recursive compilation): %s | %s"
+            el-file feature))
+
+         ((gethash el-file compile-angel--currently-compiling-files)
+          (compile-angel--debug-message
+            "SKIP file (To prevent recursive compilation): %s | %s"
+            el-file feature))
 
          ((and compile-angel-on-load-mode-compile-once
                (or (gethash el-file compile-angel--list-compiled-files)
@@ -1011,8 +1028,7 @@ EL-FILE, FEATURE, NOERROR, and NOSUFFIX are the same arguments as
                      (gethash feature-symbol
                               compile-angel--list-compiled-features))))
           (compile-angel--debug-message
-            "SKIP (In the skip hash list): %s | %s" el-file feature)
-          nil)
+            "SKIP (In the skip hash list): %s | %s" el-file feature))
 
          ((not (compile-angel--need-compilation-p el-file feature-symbol))
           (compile-angel--debug-message
@@ -1030,9 +1046,16 @@ EL-FILE, FEATURE, NOERROR, and NOSUFFIX are the same arguments as
           (puthash el-file t compile-angel--list-compiled-files)
           (when feature-symbol
             (puthash feature-symbol t compile-angel--list-compiled-features))
-          (let ((compile-angel--currently-compiling
-                 (cons el-file compile-angel--currently-compiling)))
-            (compile-angel--compile-elisp el-file noerror))))))))
+
+          (let ((compile-angel--legacy-currently-compiling
+                 (cons el-file compile-angel--legacy-currently-compiling)))
+            (unwind-protect
+                (progn
+                  (puthash el-file t compile-angel--currently-compiling-files)
+                  (puthash feature-symbol t compile-angel--currently-compiling-features)
+                  (compile-angel--compile-elisp el-file noerror))
+              (remhash el-file compile-angel--currently-compiling-files)
+              (remhash feature-symbol compile-angel--currently-compiling-features)))))))))
 
 (defun compile-angel--advice-before-require (feature
                                              &optional filename noerror)
@@ -1273,6 +1296,8 @@ be JIT compiled."
     ;; Collect .el files from load-history
     (dolist (entry load-history)
       (when-let* ((fname (compile-angel--normalize-el-file (car entry))))
+        (compile-angel--debug-message
+          "compile-angel--get-list-non-native-compiled: ADD: %s" fname)
         (puthash fname t list-el-files)))
 
     ;; Collect .el files from features
@@ -1284,6 +1309,9 @@ be JIT compiled."
                                    compile-angel--report-native-compiled-features)))
             (when-let* ((feature-el-file (compile-angel--guess-el-file
                                           nil feature-symbol)))
+              (compile-angel--debug-message
+                "compile-angel--get-list-non-native-compiled: ADD: %s"
+                feature-el-file)
               (puthash feature-el-file t list-el-files))))))
 
     ;; Check each file and build result
