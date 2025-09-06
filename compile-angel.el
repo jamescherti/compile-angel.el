@@ -1327,6 +1327,39 @@ be JIT compiled."
 
     result))
 
+(defun compile-angel--load-compiled (el-file &optional elc-file eln-file)
+  "Load the most up-to-date compiled version of EL-FILE.
+
+This function prefers the native-compiled .eln file if it exists and is newer
+than EL-FILE, otherwise it falls back to the byte-compiled .elc file if it
+exists and is newer than EL-FILE. If neither compiled file is suitable, it loads
+EL-FILE directly.
+
+Optional arguments ELC-FILE and ELN-FILE can be provided to avoid recomputing
+the corresponding .elc or .eln filenames."
+  (when el-file
+    (let* ((file-to-load el-file)
+           (eln-file (or eln-file
+                         (and (fboundp 'comp-el-to-eln-filename)
+                              (funcall 'comp-el-to-eln-filename el-file))))
+           (elc-file (or elc-file
+                         (funcall (if (bound-and-true-p
+                                       byte-compile-dest-file-function)
+                                      byte-compile-dest-file-function
+                                    #'byte-compile-dest-file)
+                                  el-file))))
+      (when (and elc-file
+                 (file-exists-p elc-file)
+                 (file-newer-than-file-p elc-file el-file))
+        (setq file-to-load elc-file))
+
+      (when (and eln-file
+                 (file-newer-than-file-p eln-file file-to-load))
+        (setq file-to-load eln-file))
+
+      (compile-angel--debug-message "LOAD: %s" file-to-load)
+      (load file-to-load nil 'nomessage))))
+
 ;;; Functions
 
 (defun compile-angel-report ()
