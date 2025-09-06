@@ -250,6 +250,9 @@ associated with file-related operations during compilation."
 When non-nil, construct a hash table mapping feature names to their file paths
 by scanning all directories in `load-path' to improve lookup performance.")
 
+(defvar compile-angel-reload-compiled-version nil
+  "Experimental feature. Do not activate it.")
+
 ;;; Internal variables
 
 (defconst compile-angel--builtin-features
@@ -288,6 +291,7 @@ don't have associated .el files and therefore don't need compilation.")
 
 (defvar compile-angel--list-jit-native-compiled-files (make-hash-table :test 'equal))
 (defvar compile-angel--native-compile-when-jit-enabled nil)
+(defvar compile-angel--reload-after-native-compile (make-hash-table :test 'equal))
 
 (defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
 (defvar compile-angel--list-compiled-features (make-hash-table :test 'eq))
@@ -464,6 +468,8 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
       (let ((inhibit-message (not (or (not compile-angel-verbose)
                                       (not compile-angel-debug)))))
         (when (fboundp 'native-compile-async)
+          (when compile-angel-reload-compiled-version
+            (puthash el-file t compile-angel--reload-after-native-compile))
           (funcall 'native-compile-async el-file)))))))
 
 (defun compile-angel--byte-compile (el-file elc-file)
@@ -1091,7 +1097,9 @@ EL-FILE, NOERROR, and NOSUFFIX are the same args as `load'."
       ;; Unset the special init-file status to prevent recursive loads
       (let ((user-init-file (if (eq user-init-file t)
                                 nil
-                              user-init-file)))
+                              user-init-file))
+            ;; Do not add loaded files to the list. Only features.
+            (compile-angel-reload-compiled-version nil))
         (compile-angel--entry-point (when el-file
                                       (expand-file-name
                                        (substitute-in-file-name el-file)))
@@ -1106,12 +1114,14 @@ EL-FILE, NOERROR, and NOSUFFIX are the same args as `load'."
 (defun compile-angel--compile-load-history ()
   "Compile `load-history', which tracks all previously loaded files."
   (compile-angel--with-fast-file-ops
-    (dolist (entry load-history)
-      (when-let* ((fname (car entry))
-                  (el-file (compile-angel--normalize-el-file fname)))
-        (compile-angel--debug-message
-          "\n[TASK] compile-angel--compile-load-history: %s" el-file)
-        (compile-angel--entry-point el-file)))))
+    (let (;; Do not add loaded files to the list. Only features.
+          (compile-angel-reload-compiled-version nil))
+      (dolist (entry load-history)
+        (when-let* ((fname (car entry))
+                    (el-file (compile-angel--normalize-el-file fname)))
+          (compile-angel--debug-message
+            "\n[TASK] compile-angel--compile-load-history: %s" el-file)
+          (compile-angel--entry-point el-file))))))
 
 (defun compile-angel--compile-loaded-features ()
   "Compile all loaded features that are in the `features' variable."
@@ -1166,7 +1176,9 @@ otherwise, return nil."
       "\n[TASK] compile-angel--hook-after-load-functions: %s"
       file)
     (let ((file (compile-angel--normalize-el-file file))
-          (compile-angel-on-load-mode-compile-once t))
+          (compile-angel-on-load-mode-compile-once t)
+          ;; Do not add loaded files to the list. Only features.
+          (compile-angel-reload-compiled-version nil))
       (when file
         (compile-angel--entry-point file)))))
 
@@ -1260,20 +1272,35 @@ NEW-VALUE is the value of the variable."
        ;; `load-file-rep-suffixes` is modified.
        (string-match-p compile-angel--el-file-regexp file)))
 
-(defun compile-angel--ensure-jit-compile ()
+(defun compile-angel--native-comp-async-all-done ()
   "When JIT is enabled, ensure that Emacs native-compiles the loaded .elc files.
 Occasionally, Emacs fails to `native-compile' certain `.elc` files that should
 be JIT compiled."
-  (when (and compile-angel-enable-native-compile
-             (> (hash-table-count compile-angel--list-jit-native-compiled-files)
-                0))
-    (unwind-protect
-        (maphash (lambda (el-file _value)
-                   (compile-angel--debug-message
-                     "Checking if Emacs really JIT Native-Compiled: %s" el-file)
-                   (compile-angel--native-compile el-file))
-                 compile-angel--list-jit-native-compiled-files)
-      (clrhash compile-angel--list-jit-native-compiled-files))))
+  (when compile-angel-enable-native-compile
+    ;; Double check and ensure Emacs compiled them
+    ;; TODO remhash instead of clrhash
+    (when (> (hash-table-count compile-angel--list-jit-native-compiled-files) 0)
+      (unwind-protect
+          (maphash (lambda (el-file _value)
+                     (compile-angel--debug-message
+                       "Checking if Emacs really JIT Native-Compiled: %s" el-file)
+                     (compile-angel--native-compile el-file))
+                   compile-angel--list-jit-native-compiled-files)
+        (clrhash compile-angel--list-jit-native-compiled-files)))
+
+    ;; Reload the modules that need reloading
+    ;; TODO remhash instead of clrhash
+    (when (and compile-angel-reload-compiled-version
+               (> (hash-table-count compile-angel--reload-after-native-compile) 0))
+      (unwind-protect
+          (unless (or (bound-and-true-p native-comp-jit-compilation)
+                      (bound-and-true-p native-comp-deferred-compilation))
+            (maphash (lambda (el-file _value)
+                       (compile-angel--debug-message
+                         "Loading the compiled version of: %s" el-file)
+                       (compile-angel--load-natively-compiled el-file))
+                     compile-angel--reload-after-native-compile))
+        (clrhash compile-angel--reload-after-native-compile)))))
 
 (defvar compile-angel--report-native-compiled-features
   (make-hash-table :test 'equal))
@@ -1327,18 +1354,18 @@ be JIT compiled."
 
     result))
 
-(defun compile-angel--load-compiled (el-file &optional elc-file eln-file)
+(defun compile-angel--load-natively-compiled (el-file &optional elc-file eln-file)
   "Load the most up-to-date compiled version of EL-FILE.
 
 This function prefers the native-compiled .eln file if it exists and is newer
-than EL-FILE, otherwise it falls back to the byte-compiled .elc file if it
-exists and is newer than EL-FILE. If neither compiled file is suitable, it loads
-EL-FILE directly.
+than EL-FILE and ELC-FILE.
 
 Optional arguments ELC-FILE and ELN-FILE can be provided to avoid recomputing
 the corresponding .elc or .eln filenames."
-  (when el-file
-    (let* ((file-to-load el-file)
+  (when (and el-file
+             (not (string-suffix-p "/early-init.el" el-file))
+             (not (string-suffix-p "/init.el" el-file)))
+    (let* ((file-origin el-file)
            (eln-file (or eln-file
                          (and (fboundp 'comp-el-to-eln-filename)
                               (funcall 'comp-el-to-eln-filename el-file))))
@@ -1351,14 +1378,12 @@ the corresponding .elc or .eln filenames."
       (when (and elc-file
                  (file-exists-p elc-file)
                  (file-newer-than-file-p elc-file el-file))
-        (setq file-to-load elc-file))
+        (setq file-origin elc-file))
 
       (when (and eln-file
-                 (file-newer-than-file-p eln-file file-to-load))
-        (setq file-to-load eln-file))
-
-      (compile-angel--debug-message "LOAD: %s" file-to-load)
-      (load file-to-load nil 'nomessage))))
+                 (file-newer-than-file-p eln-file file-origin))
+        (compile-angel--debug-message "LOAD: %s" eln-file)
+        (load eln-file nil 'nomessage)))))
 
 ;;; Functions
 
@@ -1399,19 +1424,20 @@ the corresponding .elc or .eln filenames."
       (progn
         ;; Init
         (compile-angel--init)
-        ;; Compile load-history
-        (when compile-angel-on-load-compile-load-history
-          (compile-angel--compile-load-history))
         ;; Compile features
         (when compile-angel-on-load-compile-features
           (compile-angel--compile-loaded-features))
+        ;; Compile load-history (Keep load history after features
+        ;; for the experimental feature `compile-angel-reload-compiled-version')
+        (when compile-angel-on-load-compile-load-history
+          (compile-angel--compile-load-history))
         ;; After load hook
         (when compile-angel-on-load-hook-after-load-functions
           (add-hook 'after-load-functions
                     #'compile-angel--hook-after-load-functions))
         (when compile-angel-enable-native-compile
           (add-hook 'native-comp-async-all-done-hook
-                    #'compile-angel--ensure-jit-compile))
+                    #'compile-angel--native-comp-async-all-done))
         ;; Advices
         (when compile-angel-on-load-advise-require
           (advice-add 'require :before #'compile-angel--advice-before-require))
@@ -1421,7 +1447,7 @@ the corresponding .elc or .eln filenames."
     (remove-hook 'after-load-functions
                  #'compile-angel--hook-after-load-functions)
     (remove-hook 'native-comp-async-all-done-hook
-                 #'compile-angel--ensure-jit-compile)
+                 #'compile-angel--native-comp-async-all-done)
     ;; Advices
     (advice-remove 'require #'compile-angel--advice-before-require)
     (advice-remove 'load #'compile-angel--advice-before-load)))
