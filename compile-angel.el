@@ -1112,8 +1112,8 @@ otherwise, return nil."
   (compile-angel--with-fast-file-ops
     (cond
      ((not file)
-      (compile-angel--debug-message
-        "compile-angel--normalize-el-file: nil file")
+      ;; (compile-angel--debug-message
+      ;;   "compile-angel--normalize-el-file: nil file")
       nil)
 
      ((compile-angel--is-el-file file)
@@ -1125,15 +1125,16 @@ otherwise, return nil."
                                   (let ((candidate (concat base ".el" suffix)))
                                     (and (file-exists-p candidate) candidate)))
                                 load-file-rep-suffixes))))
-        (compile-angel--debug-message
-          "compile-angel--normalize-el-file: elc file: %s -> %s"
-          file el-file)
+        ;; (compile-angel--debug-message
+        ;;   "compile-angel--normalize-el-file: elc file: %s -> %s"
+        ;;   file el-file)
         el-file))
 
      (t
-      (compile-angel--debug-message
-        "IGNORED: compile-angel--normalize-el-file: Not an .el or .elc: %s"
-        file)))))
+      ;; (compile-angel--debug-message
+      ;;   "IGNORED: compile-angel--normalize-el-file: Not an .el or .elc: %s"
+      ;;   file)
+      nil))))
 
 (defun compile-angel--hook-after-load-functions (file)
   "Compile FILE after load."
