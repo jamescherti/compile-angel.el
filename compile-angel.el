@@ -1419,4 +1419,5 @@ be JIT compiled."
 
 ;;; Provide 'compile-angel
 (provide 'compile-angel)
+
 ;;; compile-angel.el ends here
