@@ -1416,7 +1416,7 @@ the corresponding .elc or .eln filenames."
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-load-mode
-  "Toggle `compile-angel-mode' then compiles .el files before they are loaded."
+  "Compile .el files before they are loaded."
   :global t
   :lighter " CAngelOL"
   :group 'compile-angel
@@ -1454,7 +1454,7 @@ the corresponding .elc or .eln filenames."
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-save-mode
-  "Toggle `compile-angel-mode'that compiles .el file when saved."
+  "Compile .el files when saved."
   :global t
   :lighter " CAngelSG"
   :group 'compile-angel
@@ -1466,7 +1466,7 @@ the corresponding .elc or .eln filenames."
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-save-local-mode
-  "Toggle `compile-angel-mode'that compiles .el file when saved."
+  "Compiles .el files when saved."
   :global nil
   :lighter " CAngelSL"
   :group 'compile-angel
