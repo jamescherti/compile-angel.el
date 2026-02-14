@@ -242,6 +242,21 @@ associated with file-related operations during compilation."
                  (const :tag "No optimization" nil))
   :group 'compile-angel)
 
+(defcustom compile-angel-exclude-core-emacs-directory nil
+  "Non-nil to exclude the Emacs installation Lisp directory.
+This prevents the compilation of core Emacs files found in the directory
+containing `simple.el`."
+  :type 'boolean
+  :group 'compile-angel)
+
+;; Always use `file-truename'
+(defvar compile-angel--lisp-directory
+  ;; Directory where Emacs's own *.el and *.elc Lisp files are installed.
+  (if (bound-and-true-p lisp-directory)
+      (file-truename lisp-directory)
+    (when-let* ((library-path (locate-library "simple")))
+      (file-truename (file-name-directory (file-truename library-path))))))
+
 ;;; Experimental features
 
 (defvar compile-angel-guess-el-file-use-load-history nil)
@@ -576,6 +591,16 @@ FEATURE is a symbol representing the feature being loaded."
       (cond
        ((eq decision :force-compile)
         t)
+
+       ;; Exclude Emacs Lisp Directory
+       ((and compile-angel-exclude-core-emacs-directory
+             compile-angel--lisp-directory
+             (string-prefix-p compile-angel--lisp-directory
+                              el-file))
+        (compile-angel--debug-message
+          "SKIP (Emacs Lisp directory): %s | %s"
+          el-file feature)
+        nil)
 
        ;; This is specific to Doom Emacs: It ensures that the Doom Emacs user
        ;; directory, Emacs directory, and modules directory are not compiled by
