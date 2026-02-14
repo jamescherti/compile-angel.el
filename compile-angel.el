@@ -86,7 +86,10 @@
 
 (require 'bytecomp)
 (require 'cl-lib)
-(eval-when-compile (require 'subr-x))
+
+;; The `subr-x' library provides utility functions like `string-remove-suffix'
+;; that are invoked at runtime within `compile-angel--update-el-file-regexp'.
+(require 'subr-x)
 
 ;;; Variables
 
