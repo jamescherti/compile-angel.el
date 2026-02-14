@@ -58,9 +58,8 @@ It is highly recommended to set the following variables **at the very beginning 
 ;; Non-nil means to native compile packages as part of their installation.
 (setq package-native-compile t)
 
-;; Make Emacs Native-compile .elc files asynchronously by setting
-;; `native-comp-jit-compilation' to t.
-(setq native-comp-jit-compilation t)
+;; Disable Emacs JIT Native-compile to completely replace it with compile-angel
+(setq native-comp-jit-compilation nil)
 (setq native-comp-deferred-compilation native-comp-jit-compilation)  ; Deprecated
 ```
 
@@ -82,6 +81,7 @@ To install *compile-angel* on Emacs from MELPA:
 (use-package compile-angel
   :ensure t
   :demand t
+  :init
   :config
   ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
   ;; (When set to nil, compile-angel won't show which file is being compiled.)
