@@ -249,12 +249,13 @@ containing `simple.el`."
   :type 'boolean
   :group 'compile-angel)
 
-;; Always use `file-truename'
 (defvar compile-angel--lisp-directory
   ;; Directory where Emacs's own *.el and *.elc Lisp files are installed.
   (if (bound-and-true-p lisp-directory)
+      ;; Always use `file-truename'
       (file-truename lisp-directory)
     (when-let* ((library-path (locate-library "simple")))
+      ;; Always use `file-truename'
       (file-truename (file-name-directory (file-truename library-path))))))
 
 ;;; Experimental features
@@ -264,6 +265,12 @@ containing `simple.el`."
   "EXPERIMENTAL: Enable a faster feature-to-file lookup.
 When non-nil, construct a hash table mapping feature names to their file paths
 by scanning all directories in `load-path' to improve lookup performance.")
+
+(defvar compile-angel-native-compile-load nil
+  "Experimental feature. Do not activate it.
+Non-nil to load the file after asynchronous native compilation.
+When non-nil, passing the LOAD argument to `native-compile-async' ensures that
+the file is loaded immediately after compilation finishes.")
 
 (defvar compile-angel-reload-compiled-version nil
   "Experimental feature. Do not activate it.")
@@ -485,7 +492,8 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
         (when (fboundp 'native-compile-async)
           (when compile-angel-reload-compiled-version
             (puthash el-file t compile-angel--reload-after-native-compile))
-          (funcall 'native-compile-async el-file)))))))
+          (native-compile-async el-file nil
+                                compile-angel-native-compile-load)))))))
 
 (defun compile-angel--byte-compile (el-file elc-file)
   "Byte-compile EL-FILE into ELC-FILE.
@@ -1397,7 +1405,7 @@ the corresponding .elc or .eln filenames."
     (let* ((file-origin el-file)
            (eln-file (or eln-file
                          (and (fboundp 'comp-el-to-eln-filename)
-                              (funcall 'comp-el-to-eln-filename el-file))))
+                              (comp-el-to-eln-filename el-file))))
            (elc-file (or elc-file
                          (funcall (if (bound-and-true-p
                                        byte-compile-dest-file-function)
