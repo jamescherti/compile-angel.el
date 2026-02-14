@@ -19,27 +19,27 @@ If this package enhances your workflow, please show your support by **⭐ starri
 ## Table of Contents
 
 - [compile-angel.el - Speed up Emacs by Byte-compiling and Native-compiling all Elisp files](#compile-angelel---speed-up-emacs-by-byte-compiling-and-native-compiling-all-elisp-files)
-    - [Why use compile-angel?](#why-use-compile-angel)
-    - [Before installing](#before-installing)
-    - [Installation of compile-angel](#installation-of-compile-angel)
-        - [Emacs](#emacs)
-        - [Doom Emacs](#doom-emacs)
-    - [Frequently Asked Questions](#frequently-asked-questions)
-        - [Should files be compiled every time Emacs starts? How can I determine why compile-angel compiled a file?](#should-files-be-compiled-every-time-emacs-starts-how-can-i-determine-why-compile-angel-compiled-a-file)
-        - [What are some interesting Emacs customizations to consider alongside compile-angel?](#what-are-some-interesting-emacs-customizations-to-consider-alongside-compile-angel)
-        - [How to exclude certain .el files from compilation in compile-angel?](#how-to-exclude-certain-el-files-from-compilation-in-compile-angel)
-        - [How to exclude custom-file, recentf, savehist files?](#how-to-exclude-custom-file-recentf-savehist-files)
-        - [How to enable or disable byte compilation and native compilation?](#how-to-enable-or-disable-byte-compilation-and-native-compilation)
-        - [What's the point of using compile-angel? My Emacs compiles packages automatically anyway!](#whats-the-point-of-using-compile-angel-my-emacs-compiles-packages-automatically-anyway)
-        - [Could compiling all Elisp files not be accomplished with a script? (e.g., a GNU Parallel along with Emacs's -batch mode.)](#could-compiling-all-elisp-files-not-be-accomplished-with-a-script-eg-a-gnu-parallel-along-with-emacss--batch-mode)
-        - [Why not just use the package-recompile-all function?](#why-not-just-use-the-package-recompile-all-function)
-        - [What is the impact on Emacs startup?](#what-is-the-impact-on-emacs-startup)
-        - [What's the difference between native and byte compiled?](#whats-the-difference-between-native-and-byte-compiled)
-        - [What are some use-cases of compile-angel?](#what-are-some-use-cases-of-compile-angel)
-        - [What is the difference between auto-compile and compile-angel?](#what-is-the-difference-between-auto-compile-and-compile-angel)
-    - [Comments from users](#comments-from-users)
-    - [Author and License](#author-and-license)
-    - [Links](#links)
+  - [Why use compile-angel?](#why-use-compile-angel)
+  - [Before installing](#before-installing)
+  - [Installation of compile-angel](#installation-of-compile-angel)
+    - [Emacs](#emacs)
+    - [Doom Emacs](#doom-emacs)
+  - [Frequently Asked Questions](#frequently-asked-questions)
+    - [Should files be compiled every time Emacs starts? How can I determine why compile-angel compiled a file?](#should-files-be-compiled-every-time-emacs-starts-how-can-i-determine-why-compile-angel-compiled-a-file)
+    - [What are some interesting Emacs customizations to consider alongside compile-angel?](#what-are-some-interesting-emacs-customizations-to-consider-alongside-compile-angel)
+    - [How to exclude certain .el files from compilation in compile-angel?](#how-to-exclude-certain-el-files-from-compilation-in-compile-angel)
+    - [How to exclude custom-file, recentf, savehist files?](#how-to-exclude-custom-file-recentf-savehist-files)
+    - [How to enable or disable byte compilation and native compilation?](#how-to-enable-or-disable-byte-compilation-and-native-compilation)
+    - [What's the point of using compile-angel? My Emacs compiles packages automatically anyway!](#whats-the-point-of-using-compile-angel-my-emacs-compiles-packages-automatically-anyway)
+    - [Could compiling all Elisp files not be accomplished with a script? (e.g., a GNU Parallel along with Emacs's -batch mode.)](#could-compiling-all-elisp-files-not-be-accomplished-with-a-script-eg-a-gnu-parallel-along-with-emacss--batch-mode)
+    - [Why not just use the package-recompile-all function?](#why-not-just-use-the-package-recompile-all-function)
+    - [What is the impact on Emacs startup?](#what-is-the-impact-on-emacs-startup)
+    - [What's the difference between native and byte compiled?](#whats-the-difference-between-native-and-byte-compiled)
+    - [What are some use-cases of compile-angel?](#what-are-some-use-cases-of-compile-angel)
+    - [What is the difference between auto-compile and compile-angel?](#what-is-the-difference-between-auto-compile-and-compile-angel)
+  - [Comments from users](#comments-from-users)
+  - [Author and License](#author-and-license)
+  - [Links](#links)
 
 <!-- markdown-toc end -->
 
@@ -80,6 +80,10 @@ To install *compile-angel* on Emacs from MELPA:
   :ensure t
   :demand t
   :config
+  ;; Enable native-compilation and byte-compilation
+  (setq compile-angel-enable-byte-compile t)
+  (setq compile-angel-enable-native-compile t)
+
   ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
   ;; (When set to nil, compile-angel won't show which file is being compiled.)
   (setq compile-angel-verbose t)
