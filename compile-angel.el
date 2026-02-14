@@ -666,6 +666,8 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
                                 #'byte-compile-dest-file)
                               el-file))
            (do-native-compile nil)
+           (el-file-truename (when el-file
+                               (file-truename el-file)))
            (compile-angel--native-compile-when-jit-enabled
             compile-angel--native-compile-when-jit-enabled)
            no-byte-compile-defined)
@@ -691,7 +693,8 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
             (if (compile-angel--no-byte-compile-p el-file)
                 (progn
                   (setq do-native-compile nil)
-                  (puthash el-file t compile-angel--no-byte-compile-files-list)
+                  (puthash el-file-truename t
+                           compile-angel--no-byte-compile-files-list)
                   (setq no-byte-compile-defined t)
                   (compile-angel--debug-message
                     "Native-compilation ignored (no-byte-compile): %s"
@@ -721,7 +724,8 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
               (setq do-native-compile t))
 
              ((eq byte-compile-result 'no-byte-compile)
-              (puthash el-file t compile-angel--no-byte-compile-files-list)
+              (puthash el-file-truename t
+                       compile-angel--no-byte-compile-files-list)
               (setq no-byte-compile-defined t)
               (compile-angel--debug-message
                 "Byte-compilation Ignore (no-byte-compile): %s"
@@ -1040,21 +1044,22 @@ resolved file path or nil if not found."
         feature-file)))))
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix noerror)
-  "This function is called by all the :before advices.
-EL-FILE, FEATURE, NOERROR, and NOSUFFIX are the same arguments as
-`load' and `require'."
+  "This function is called by all the :before advices."
   (compile-angel--with-fast-file-ops
     (when (or compile-angel-enable-byte-compile
               compile-angel-enable-native-compile)
       (let* ((feature-symbol (compile-angel--normalize-feature feature))
              (el-file (compile-angel--guess-el-file
-                       el-file feature-symbol nosuffix)))
+                       el-file feature-symbol nosuffix))
+             ;; FIX: Canonicalize path for locking mechanisms
+             (el-file-truename (when el-file (file-truename el-file))))
         (cond
          ((not el-file)
           (compile-angel--debug-message
             "SKIP file (Returned a nil .el file): %s | %s" el-file feature))
 
-         ((member el-file compile-angel--legacy-currently-compiling)
+         ;; FIX: Use el-file-truename for all hash lookups
+         ((member el-file-truename compile-angel--legacy-currently-compiling)
           (compile-angel--debug-message
             "SKIP file - LEGACY (To prevent recursive compilation): %s | %s"
             el-file feature))
@@ -1065,13 +1070,13 @@ EL-FILE, FEATURE, NOERROR, and NOSUFFIX are the same arguments as
             "SKIP feature (To prevent recursive compilation): %s | %s"
             el-file feature))
 
-         ((gethash el-file compile-angel--currently-compiling-files)
+         ((gethash el-file-truename compile-angel--currently-compiling-files)
           (compile-angel--debug-message
             "SKIP file (To prevent recursive compilation): %s | %s"
             el-file feature))
 
          ((and compile-angel-on-load-mode-compile-once
-               (or (gethash el-file compile-angel--list-compiled-files)
+               (or (gethash el-file-truename compile-angel--list-compiled-files)
                    (when feature-symbol
                      (gethash feature-symbol
                               compile-angel--list-compiled-features))))
@@ -1083,7 +1088,7 @@ EL-FILE, FEATURE, NOERROR, and NOSUFFIX are the same arguments as
             "SKIP (Does not need compilation): %s | %s" el-file feature))
 
          ((and compile-angel--track-no-byte-compile-files
-               (gethash el-file compile-angel--no-byte-compile-files-list))
+               (gethash el-file-truename compile-angel--no-byte-compile-files-list))
           (compile-angel--debug-message
             "Compilation ignored (in the no-byte-compile list): %s" el-file)
           t)
@@ -1091,18 +1096,19 @@ EL-FILE, FEATURE, NOERROR, and NOSUFFIX are the same arguments as
          (t
           (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
                                         el-file feature-symbol)
-          (puthash el-file t compile-angel--list-compiled-files)
+          ;; FIX: Use el-file-truename
+          (puthash el-file-truename t compile-angel--list-compiled-files)
           (when feature-symbol
             (puthash feature-symbol t compile-angel--list-compiled-features))
 
           (let ((compile-angel--legacy-currently-compiling
-                 (cons el-file compile-angel--legacy-currently-compiling)))
+                 (cons el-file-truename compile-angel--legacy-currently-compiling)))
             (unwind-protect
                 (progn
-                  (puthash el-file t compile-angel--currently-compiling-files)
+                  (puthash el-file-truename t compile-angel--currently-compiling-files)
                   (puthash feature-symbol t compile-angel--currently-compiling-features)
                   (compile-angel--compile-elisp el-file noerror))
-              (remhash el-file compile-angel--currently-compiling-files)
+              (remhash el-file-truename compile-angel--currently-compiling-files)
               (remhash feature-symbol compile-angel--currently-compiling-features)))))))))
 
 (defun compile-angel--advice-before-require (feature
@@ -1353,8 +1359,9 @@ be JIT compiled."
 
 (defun compile-angel--report-is-native-compiled (el-file)
   "Return non-nil if EL-FILE is natively compiled."
-  (when-let* ((el-file (compile-angel--normalize-el-file el-file)))
-    (when (and (not (gethash el-file
+  (when-let* ((el-file (compile-angel--normalize-el-file el-file))
+              (el-file-truename (file-truename el-file)))
+    (when (and (not (gethash el-file-truename
                              compile-angel--no-byte-compile-files-list))
                (not (compile-angel--el-file-excluded-p el-file)))
       (if (not (compile-angel--elisp-native-compiled-p el-file))
