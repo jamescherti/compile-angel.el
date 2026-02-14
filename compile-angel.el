@@ -1393,6 +1393,7 @@ the corresponding .elc or .eln filenames."
 
 (defun compile-angel-report ()
   "Create a buffer listing all Elisp files that are not native compiled."
+  (interactive)
   (with-current-buffer (get-buffer-create "*compile-angel:report*")
     (let ((inhibit-read-only t))
       (read-only-mode 1)
