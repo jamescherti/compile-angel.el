@@ -424,7 +424,13 @@ declaration is absent or not trusted under safe-local-variable rules."
 
           ;; Disable any influence from .dir-locals.el files in the directory.
           ;; Ensures only variables from FILE-PATH are considered.
-          (enable-dir-local-variables nil)
+          ;;
+          ;; This prevents projects from disabling byte-compilation for an
+          ;; entire directory via .dir-locals.el, which is a standard Emacs
+          ;; mechanism.
+          ;;
+          ;; Do not enable this.
+          ;; (enable-dir-local-variables nil)
 
           ;; Disable remote directory-local variables via TRAMP or similar.
           ;; Prevents remote configuration from influencing results.
