@@ -466,7 +466,7 @@ Return non-nil if the file should be ignored, nil otherwise."
   "Return non-nil if EL-FILE is native-compiled and up to date.
 Return nil if it is not native-compiled or if its .eln file is out of date."
   (let ((eln-file (and (fboundp 'comp-el-to-eln-filename)
-                       (funcall 'comp-el-to-eln-filename el-file))))
+                       (comp-el-to-eln-filename el-file))))
     (when (and eln-file
                (file-newer-than-file-p eln-file el-file))
       t)))
