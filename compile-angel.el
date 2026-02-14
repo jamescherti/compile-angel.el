@@ -536,8 +536,7 @@ Return the byte compile result."
                                  ;; Show the message
                                  (apply original-message combined-args))))))
                 (condition-case err
-                    (let ((noninteractive t))
-                      (byte-compile-file el-file))
+                    (byte-compile-file el-file)
                   ;; TODO ignore all errors
                   (permission-denied
                    (progn
