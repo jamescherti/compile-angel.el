@@ -83,10 +83,6 @@ To install *compile-angel* on Emacs from MELPA:
   :ensure t
   :demand t
   :config
-  ;; Enable native-compilation and byte-compilation
-  (setq compile-angel-enable-byte-compile t)
-  (setq compile-angel-enable-native-compile t)
-
   ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
   ;; (When set to nil, compile-angel won't show which file is being compiled.)
   (setq compile-angel-verbose t)
