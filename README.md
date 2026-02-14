@@ -20,7 +20,6 @@ If this package enhances your workflow, please show your support by **⭐ starri
 
 - [compile-angel.el - Speed up Emacs by Byte-compiling and Native-compiling all Elisp files](#compile-angelel---speed-up-emacs-by-byte-compiling-and-native-compiling-all-elisp-files)
   - [Why use compile-angel?](#why-use-compile-angel)
-  - [Before installing](#before-installing)
   - [Installation of compile-angel](#installation-of-compile-angel)
     - [Emacs](#emacs)
     - [Doom Emacs](#doom-emacs)
@@ -47,27 +46,6 @@ If this package enhances your workflow, please show your support by **⭐ starri
 
 Because you are likely running a significant amount of interpreted, slow Elisp code that Emacs did not compile automatically. Ensuring that Elisp is native-compiled significantly improves Emacs' performance. Unfortunately, functions like *package-install* and *package-recompile-all* do not compile .el files that were not installed using *package.el*. Since these files are not byte-compiled, the Emacs JIT compiler does not native-compile them either, as a byte-compiled file signals the JIT compiler to perform native compilation. **In contrast, **compile-angel** modes ensure that all loaded `.el` files are compiled transparently, regardless of whether they are part of a package.**
 
-## Before installing
-
-It is highly recommended to set the following variables **at the very beginning of your early-init.el**:
-
-``` emacs-lisp
-;; Ensure Emacs loads the most recent byte-compiled files.
-(setq load-prefer-newer t)
-
-;; Non-nil means to native compile packages as part of their installation.
-(setq package-native-compile t)
-
-;; Disable Emacs JIT Native-compile to completely replace it with compile-angel
-(setq native-comp-jit-compilation nil)
-(setq native-comp-deferred-compilation native-comp-jit-compilation)  ; Deprecated
-```
-
-Additionally, ensure that native compilation is enabled: This should return t:
-```
-(native-comp-available-p)
-```
-
 ## Installation of compile-angel
 
 ### Emacs
@@ -82,6 +60,16 @@ To install *compile-angel* on Emacs from MELPA:
   :ensure t
   :demand t
   :init
+  ;; Ensure Emacs loads the most recent byte-compiled files.
+  (setq load-prefer-newer t)
+
+  ;; Non-nil means to native compile packages as part of their installation.
+  (setq package-native-compile t)
+
+  ;; Disable Emacs JIT Native-compile to completely replace it with compile-angel
+  (setq native-comp-jit-compilation nil)
+  (setq native-comp-deferred-compilation native-comp-jit-compilation)  ; Deprecated
+
   :config
   ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
   ;; (When set to nil, compile-angel won't show which file is being compiled.)
