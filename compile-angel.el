@@ -239,8 +239,26 @@ The value determines how file name handlers are temporarily adjusted:
 
 - \\='all   Disable all handlers (NOT RECOMMENDED).
 - \\='safe  Disable all handlers except the compression handler
-  (`.el.gz' files).
+           (`.el.gz' files).
 - \\='nil   Do not modify `file-name-handler-alist'.
+
+Every time Emacs performs a file operation (like `load', `file-exists-p',
+`expand-file-name'), it iterates through `file-name-handler-alist':
+- It checks the file path against every regular expression in that
+  list.
+- This list often contains complex regexes for TRAMP (remote files), image
+  libraries, archives, and encryption.
+- By setting it to 'safe (which usually leaves only one or zero entries), you
+  skip all those regex checks. In a loop compiling hundreds of files, saving
+  ~0.5ms per file operation adds up to noticeable seconds.
+
+For startup optimization: Yes. Many Emacs style configs use this trick during
+startup because they know exactly which files are being loaded (usually local,
+unencrypted ones).
+
+For general purpose compilation: It depends.
+- If you only compile local files: Use 'safe. It gives you free performance.
+- If you use TRAMP: You must use 'nil.
 
 This setting is intended to improve performance by reducing the overhead
 associated with file-related operations during compilation."
@@ -499,11 +517,14 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
         (compile-angel--verbose-message
           "Async native-compilation: %s" el-file-abbreviated))
       (let ((inhibit-message (not (or (not compile-angel-verbose)
-                                      (not compile-angel-debug)))))
+                                      (not compile-angel-debug))))
+            ;; TODO find a way to pass the truename to this function
+            (el-file-truename (file-truename el-file)))
         (when (fboundp 'native-compile-async)
           (when compile-angel-reload-compiled-version
-            (puthash el-file t compile-angel--reload-after-native-compile))
-          (native-compile-async el-file nil
+            (puthash el-file t
+                     compile-angel--reload-after-native-compile))
+          (native-compile-async el-file-truename nil
                                 compile-angel-native-compile-load)))))))
 
 (defun compile-angel--byte-compile (el-file elc-file)
@@ -564,9 +585,11 @@ Return the byte compile result."
                    'byte-compile-exception-error))))))
       byte-compile-result))))
 
-(defun compile-angel--need-compilation-p (el-file feature)
+(defun compile-angel--need-compilation-p (el-file el-file-truename feature)
   "Return non-nil if EL-FILE or FEATURE need compilation.
 EL-FILE is a String representing the path to the Elisp source file.
+EL-FILE-TRUENAME is a `file-truename' String representing the path to the Elisp
+source file.
 FEATURE is a symbol representing the feature being loaded."
   (cond
    ((not el-file)
@@ -614,7 +637,7 @@ FEATURE is a symbol representing the feature being loaded."
        ((and compile-angel-exclude-core-emacs-directory
              compile-angel--lisp-directory
              (string-prefix-p compile-angel--lisp-directory
-                              el-file))
+                              el-file-truename))
         (compile-angel--debug-message
           "SKIP (Emacs Lisp directory): %s | %s"
           el-file feature)
@@ -626,16 +649,15 @@ FEATURE is a symbol representing the feature being loaded."
        ;; directories should never be compiled, or Doom may fail to load some of
        ;; them correctly.
        ((and compile-angel--doom-user-dir
-             (let ((el-file-truename (file-truename el-file)))
-               (or (and compile-angel--doom-user-dir
-                        (string-prefix-p compile-angel--doom-user-dir
-                                         el-file-truename))
-                   (and compile-angel--doom-emacs-lisp-dir
-                        (string-prefix-p compile-angel--doom-emacs-lisp-dir
-                                         el-file-truename))
-                   (and compile-angel--doom-modules-dir
-                        (string-prefix-p compile-angel--doom-modules-dir
-                                         el-file-truename)))))
+             (or (and compile-angel--doom-user-dir
+                      (string-prefix-p compile-angel--doom-user-dir
+                                       el-file-truename))
+                 (and compile-angel--doom-emacs-lisp-dir
+                      (string-prefix-p compile-angel--doom-emacs-lisp-dir
+                                       el-file-truename))
+                 (and compile-angel--doom-modules-dir
+                      (string-prefix-p compile-angel--doom-modules-dir
+                                       el-file-truename))))
         (compile-angel--debug-message
           "SKIP (Doom Emacs modules/emacs/user directory): %s | %s"
           el-file feature)
@@ -1077,7 +1099,9 @@ resolved file path or nil if not found."
           (compile-angel--debug-message
             "SKIP (In the skip hash list): %s | %s" el-file feature))
 
-         ((not (compile-angel--need-compilation-p el-file feature-symbol))
+         ((not (compile-angel--need-compilation-p el-file
+                                                  el-file-truename
+                                                  feature-symbol))
           (compile-angel--debug-message
             "SKIP (Does not need compilation): %s | %s" el-file feature))
 
