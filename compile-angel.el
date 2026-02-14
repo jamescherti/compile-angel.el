@@ -340,7 +340,7 @@ don't have associated .el files and therefore don't need compilation.")
 (defvar compile-angel--native-compile-when-jit-enabled nil)
 (defvar compile-angel--reload-after-native-compile (make-hash-table :test 'equal))
 
-(defvar compile-angel--list-compiled-files (make-hash-table :test 'equal))
+(defvar compile-angel--list-processed-files (make-hash-table :test 'equal))
 (defvar compile-angel--list-compiled-features (make-hash-table :test 'eq))
 
 (defvar compile-angel--legacy-currently-compiling nil)
@@ -1085,14 +1085,16 @@ resolved file path or nil if not found."
           (compile-angel--debug-message
             "SKIP file (Returned a nil .el file): %s | %s" el-file feature))
 
-         ;; FIX: Use el-file-truename for all hash lookups
          ((member el-file-truename compile-angel--legacy-currently-compiling)
           (compile-angel--debug-message
             "SKIP file - LEGACY (To prevent recursive compilation): %s | %s"
             el-file feature))
 
+         ;; Optimization: Check if we have already processed this file (compiled
+         ;; OR skipped) We treat `compile-angel--list-processed-files' as a
+         ;; "processed" cache.
          ((and compile-angel-on-load-mode-compile-once
-               (or (gethash el-file-truename compile-angel--list-compiled-files)
+               (or (gethash el-file-truename compile-angel--list-processed-files)
                    (when feature-symbol
                      (gethash feature-symbol
                               compile-angel--list-compiled-features))))
@@ -1102,11 +1104,31 @@ resolved file path or nil if not found."
          ((not (compile-angel--need-compilation-p el-file
                                                   el-file-truename
                                                   feature-symbol))
+          ;; Optimization: Negative Caching
+          ;; We're recording the "Skip" decision in future requests for the same
+          ;; file will trigger the fast-path check at the top of your cond
+          ;; block. This prevents compile-angel from re-running the expensive
+          ;; checks
+          (when compile-angel-on-load-mode-compile-once
+            (puthash el-file-truename t compile-angel--list-processed-files)
+            (when feature-symbol
+              (puthash feature-symbol t compile-angel--list-compiled-features)))
+
           (compile-angel--debug-message
             "SKIP (Does not need compilation): %s | %s" el-file feature))
 
          ((and compile-angel--track-no-byte-compile-files
                (gethash el-file-truename compile-angel--no-byte-compile-files-list))
+          ;; Optimization: Negative Caching
+          ;; We're recording the "Skip" decision in future requests for the same
+          ;; file will trigger the fast-path check at the top of your cond
+          ;; block. This prevents compile-angel from re-running the expensive
+          ;; checks
+          (when compile-angel-on-load-mode-compile-once
+            (puthash el-file-truename t compile-angel--list-processed-files)
+            (when feature-symbol
+              (puthash feature-symbol t compile-angel--list-compiled-features)))
+
           (compile-angel--debug-message
             "Compilation ignored (in the no-byte-compile list): %s" el-file)
           t)
@@ -1114,8 +1136,7 @@ resolved file path or nil if not found."
          (t
           (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
                                         el-file feature-symbol)
-          ;; FIX: Use el-file-truename
-          (puthash el-file-truename t compile-angel--list-compiled-files)
+          (puthash el-file-truename t compile-angel--list-processed-files)
           (when feature-symbol
             (puthash feature-symbol t compile-angel--list-compiled-features))
 
