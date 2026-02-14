@@ -59,7 +59,8 @@ To install *compile-angel* on Emacs from MELPA:
 ;; Ensure Emacs loads the most recent byte-compiled files.
 (setq load-prefer-newer t)
 
-;; Non-nil means to native compile packages as part of their installation.
+;; Disable native compilation of packages during installation.
+;; Compile-angel will take care of it.
 (setq package-native-compile nil)
 
 ;; Disable Emacs JIT Native-compile to completely replace it with compile-angel
