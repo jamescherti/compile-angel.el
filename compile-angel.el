@@ -87,6 +87,10 @@
 (require 'bytecomp)
 (require 'cl-lib)
 
+;; This is for Emacs 28 or older. Starting with Emacs 29.1,
+;; `string-remove-suffix' was moved to the core, making it available
+;; automatically without requiring extra libraries.
+;;
 ;; The `subr-x' library provides utility functions like `string-remove-suffix'
 ;; that are invoked at runtime within `compile-angel--update-el-file-regexp'.
 (require 'subr-x)
