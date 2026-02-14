@@ -55,6 +55,9 @@ It is highly recommended to set the following variables **at the very beginning 
 ;; Ensure Emacs loads the most recent byte-compiled files.
 (setq load-prefer-newer t)
 
+;; Non-nil means to native compile packages as part of their installation.
+(setq package-native-compile t)
+
 ;; Make Emacs Native-compile .elc files asynchronously by setting
 ;; `native-comp-jit-compilation' to t.
 (setq native-comp-jit-compilation t)
