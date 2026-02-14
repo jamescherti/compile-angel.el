@@ -63,9 +63,9 @@ To install *compile-angel* on Emacs from MELPA:
 ;; Compile-angel will take care of it.
 (setq package-native-compile nil)
 
-;; Disable Emacs JIT Native-compile to completely replace it with compile-angel
-(setq native-comp-jit-compilation nil)
-(setq native-comp-deferred-compilation native-comp-jit-compilation)  ; Deprecated
+;; Uncomment to disable Emacs JIT Native-compile to completely replace it with compile-angel
+;; (setq native-comp-jit-compilation nil)
+;; (setq native-comp-deferred-compilation native-comp-jit-compilation)  ; Deprecated
 
 (use-package compile-angel
   :ensure t
