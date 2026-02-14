@@ -56,20 +56,19 @@ To install *compile-angel* on Emacs from MELPA:
 
 2. Add the following code **at the very beginning of your init.el file, before all other packages**:
 ```emacs-lisp
+;; Ensure Emacs loads the most recent byte-compiled files.
+(setq load-prefer-newer t)
+
+;; Non-nil means to native compile packages as part of their installation.
+(setq package-native-compile t)
+
+;; Disable Emacs JIT Native-compile to completely replace it with compile-angel
+(setq native-comp-jit-compilation nil)
+(setq native-comp-deferred-compilation native-comp-jit-compilation)  ; Deprecated
+
 (use-package compile-angel
   :ensure t
   :demand t
-  :init
-  ;; Ensure Emacs loads the most recent byte-compiled files.
-  (setq load-prefer-newer t)
-
-  ;; Non-nil means to native compile packages as part of their installation.
-  (setq package-native-compile t)
-
-  ;; Disable Emacs JIT Native-compile to completely replace it with compile-angel
-  (setq native-comp-jit-compilation nil)
-  (setq native-comp-deferred-compilation native-comp-jit-compilation)  ; Deprecated
-
   :config
   ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
   ;; (When set to nil, compile-angel won't show which file is being compiled.)
