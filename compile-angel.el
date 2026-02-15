@@ -365,6 +365,8 @@ don't have associated .el files and therefore don't need compilation.")
 (defvar compile-angel--list-compiled-features (make-hash-table :test 'eq))
 
 (defvar compile-angel--legacy-currently-compiling nil)
+
+(defvar compile-angel--currently-compiling-use-hash nil)
 (defvar compile-angel--currently-compiling-files (make-hash-table :test 'equal))
 (defvar compile-angel--currently-compiling-features (make-hash-table :test 'eq))
 
@@ -1114,13 +1116,15 @@ resolved file path or nil if not found."
             "SKIP file - LEGACY (To prevent recursive compilation): %s | %s"
             el-file feature))
 
-         ((and feature-symbol
+         ((and compile-angel--currently-compiling-use-hash
+               feature-symbol
                (gethash feature-symbol compile-angel--currently-compiling-features))
           (compile-angel--debug-message
             "SKIP feature (To prevent recursive compilation): %s | %s"
             el-file feature))
 
-         ((gethash el-file-truename compile-angel--currently-compiling-files)
+         ((and compile-angel--currently-compiling-use-hash
+               (gethash el-file-truename compile-angel--currently-compiling-files))
           (compile-angel--debug-message
             "SKIP file (To prevent recursive compilation): %s | %s"
             el-file feature))
@@ -1179,11 +1183,13 @@ resolved file path or nil if not found."
                  (cons el-file-truename compile-angel--legacy-currently-compiling)))
             (unwind-protect
                 (progn
-                  (puthash el-file-truename t compile-angel--currently-compiling-files)
-                  (puthash feature-symbol t compile-angel--currently-compiling-features)
+                  (when compile-angel--currently-compiling-use-hash
+                    (puthash el-file-truename t compile-angel--currently-compiling-files)
+                    (puthash feature-symbol t compile-angel--currently-compiling-features))
                   (compile-angel--compile-elisp el-file noerror))
-              (remhash el-file-truename compile-angel--currently-compiling-files)
-              (remhash feature-symbol compile-angel--currently-compiling-features)))))))))
+              (when compile-angel--currently-compiling-use-hash
+                (remhash el-file-truename compile-angel--currently-compiling-files)
+                (remhash feature-symbol compile-angel--currently-compiling-features))))))))))
 
 (defun compile-angel--advice-before-require (feature
                                              &optional filename noerror)
