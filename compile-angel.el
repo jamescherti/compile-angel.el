@@ -1428,6 +1428,8 @@ the corresponding .elc or .eln filenames."
       (progn
         ;; Init
         (compile-angel--init)
+        ;; Problematic files
+        (compile-angel--entry-point nil 'dash)
         ;; Compile features
         (when compile-angel-on-load-compile-features
           (compile-angel--compile-loaded-features))
