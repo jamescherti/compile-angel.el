@@ -575,8 +575,7 @@ Return the byte compile result."
            (byte-compile-result
             (let ((original-message (symbol-function 'message)))
               (condition-case err
-                  (let ((noninteractive t))
-                    (byte-compile-file el-file))
+                  (byte-compile-file el-file)
                 (permission-denied
                  (progn
                    (compile-angel--debug-message
