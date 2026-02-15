@@ -1539,8 +1539,13 @@ the corresponding .elc or .eln filenames."
       (progn
         ;; Init
         (compile-angel--init)
-        ;; Problematic files
-        (compile-angel--entry-point nil 'dash)
+        ;; Pre-compiling 'dash' serves as a workaround to prevent Emacs 31 from
+        ;; hanging during a fresh build. Implicitly loading 'dash' source
+        ;; (triggered by dependencies like 'elisp-refs') when byte-compilation
+        ;; is enabled can cause Emacs to hang and require restarting. This step
+        ;; ensures 'dash' is compiled explicitly if present.
+        (when compile-angel-enable-byte-compile
+          (compile-angel--entry-point nil 'dash))
         ;; Compile features
         (when compile-angel-on-load-compile-features
           (compile-angel--compile-loaded-features))
