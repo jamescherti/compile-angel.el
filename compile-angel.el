@@ -40,16 +40,6 @@
 ;; - `compile-angel-on-save-local-mode': A local mode that compiles .el files
 ;;   whenever the user saves them.
 ;;
-;; Before installing:
-;; ------------------
-;; It is highly recommended to set the following variables in your init file:
-;;   (setq load-prefer-newer t)
-;;   (setq native-comp-jit-compilation t)
-;;   (setq native-comp-deferred-compilation t) ; Deprecated in Emacs > 29.1
-;;
-;; Additionally, ensure that native compilation is enabled; this should
-;; return t: `(native-comp-available-p)`.
-;;
 ;; Installation from MELPA:
 ;; ------------------------
 ;; (use-package compile-angel
