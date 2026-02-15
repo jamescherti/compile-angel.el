@@ -63,8 +63,8 @@ To install *compile-angel* on Emacs from MELPA:
 ;; Ensure Emacs loads the most recent byte-compiled files.
 (setq load-prefer-newer t)
 
-;; Disable native compilation of packages during installation.
-;; Compile-angel will take care of it.
+;; Uncomment the following to disable compilation of packages during installation;
+;; compile-angel will handle it.
 (setq package-native-compile nil)
 
 ;; Uncomment to disable Emacs JIT Native-compile to completely replace it with compile-angel
@@ -156,9 +156,9 @@ This function is called immediately after `dotspacemacs/init', before layer conf
   ;; Ensure Emacs loads the most recent byte-compiled files.
   (setq load-prefer-newer t)
 
-  ;; Disable native compilation of packages during installation.
-  ;; Compile-angel will take care of it.
-  (setq package-native-compile nil)
+  ;; Uncomment the following to disable compilation of packages during installation;
+  ;; compile-angel will handle it.
+  ;; (setq package-native-compile nil)
 
   ;; Uncomment to disable Emacs JIT Native-compile to completely replace it with compile-angel
   ;; (setq native-comp-jit-compilation nil)
