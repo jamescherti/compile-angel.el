@@ -704,6 +704,7 @@ FEATURE is a symbol representing the feature being loaded."
         nil)
 
        ;; :continue starts here:
+       ;; TODO add another one for file-truename?
        ((compile-angel--el-file-excluded-p el-file)
         nil)
 
@@ -1439,8 +1440,7 @@ be JIT compiled."
 
 (defun compile-angel--report-is-native-compiled (el-file)
   "Return non-nil if EL-FILE is natively compiled."
-  (when-let* ((el-file (compile-angel--normalize-el-file el-file))
-              (el-file-truename (file-truename el-file)))
+  (when-let* ((el-file-truename (file-truename el-file)))
     (when (and (not (gethash el-file-truename
                              compile-angel--no-byte-compile-files-list))
                (not (compile-angel--el-file-excluded-p el-file)))
