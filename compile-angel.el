@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2024-2026 James Cherti | https://www.jamescherti.com/contact/
 
-;; Author: James Cherti
+;; Author: James Cherti <https://www.jamescherti.com/contact/>
 ;; Version: 1.1.3
 ;; URL: https://github.com/jamescherti/compile-angel.el
 ;; Keywords: convenience
