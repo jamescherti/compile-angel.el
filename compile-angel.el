@@ -574,41 +574,23 @@ Return the byte compile result."
            (emacs-lisp-mode-hook nil)
            (byte-compile-result
             (let ((original-message (symbol-function 'message)))
-              (cl-letf (((symbol-function #'message)
-                         #'(lambda (format-string &rest messages-args)
-                             (let ((combined-args (cons format-string
-                                                        messages-args)))
-                               (when (or (not compile-angel--quiet-byte-compile)
-                                         ;; Ensure format-string is a string
-                                         ;; before checking prefixes. This
-                                         ;; prevents crashes on (message nil).
-                                         (and compile-angel--quiet-byte-compile
-                                              (stringp format-string)
-                                              (not (string-prefix-p
-                                                    "Wrote"
-                                                    format-string))
-                                              (not (string-prefix-p
-                                                    "Compiling "
-                                                    format-string))))
-                                 ;; Show the message
-                                 (apply original-message combined-args))))))
-                (condition-case err
-                    (let ((noninteractive t))
-                      (byte-compile-file el-file))
-                  (permission-denied
-                   (progn
-                     (compile-angel--debug-message
-                       "Byte-compilation ignored: Permission denied: %s"
-                       (error-message-string err))
-                     ;; Try to native compile
-                     'byte-compile-exception-error))
-
-                  (t
+              (condition-case err
+                  (let ((noninteractive t))
+                    (byte-compile-file el-file))
+                (permission-denied
+                 (progn
                    (compile-angel--debug-message
-                     "Byte-compilation ignored: Error: %s"
+                     "Byte-compilation ignored: Permission denied: %s"
                      (error-message-string err))
-                   ;; Do not native compile
-                   nil))))))
+                   ;; Try to native compile
+                   'byte-compile-exception-error))
+
+                (t
+                 (compile-angel--debug-message
+                   "Byte-compilation ignored: Error: %s"
+                   (error-message-string err))
+                 ;; Do not native compile
+                 nil)))))
       byte-compile-result))))
 
 (defun compile-angel--need-compilation-p (el-file el-file-truename feature)
