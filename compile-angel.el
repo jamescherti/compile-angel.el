@@ -112,16 +112,17 @@
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-excluded-files '("loaddefs.el"
-                                          "autoloads.el"
-                                          "/lisp/org/org-version.el"
-                                          "/lisp/cus-load.el"
-                                          "/lisp/finder-inf.el"
-                                          "/.yas-setup.el"  ; Yasnippet
-                                          ;; /lisp and /site-lisp: subdirs.el
-                                          "lisp/subdirs.el"
-                                          ;; Built-in no-byte-compile packages
-                                          "/lisp/leim/leim-list.el")
+(defcustom compile-angel-excluded-files
+  (delq nil (list "loaddefs.el"
+                  "autoloads.el"
+                  "/lisp/org/org-version.el"
+                  "/lisp/cus-load.el"
+                  "/lisp/finder-inf.el"
+                  "/.yas-setup.el"  ; Yasnippet
+                  ;; /lisp and /site-lisp: subdirs.el
+                  "lisp/subdirs.el"
+                  ;; Built-in no-byte-compile packages
+                  "/lisp/leim/leim-list.el"))
   "A list of path suffixes used to exclude specific .el files from compilation.
 
 Example: \\='(\"suffix.el\" \"/filename.el\") This excludes any path that ends
@@ -141,7 +142,34 @@ include all extensions associated with .el files."
 (defcustom compile-angel-excluded-files-regexps
   (delq nil (list "/lisp/international/.*\\.el"
                   (when (bound-and-true-p doom-user-dir)
-                    "/doom-snippets/.*")))
+                    "/doom-snippets/.*")
+
+                  ;; Spacemacs: init.el and early-init.el
+                  (when (bound-and-true-p spacemacs-core-directory)
+                    (concat "^" (regexp-quote (expand-file-name
+                                               "init.el"
+                                               user-emacs-directory)) "$"))
+                  (when (bound-and-true-p spacemacs-core-directory)
+                    (concat "^" (regexp-quote (expand-file-name
+                                               "early-init.el"
+                                               user-emacs-directory)) "$"))
+
+                  ;; Spacemacs: Exclude Spacemacs core directory
+                  (when (bound-and-true-p spacemacs-core-directory)
+                    (concat "^" (regexp-quote (file-name-as-directory
+                                               (expand-file-name
+                                                spacemacs-core-directory)))))
+
+                  ;; Spacemacs: Files such as ~/.spacemacs
+                  (when (bound-and-true-p dotspacemacs-filepath)
+                    (concat "^" (regexp-quote (expand-file-name
+                                               dotspacemacs-filepath)) "$"))
+
+                  ;; Spacemacs: Exclude layers directory only if core exists
+                  (when (bound-and-true-p spacemacs-core-directory)
+                    (concat "^" (regexp-quote (expand-file-name
+                                               "layers/"
+                                               user-emacs-directory))))))
   "A list of regular expressions to exclude certain .el files from compilation.
 
 It is advisable to use `compile-angel-excluded-files' instead of

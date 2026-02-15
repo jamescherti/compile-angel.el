@@ -23,6 +23,10 @@ If this package enhances your workflow, please show your support by **⭐ starri
   - [Installation of compile-angel](#installation-of-compile-angel)
     - [Emacs](#emacs)
     - [Doom Emacs](#doom-emacs)
+    - [Spacemacs](#spacemacs)
+      - [1. Add the package](#1-add-the-package)
+      - [2. Configure pre-load variables](#2-configure-pre-load-variables)
+      - [3. Configure the package](#3-configure-the-package)
   - [Frequently Asked Questions](#frequently-asked-questions)
     - [Should files be compiled every time Emacs starts? How can I determine why compile-angel compiled a file?](#should-files-be-compiled-every-time-emacs-starts-how-can-i-determine-why-compile-angel-compiled-a-file)
     - [What are some interesting Emacs customizations to consider alongside compile-angel?](#what-are-some-interesting-emacs-customizations-to-consider-alongside-compile-angel)
@@ -64,6 +68,7 @@ To install *compile-angel* on Emacs from MELPA:
 (setq package-native-compile nil)
 
 ;; Uncomment to disable Emacs JIT Native-compile to completely replace it with compile-angel
+;; (This can prevents redundant or repetitive background compilations.)
 ;; (setq native-comp-jit-compilation nil)
 ;; (setq native-comp-deferred-compilation native-comp-jit-compilation)  ; Deprecated
 
@@ -119,6 +124,78 @@ Here is how to install *compile-angel* on Doom Emacs:
 3. Run the `doom sync` command:
 ```
 doom sync
+```
+
+### Spacemacs
+
+To install **compile-angel** in Spacemacs, you need to distribute the configuration across three specific sections of your `~/.spacemacs` file to ensure the loading order mimics the vanilla Emacs instructions.
+
+#### 1. Add the package
+
+Locate the `dotspacemacs-additional-packages` variable and add `compile-angel` to the list:
+
+```emacs-lisp
+   dotspacemacs-additional-packages '(
+     ;; ... other packages ...
+     compile-angel
+   )
+
+```
+
+This ensures Spacemacs downloads and installs the package.
+
+#### 2. Configure pre-load variables
+
+The variables that must be set **before** packages load should be placed in the `dotspacemacs/user-init` function.
+
+```emacs-lisp
+(defun dotspacemacs/user-init ()
+  "Initialization for user code:
+This function is called immediately after `dotspacemacs/init', before layer configuration."
+
+  ;; Ensure Emacs loads the most recent byte-compiled files.
+  (setq load-prefer-newer t)
+
+  ;; Disable native compilation of packages during installation.
+  ;; Compile-angel will take care of it.
+  (setq package-native-compile nil)
+
+  ;; Uncomment to disable Emacs JIT Native-compile to completely replace it with compile-angel
+  ;; (setq native-comp-jit-compilation nil)
+  ;; (setq native-comp-deferred-compilation native-comp-jit-compilation) ; Deprecated
+)
+
+```
+
+#### 3. Configure the package
+
+Place the package configuration in the `dotspacemacs/user-config` function.
+
+```emacs-lisp
+(defun dotspacemacs/user-config ()
+  "Configuration for user code:
+This function is called at the very end of Spacemacs startup, after layer configuration."
+  (use-package compile-angel
+    :demand t
+    :config
+    (setq compile-angel-verbose t)
+
+    ;; Uncomment the line below to compile automatically when an Elisp file is saved
+    ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
+
+    ;; The following directive prevents compile-angel from compiling your init
+    ;; files. If you choose to remove this push to `compile-angel-excluded-files'
+    ;; and compile your pre/post-init files, ensure you understand the
+    ;; implications and thoroughly test your code. For example, if you're using
+    ;; the `use-package' macro, you'll need to explicitly add:
+    ;; (eval-when-compile (require 'use-package))
+    ;; at the top of your init file.
+    (push "/init.el" compile-angel-excluded-files)
+    (push "/early-init.el" compile-angel-excluded-files)
+
+    (compile-angel-on-load-mode 1))
+)
+
 ```
 
 ## Frequently Asked Questions
