@@ -603,7 +603,8 @@ Return the byte compile result."
                    (compile-angel--debug-message
                      "Byte-compilation ignored: Error: %s"
                      (error-message-string err))
-                   'byte-compile-exception-error))))))
+                   ;; Do not native compile
+                   nil))))))
       byte-compile-result))))
 
 (defun compile-angel--need-compilation-p (el-file el-file-truename feature)
