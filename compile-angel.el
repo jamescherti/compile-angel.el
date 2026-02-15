@@ -499,13 +499,17 @@ Return the byte compile result."
                              (let ((combined-args (cons format-string
                                                         messages-args)))
                                (when (or (not compile-angel--quiet-byte-compile)
+                                         ;; Ensure format-string is a string
+                                         ;; before checking prefixes. This
+                                         ;; prevents crashes on (message nil).
                                          (and compile-angel--quiet-byte-compile
-                                              (and (not (string-prefix-p
-                                                         "Wrote"
-                                                         format-string))
-                                                   (not (string-prefix-p
-                                                         "Compiling "
-                                                         format-string)))))
+                                              (stringp format-string)
+                                              (not (string-prefix-p
+                                                    "Wrote"
+                                                    format-string))
+                                              (not (string-prefix-p
+                                                    "Compiling "
+                                                    format-string))))
                                  ;; Show the message
                                  (apply original-message combined-args))))))
                 (condition-case err
