@@ -106,8 +106,11 @@
   :group 'compile-angel)
 
 (defcustom compile-angel-excluded-files
-  (delq nil (list "loaddefs.el"
+  (delq nil (list "-loaddefs.el"
                   "-autoloads.el"
+                  "-pkg.el"          ; Package metadata
+                  "/loaddefs.el"
+                  "/.dir-locals.el"
                   "/lisp/org/org-version.el"
                   "/lisp/cus-load.el"
                   "/lisp/finder-inf.el"
@@ -639,6 +642,18 @@ FEATURE is a symbol representing the feature being loaded."
       (cond
        ((eq decision :force-compile)
         t)
+
+       ;; Exclude features ending with -autoloads
+       ((and feature
+             (or (eq feature 'loaddefs)
+                 (let ((feature (symbol-name feature)))
+                   (or (string-suffix-p "-autoloads" feature)
+                       (string-suffix-p "-pkg" feature)
+                       (string-suffix-p "-loaddefs" feature)))))
+        (compile-angel--debug-message
+          "SKIP (Feature ends with -autoloads/-pkg/-loaddefs): %s | %s"
+          el-file feature)
+        nil)
 
        ;; Exclude Emacs Lisp Directory
        ((and compile-angel-exclude-core-emacs-directory
