@@ -107,7 +107,7 @@
 
 (defcustom compile-angel-excluded-files
   (delq nil (list "loaddefs.el"
-                  "autoloads.el"
+                  "-autoloads.el"
                   "/lisp/org/org-version.el"
                   "/lisp/cus-load.el"
                   "/lisp/finder-inf.el"
