@@ -63,10 +63,6 @@ To install *compile-angel* on Emacs from MELPA:
 ;; Ensure Emacs loads the most recent byte-compiled files.
 (setq load-prefer-newer t)
 
-;; Uncomment the following to disable compilation of packages during installation;
-;; compile-angel will handle it.
-(setq package-native-compile nil)
-
 ;; Uncomment to disable Emacs JIT Native-compile to completely replace it with compile-angel
 ;; (This can prevents redundant or repetitive background compilations.)
 ;; (setq native-comp-jit-compilation nil)
@@ -76,6 +72,10 @@ To install *compile-angel* on Emacs from MELPA:
   :ensure t
   :demand t
   :config
+  ;; The following disables compilation of packages during installation;
+  ;; compile-angel will handle it.
+  (setq package-native-compile nil)
+
   ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
   ;; (When set to nil, compile-angel won't show which file is being compiled.)
   (setq compile-angel-verbose t)
