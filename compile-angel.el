@@ -522,13 +522,12 @@ Return non-nil if the file should be ignored, nil otherwise."
 (defun compile-angel--elisp-native-compiled-p (el-file)
   "Return non-nil if EL-FILE is native-compiled and up to date.
 Return nil if it is not native-compiled or if its .eln file is out of date."
-  (let ((eln-file (and (fboundp 'comp-el-to-eln-filename)
-                       (comp-el-to-eln-filename el-file))))
-    (when (and eln-file
-               (file-newer-than-file-p eln-file el-file))
+  (when-let* ((eln-file (and (fboundp 'comp-el-to-eln-filename)
+                             (comp-el-to-eln-filename el-file))))
+    (when (file-newer-than-file-p eln-file el-file)
       t)))
 
-(defun compile-angel--native-compile (el-file)
+(defun compile-angel--native-compile-maybe (el-file)
   "Native-compile EL-FILE."
   (compile-angel--with-fast-file-ops
     (cond
@@ -541,18 +540,18 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
         "Native-compilation ignored (up-to-date): %s" el-file))
 
      (t
-      (let ((el-file-abbreviated (abbreviate-file-name el-file)))
-        (compile-angel--verbose-message
-          "Async native-compilation: %s" el-file-abbreviated))
       (let ((inhibit-message (not (or (not compile-angel-verbose)
-                                      (not compile-angel-debug))))
-            ;; TODO find a way to pass the truename to this function
-            (el-file-truename (file-truename el-file)))
+                                      (not compile-angel-debug)))))
         (when (fboundp 'native-compile-async)
           (when compile-angel-reload-compiled-version
             (puthash el-file t
                      compile-angel--reload-after-native-compile))
-          (native-compile-async el-file-truename nil
+
+          (let ((el-file-abbreviated (abbreviate-file-name el-file)))
+            (compile-angel--verbose-message
+              "Async native-compilation: %s" el-file-abbreviated))
+
+          (native-compile-async el-file nil
                                 compile-angel-native-compile-load)))))))
 
 (defun compile-angel--byte-compile (el-file elc-file)
@@ -823,7 +822,7 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
 
         (when (and compile-angel-enable-native-compile
                    do-native-compile)
-          (compile-angel--native-compile el-file)))))))
+          (compile-angel--native-compile-maybe el-file)))))))
 
 (defun compile-angel--check-parens ()
   "Check for unbalanced parentheses in the current buffer.
@@ -1413,7 +1412,7 @@ be JIT compiled."
           (maphash (lambda (el-file _value)
                      (compile-angel--debug-message
                        "Checking if Emacs really JIT Native-Compiled: %s" el-file)
-                     (compile-angel--native-compile el-file))
+                     (compile-angel--native-compile-maybe el-file))
                    compile-angel--list-jit-native-compiled-files)
         (clrhash compile-angel--list-jit-native-compiled-files)))
 
@@ -1441,7 +1440,7 @@ be JIT compiled."
                              compile-angel--no-byte-compile-files-list))
                (not (compile-angel--el-file-excluded-p el-file)))
       (if (not (compile-angel--elisp-native-compiled-p el-file))
-          t
+          t ; up-to-date
         nil))))
 
 (defun compile-angel--get-list-non-native-compiled ()
