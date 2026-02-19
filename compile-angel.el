@@ -136,36 +136,37 @@ include all extensions associated with .el files."
   :group 'compile-angel)
 
 (defcustom compile-angel-excluded-files-regexps
-  (delq nil (list "/lisp/international/.*\\.el"
-                  (when (bound-and-true-p doom-user-dir)
-                    "/doom-snippets/.*")
+  (delq nil (list
+             ;; Emacs
+             "/lisp/international/.*\\.el\\(?:\\.gz\\)?$"
 
-                  ;; Spacemacs: init.el and early-init.el
-                  (when (bound-and-true-p spacemacs-core-directory)
-                    (concat "^" (regexp-quote (expand-file-name
-                                               "init.el"
-                                               user-emacs-directory)) "$"))
-                  (when (bound-and-true-p spacemacs-core-directory)
-                    (concat "^" (regexp-quote (expand-file-name
-                                               "early-init.el"
-                                               user-emacs-directory)) "$"))
+             ;; Doom
+             (when (bound-and-true-p doom-user-dir)
+               "/doom-snippets/")
 
-                  ;; Spacemacs: Exclude Spacemacs core directory
-                  (when (bound-and-true-p spacemacs-core-directory)
-                    (concat "^" (regexp-quote (file-name-as-directory
-                                               (expand-file-name
-                                                spacemacs-core-directory)))))
-
-                  ;; Spacemacs: Files such as ~/.spacemacs
-                  (when (bound-and-true-p dotspacemacs-filepath)
-                    (concat "^" (regexp-quote (expand-file-name
-                                               dotspacemacs-filepath)) "$"))
-
-                  ;; Spacemacs: Exclude layers directory only if core exists
-                  (when (bound-and-true-p spacemacs-core-directory)
-                    (concat "^" (regexp-quote (expand-file-name
-                                               "layers/"
-                                               user-emacs-directory))))))
+             ;; Spacemacs
+             (when (bound-and-true-p spacemacs-core-directory)
+               (concat "^" (regexp-quote (expand-file-name
+                                          "init.el"
+                                          user-emacs-directory)) "$"))
+             (when (bound-and-true-p spacemacs-core-directory)
+               (concat "^" (regexp-quote (expand-file-name
+                                          "early-init.el"
+                                          user-emacs-directory)) "$"))
+             (when (bound-and-true-p spacemacs-core-directory)
+               ;; Spacemacs: Exclude Spacemacs core directory
+               (concat "^" (regexp-quote (file-name-as-directory
+                                          (expand-file-name
+                                           spacemacs-core-directory)))))
+             (when (bound-and-true-p dotspacemacs-filepath)
+               ;; Spacemacs: Files such as ~/.spacemacs
+               (concat "^" (regexp-quote (expand-file-name
+                                          dotspacemacs-filepath)) "$"))
+             (when (bound-and-true-p spacemacs-core-directory)
+               ;; Spacemacs: Exclude layers directory only if core exists
+               (concat "^" (regexp-quote (expand-file-name
+                                          "layers/"
+                                          user-emacs-directory))))))
   "A list of regular expressions to exclude certain .el files from compilation.
 
 It is advisable to use `compile-angel-excluded-files' instead of
@@ -272,7 +273,7 @@ Every time Emacs performs a file operation (like `load', `file-exists-p',
   list.
 - This list often contains complex regexes for TRAMP (remote files), image
   libraries, archives, and encryption.
-- By setting it to 'safe (which usually leaves only one or zero entries), you
+- By setting it to \='safe (which usually leaves only one or zero entries), you
   skip all those regex checks. In a loop compiling hundreds of files, saving
   ~0.5ms per file operation adds up to noticeable seconds.
 
@@ -281,8 +282,8 @@ startup because they know exactly which files are being loaded (usually local,
 unencrypted ones).
 
 For general purpose compilation: It depends.
-- If you only compile local files: Use 'safe. It gives you free performance.
-- If you use TRAMP: You must use 'nil.
+- If you only compile local files: Use \='safe. It gives you free performance.
+- If you use TRAMP: You must use \='nil.
 
 This setting is intended to improve performance by reducing the overhead
 associated with file-related operations during compilation."
@@ -507,14 +508,16 @@ declaration is absent or not trusted under safe-local-variable rules."
 (defun compile-angel--el-file-excluded-p (el-file)
   "Check if EL-FILE matches any regex in `compile-angel-excluded-files-regexps'.
 Return non-nil if the file should be ignored, nil otherwise."
-  (when (or (and compile-angel--excluded-path-suffixes-regexps
-                 (cl-some (lambda (regex)
-                            (string-match-p regex el-file))
-                          compile-angel--excluded-path-suffixes-regexps))
-            (and compile-angel-excluded-files-regexps
-                 (cl-some (lambda (regex)
-                            (string-match-p regex el-file))
-                          compile-angel-excluded-files-regexps)))
+  (when (or
+         (and compile-angel--excluded-path-suffixes-regexps
+              (cl-some (lambda (regex)
+                         (string-match-p regex el-file))
+                       compile-angel--excluded-path-suffixes-regexps))
+
+         (and compile-angel-excluded-files-regexps
+              (cl-some (lambda (regex)
+                         (string-match-p regex el-file))
+                       compile-angel-excluded-files-regexps)))
     (compile-angel--debug-message
       "SKIP (.el file excluded with a regex): %s" el-file)
     t))
@@ -577,23 +580,22 @@ Return the byte compile result."
            (prog-mode-hook nil)
            (emacs-lisp-mode-hook nil)
            (byte-compile-result
-            (let ((original-message (symbol-function 'message)))
-              (condition-case err
-                  (byte-compile-file el-file)
-                (permission-denied
-                 (progn
-                   (compile-angel--debug-message
-                     "Byte-compilation ignored: Permission denied: %s"
-                     (error-message-string err))
-                   ;; Try to native compile
-                   'byte-compile-exception-error))
-
-                (t
+            (condition-case err
+                (byte-compile-file el-file)
+              (permission-denied
+               (progn
                  (compile-angel--debug-message
-                   "Byte-compilation ignored: Error: %s"
+                   "Byte-compilation ignored: Permission denied: %s"
                    (error-message-string err))
-                 ;; Do not native compile
-                 nil)))))
+                 ;; Try to native compile
+                 'byte-compile-exception-error))
+
+              (t
+               (compile-angel--debug-message
+                 "Byte-compilation ignored: Error: %s"
+                 (error-message-string err))
+               ;; Do not native compile
+               nil))))
       byte-compile-result))))
 
 (defun compile-angel--need-compilation-p (el-file el-file-truename feature)
@@ -1095,7 +1097,9 @@ resolved file path or nil if not found."
         feature-file)))))
 
 (defun compile-angel--entry-point (el-file &optional feature nosuffix noerror)
-  "This function is called by all the :before advices."
+  "This function is called by all the :before advices.
+The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
+`load' function."
   (compile-angel--with-fast-file-ops
     (when (or compile-angel-enable-byte-compile
               compile-angel-enable-native-compile)
@@ -1351,6 +1355,8 @@ NEW-VALUE is the value of the variable."
                           (unless (string-prefix-p "\\'" el-file-regexp)
                             "\\'" ))
                   path-suffixes-regexp))))
+
+      ;; TODO only start after the mode starts?
       (setq compile-angel--excluded-path-suffixes-regexps
             (nreverse path-suffixes-regexp)))))
 
@@ -1521,7 +1527,6 @@ the corresponding .elc or .eln filenames."
 (defun compile-angel-exclude-file (file)
   "Add a specific FILE to `compile-angel-excluded-files-regexps'.
 FILE is the file path to exclude from compilation."
-  ;; (interactive "fFile to exclude: ")
   (let* ((file (expand-file-name file))
          (file-truename (file-truename file)))
     (add-to-list 'compile-angel-excluded-files-regexps
