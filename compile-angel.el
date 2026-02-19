@@ -547,12 +547,14 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
             (puthash el-file t
                      compile-angel--reload-after-native-compile))
 
-          (let ((el-file-abbreviated (abbreviate-file-name el-file)))
-            (compile-angel--verbose-message
-              "Async native-compilation: %s" el-file-abbreviated))
-
           (native-compile-async el-file nil
-                                compile-angel-native-compile-load)))))))
+                                compile-angel-native-compile-load)
+
+          (when (and (boundp 'comp-async-compilations)
+                     (gethash el-file comp-async-compilations))
+            (let ((el-file-abbreviated (abbreviate-file-name el-file)))
+              (compile-angel--verbose-message
+                "Async native-compilation: %s" el-file-abbreviated)))))))))
 
 (defun compile-angel--byte-compile (el-file elc-file)
   "Byte-compile EL-FILE into ELC-FILE.
