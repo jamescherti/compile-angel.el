@@ -302,18 +302,18 @@ Example configuration:
 
 If you need to prevent **compile-angel** from compiling specific files or entire directories, you can use the provided helper functions. These functions automatically handle path expansion, symbolic link resolution, and regular expression formatting, ensuring your paths are excluded correctly.
 
-* Use the `compile-angel-add-file-to-regexp-exclusions` function to exclude a single file:
+* Use the `compile-angel-exclude-file` function to exclude a single file:
   ```elisp
   ;; This adds exact match regular expression to the
   ;; `compile-angel-excluded-files-regexps' variable
-  (compile-angel-add-file-to-regexp-exclusions "~/.emacs.d/init.el")
+  (compile-angel-exclude-file "~/.emacs.d/init.el")
   ```
 
-* Use the `compile-angel-add-directory-to-regexp-exclusions` function to exclude a directory and all of its contents:
+* Use the `compile-angel-exclude-directory` function to exclude a directory and all of its contents:
 ```elisp
 ;; It ensures the path is treated as a directory and adds a prefix match regular
 ;; expression to the `compile-angel-excluded-files-regexps' variable
-(compile-angel-add-directory-to-regexp-exclusions "~/.emacs.d/local-packages/")
+(compile-angel-exclude-directory "~/.emacs.d/local-packages/")
 ```
 
 NOTE: Both functions check if the expanded path differs from its `file-truename` (for example, if symlinks are involved in the path). If they differ, both the expanded path and the `file-truename' are added to the exclusion list to guarantee the file or directory is consistently ignored during compilation.

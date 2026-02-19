@@ -1518,7 +1518,7 @@ the corresponding .elc or .eln filenames."
 ;;; Functions
 
 ;;;###autoload
-(defun compile-angel-add-file-to-regexp-exclusions (file)
+(defun compile-angel-exclude-file (file)
   "Add a specific FILE to `compile-angel-excluded-files-regexps'.
 FILE is the file path to exclude from compilation."
   ;; (interactive "fFile to exclude: ")
@@ -1531,7 +1531,7 @@ FILE is the file path to exclude from compilation."
                    (concat "^" (regexp-quote file-truename) "$")))))
 
 ;;;###autoload
-(defun compile-angel-add-directory-to-regexp-exclusions (directory)
+(defun compile-angel-exclude-directory (directory)
   "Add a specific DIRECTORY to `compile-angel-excluded-files-regexps'.
 DIRECTORY is the directory path to exclude from compilation."
   (let* ((dir (file-name-as-directory (expand-file-name directory)))
