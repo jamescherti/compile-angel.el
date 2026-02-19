@@ -33,6 +33,7 @@ If this package enhances your workflow, please show your support by **⭐ starri
     - [How to exclude certain .el files from compilation in compile-angel?](#how-to-exclude-certain-el-files-from-compilation-in-compile-angel)
     - [How to exclude custom-file, recentf, savehist files?](#how-to-exclude-custom-file-recentf-savehist-files)
     - [How to enable or disable byte compilation and native compilation?](#how-to-enable-or-disable-byte-compilation-and-native-compilation)
+    - [Excluding specific files and directories using helper functions](#excluding-specific-files-and-directories-using-helper-functions)
     - [What's the point of using compile-angel? My Emacs compiles packages automatically anyway!](#whats-the-point-of-using-compile-angel-my-emacs-compiles-packages-automatically-anyway)
     - [Could compiling all Elisp files not be accomplished with a script? (e.g., a GNU Parallel along with Emacs's -batch mode.)](#could-compiling-all-elisp-files-not-be-accomplished-with-a-script-eg-a-gnu-parallel-along-with-emacss--batch-mode)
     - [Why not just use the package-recompile-all function?](#why-not-just-use-the-package-recompile-all-function)
@@ -296,6 +297,26 @@ Example configuration:
 (setq compile-angel-enable-byte-compile t)
 (setq compile-angel-enable-native-compile t)
 ```
+
+### Excluding specific files and directories using helper functions
+
+If you need to prevent **compile-angel** from compiling specific files or entire directories, you can use the provided helper functions. These functions automatically handle path expansion, symbolic link resolution, and regular expression formatting, ensuring your paths are excluded correctly.
+
+* Use the `compile-angel-add-file-to-regexp-exclusions` function to exclude a single file:
+  ```elisp
+  ;; This adds exact match regular expression to the
+  ;; `compile-angel-excluded-files-regexps' variable
+  (compile-angel-add-file-to-regexp-exclusions "~/.emacs.d/init.el")
+  ```
+
+* Use the `compile-angel-add-directory-to-regexp-exclusions` function to exclude a directory and all of its contents:
+```elisp
+;; It ensures the path is treated as a directory and adds a prefix match regular
+;; expression to the `compile-angel-excluded-files-regexps' variable
+(compile-angel-add-directory-to-regexp-exclusions "~/.emacs.d/local-packages/")
+```
+
+NOTE: Both functions check if the expanded path differs from its `file-truename` (for example, if symlinks are involved in the path). If they differ, both the expanded path and the `file-truename' are added to the exclusion list to guarantee the file or directory is consistently ignored during compilation.
 
 ### What's the point of using compile-angel? My Emacs compiles packages automatically anyway!
 

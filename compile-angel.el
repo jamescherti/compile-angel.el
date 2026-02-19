@@ -1517,6 +1517,32 @@ the corresponding .elc or .eln filenames."
 
 ;;; Functions
 
+;;;###autoload
+(defun compile-angel-add-file-to-regexp-exclusions (file)
+  "Add a specific FILE to `compile-angel-excluded-files-regexps'.
+FILE is the file path to exclude from compilation."
+  ;; (interactive "fFile to exclude: ")
+  (let* ((file (expand-file-name file))
+         (file-truename (file-truename file)))
+    (add-to-list 'compile-angel-excluded-files-regexps
+                 (concat "^" (regexp-quote file) "$"))
+    (unless (string= file file-truename)
+      (add-to-list 'compile-angel-excluded-files-regexps
+                   (concat "^" (regexp-quote file-truename) "$")))))
+
+;;;###autoload
+(defun compile-angel-add-directory-to-regexp-exclusions (directory)
+  "Add a specific DIRECTORY to `compile-angel-excluded-files-regexps'.
+DIRECTORY is the directory path to exclude from compilation."
+  (let* ((dir (file-name-as-directory (expand-file-name directory)))
+         (dir-truename (file-name-as-directory (file-truename dir))))
+    (add-to-list 'compile-angel-excluded-files-regexps
+                 (concat "^" (regexp-quote dir)))
+    (unless (string= dir dir-truename)
+      (add-to-list 'compile-angel-excluded-files-regexps
+                   (concat "^" (regexp-quote dir-truename))))))
+
+;;;###autoload
 (defun compile-angel-report ()
   "Create a buffer listing all Elisp files that are not native compiled."
   (interactive)
