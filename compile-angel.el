@@ -365,7 +365,7 @@ don't have associated .el files and therefore don't need compilation.")
 (defvar compile-angel--reload-after-native-compile (make-hash-table :test 'equal))
 
 (defvar compile-angel--list-processed-files (make-hash-table :test 'equal))
-(defvar compile-angel--list-compiled-features (make-hash-table :test 'eq))
+(defvar compile-angel--list-processed-features (make-hash-table :test 'eq))
 
 (defvar compile-angel--legacy-currently-compiling nil)
 
@@ -1134,7 +1134,7 @@ resolved file path or nil if not found."
                (or (gethash el-file-truename compile-angel--list-processed-files)
                    (when feature-symbol
                      (gethash feature-symbol
-                              compile-angel--list-compiled-features))))
+                              compile-angel--list-processed-features))))
           (compile-angel--debug-message
             "SKIP (In the skip hash list): %s | %s" el-file feature))
 
@@ -1149,7 +1149,7 @@ resolved file path or nil if not found."
           (when compile-angel-on-load-mode-compile-once
             (puthash el-file-truename t compile-angel--list-processed-files)
             (when feature-symbol
-              (puthash feature-symbol t compile-angel--list-compiled-features)))
+              (puthash feature-symbol t compile-angel--list-processed-features)))
 
           (compile-angel--debug-message
             "SKIP (Does not need compilation): %s | %s" el-file feature))
@@ -1164,7 +1164,7 @@ resolved file path or nil if not found."
           (when compile-angel-on-load-mode-compile-once
             (puthash el-file-truename t compile-angel--list-processed-files)
             (when feature-symbol
-              (puthash feature-symbol t compile-angel--list-compiled-features)))
+              (puthash feature-symbol t compile-angel--list-processed-features)))
 
           (compile-angel--debug-message
             "Compilation ignored (in the no-byte-compile list): %s" el-file)
@@ -1175,7 +1175,7 @@ resolved file path or nil if not found."
                                         el-file feature-symbol)
           (puthash el-file-truename t compile-angel--list-processed-files)
           (when feature-symbol
-            (puthash feature-symbol t compile-angel--list-compiled-features))
+            (puthash feature-symbol t compile-angel--list-processed-features))
 
           (let ((compile-angel--legacy-currently-compiling
                  (cons el-file-truename compile-angel--legacy-currently-compiling)))
