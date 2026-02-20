@@ -118,7 +118,11 @@
                   ;; /lisp and /site-lisp: subdirs.el
                   "lisp/subdirs.el"
                   ;; Built-in no-byte-compile packages
-                  "/lisp/leim/leim-list.el"))
+                  "/lisp/leim/leim-list.el"
+                  ;; TODO: Find a permanent fix
+                  ;; This is important because Emacs loads the early-init.elc,
+                  ;; even if it is older than the early-init.el file
+                  "/early-init.el"))
   "A list of path suffixes used to exclude specific .el files from compilation.
 
 Example: \\='(\"suffix.el\" \"/filename.el\") This excludes any path that ends
