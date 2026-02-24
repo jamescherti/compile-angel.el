@@ -223,9 +223,6 @@ Below are a few interesting options:
 (setq native-comp-async-query-on-exit t)
 (setq confirm-kill-processes t)
 
-;; Non-nil means to native compile packages as part of their installation.
-(setq package-native-compile t)
-
 ;; -------------------------------------------------
 ;; Show buffer when there is a warning.
 ;; (NOT RECOMMENDED, except during development).
