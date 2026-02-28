@@ -108,7 +108,7 @@
 (defcustom compile-angel-excluded-files
   (delq nil (list "-loaddefs.el"
                   "-autoloads.el"
-                  "-pkg.el"          ; Package metadata
+                  "-pkg.el"          ; Straight (package metadata)
                   "/loaddefs.el"
                   "/.dir-locals.el"
                   "/lisp/org/org-version.el"
@@ -214,8 +214,11 @@ displayed accordingly."
 
 (defcustom compile-angel-predicate-function nil
   "Function that determines if an .el file should be compiled.
-It takes one argument (an .el file) and returns t if the file should be
-compiled, or nil if the file should not be compiled.
+It takes one argument (an .el file) and returns:
+- `:native-comp' to compile using native compilation.
+- `:byte-comp' to compile using byte compilation.
+- Any other non-nil value to compile using both native and byte compilation.
+- nil to not compile the file at all.
 
 This function applies to all modes:
 - `compile-angel-on-load-mode'
@@ -621,10 +624,18 @@ FEATURE is a symbol representing the feature being loaded."
 
    (t
     (let ((decision (if compile-angel-predicate-function
-                        (funcall compile-angel-predicate-function el-file)
+                        (let ((predicate-decision
+                               (funcall compile-angel-predicate-function
+                                        el-file)))
+                          (compile-angel--debug-message
+                            "PREDICATE function returned %s: %s | %s"
+                            predicate-decision el-file feature)
+                          predicate-decision)
                       t)))
       (when (and (not (eq decision t))  ; t = :continue
                  (not (eq decision nil))  ; nil = :ignore
+                 (not (eq decision :native-comp))
+                 (not (eq decision :byte-comp))
 
                  ;; `:compile' have precedence over excluded files
                  ;; (`compile-angel-excluded-files' and
@@ -647,8 +658,7 @@ FEATURE is a symbol representing the feature being loaded."
         (setq decision t))
 
       (cond
-       ((eq decision :force-compile)
-        t)
+       ((eq decision :force-compile) decision)
 
        ;; Exclude features ending with -autoloads
        ((and feature
@@ -692,8 +702,7 @@ FEATURE is a symbol representing the feature being loaded."
           el-file feature)
         nil)
 
-       ((eq decision :compile)
-        t)
+       ((eq decision :compile) decision)
 
        ((eq decision :ignore)
         (compile-angel--debug-message
@@ -711,18 +720,22 @@ FEATURE is a symbol representing the feature being loaded."
        ((compile-angel--el-file-excluded-p el-file)
         nil)
 
-       (t t))))))
+       (t
+        decision))))))
 
-(defun compile-angel--compile-elisp (el-file &optional noerror)
+(defun compile-angel--compile-elisp (el-file
+                                     &optional noerror do-byte do-native)
   "Byte-compile and Native-compile the .el file EL-FILE.
-When NOERROR is non-nil, suppress warnings if the file is absent."
+When NOERROR is non-nil, suppress warnings if the file is absent.
+When DO-BYTE is non-nil, byte compile.
+When DO-NATIVE is non-nil, native compile."
   (compile-angel--with-fast-file-ops
     (let* ((elc-file (funcall (if (bound-and-true-p
                                    byte-compile-dest-file-function)
                                   byte-compile-dest-file-function
                                 #'byte-compile-dest-file)
                               el-file))
-           (do-native-compile nil)
+           (decision-native-compile nil)
            (el-file-truename (when el-file
                                (file-truename el-file)))
            (compile-angel--native-compile-when-jit-enabled
@@ -739,17 +752,20 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
        ;; compilation.
        ((not (file-readable-p el-file))
         (unless noerror
-          (message "[compile-angel] Warning: The file does not exist: %s" el-file)))
+          (message "[compile-angel] Warning: The file does not exist: %s"
+                   el-file)))
 
        (t
         (cond
-         ;; Byte-compile Disabled
-         ((not compile-angel-enable-byte-compile)
-          (when compile-angel-enable-native-compile
+         ;; no-byte-compile: t
+         ((not (and compile-angel-enable-byte-compile do-byte))
+          (when (and compile-angel-enable-native-compile do-native)
             ;; Disable native compilation when no-byte-compile is set to t
             (if (compile-angel--no-byte-compile-p el-file)
                 (progn
-                  (setq do-native-compile nil)
+                  ;; No byte compile
+                  ;; TODO: Does no byte compile count = native compile?
+                  (setq decision-native-compile nil)
                   (puthash el-file-truename t
                            compile-angel--no-byte-compile-files-list)
                   (setq no-byte-compile-defined t)
@@ -757,28 +773,30 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
                     "Native-compilation ignored (no-byte-compile): %s"
                     el-file))
               ;; Native compile
-              (setq do-native-compile t)
+              (setq decision-native-compile t)
 
-              ;; Ensure the files are native compiled, as JIT compilation depends
-              ;; on the presence of .elc files.
+              ;; Ensure the files are native compiled, as JIT compilation
+              ;; depends on the presence of .elc files.
               (setq compile-angel--native-compile-when-jit-enabled t))))
 
          ;; Byte-compile Enabled
-         ((file-writable-p elc-file)
+         ((and (and compile-angel-enable-byte-compile do-byte)
+               (file-writable-p elc-file))
           ;; Byte-compile
-          (let ((byte-compile-result
-                 (compile-angel--byte-compile el-file elc-file))
-                (el-file-abbreviated (abbreviate-file-name el-file)))
+          (let ((byte-compile-result (compile-angel--byte-compile el-file
+                                                                  elc-file)))
             (cond
-             ((eq byte-compile-result 'byte-compile-up-to-date)
+             ((or (eq byte-compile-result 'byte-compile-up-to-date))
               ;; Even if the .elc file is up to date, the native-compiled
               ;; version may be absent
-              (setq do-native-compile t))
+              (setq decision-native-compile
+                    (and compile-angel-enable-native-compile do-native)))
 
              ((eq byte-compile-result 'byte-compile-exception-error)
               ;; An exception does not necessarily indicate that the file cannot
               ;; be natively compiled
-              (setq do-native-compile t))
+              (setq decision-native-compile
+                    (and compile-angel-enable-native-compile do-native)))
 
              ((eq byte-compile-result 'no-byte-compile)
               (puthash el-file-truename t
@@ -786,18 +804,21 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
               (setq no-byte-compile-defined t)
               (compile-angel--debug-message
                 "Byte-compilation Ignore (no-byte-compile): %s"
-                el-file-abbreviated)
-              (setq do-native-compile nil))
+                (abbreviate-file-name el-file))
+              ;; TODO: Does no byte compile count = native compile?
+              (setq decision-native-compile nil))
 
              ((not byte-compile-result)
               (compile-angel--verbose-message "Byte-compilation error: %s"
-                                              el-file-abbreviated)
-              (setq do-native-compile nil))
+                                              (abbreviate-file-name el-file))
+              (setq decision-native-compile nil))
 
              ((eq byte-compile-result t)
               (compile-angel--verbose-message
-                "Byte-compilation successful: %s" el-file-abbreviated)
-              (setq do-native-compile t))
+                "Byte-compilation successful: %s"
+                (abbreviate-file-name el-file))
+              (setq decision-native-compile
+                    (and compile-angel-enable-native-compile do-native)))
 
              (t
               (error "Invalid value returned by compile-angel--byte-compile")))))
@@ -805,20 +826,21 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
          ;; .elc not writable
          (t
           ;; Do not byte-compile
+          (setq decision-native-compile (and compile-angel-enable-native-compile
+                                             do-native))
           (compile-angel--debug-message
             "Byte-compilation ignored (not writable)%s: %s"
-            (if compile-angel-enable-native-compile
+            (if decision-native-compile
                 ". Native-compilation only"
               "")
-            elc-file)
-          (setq do-native-compile t)))
+            elc-file)))
 
         (let ((jit-enabled (or (bound-and-true-p native-comp-jit-compilation)
                                (bound-and-true-p native-comp-deferred-compilation))))
           (when (and jit-enabled
                      (not compile-angel--native-compile-when-jit-enabled))
             ;; Do not native-compile. Let the JIT compiler do it.
-            (setq do-native-compile nil)
+            (setq decision-native-compile nil)
             (unless no-byte-compile-defined
               ;; The `compile-angel--list-jit-native-compiled-files' hash table
               ;; serves as a safeguard to verify later that the JIT compiler has
@@ -829,7 +851,7 @@ When NOERROR is non-nil, suppress warnings if the file is absent."
               el-file)))
 
         (when (and compile-angel-enable-native-compile
-                   do-native-compile)
+                   decision-native-compile)
           (compile-angel--native-compile-maybe el-file)))))))
 
 (defun compile-angel--check-parens ()
@@ -1146,22 +1168,6 @@ The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
           (compile-angel--debug-message
             "SKIP (In the skip hash list): %s | %s" el-file feature))
 
-         ((not (compile-angel--need-compilation-p el-file
-                                                  el-file-truename
-                                                  feature-symbol))
-          ;; Optimization: Negative Caching
-          ;; We're recording the "Skip" decision in future requests for the same
-          ;; file will trigger the fast-path check at the top of your cond
-          ;; block. This prevents compile-angel from re-running the expensive
-          ;; checks
-          (when compile-angel-on-load-mode-compile-once
-            (puthash el-file-truename t compile-angel--list-processed-files)
-            (when feature-symbol
-              (puthash feature-symbol t compile-angel--list-processed-features)))
-
-          (compile-angel--debug-message
-            "SKIP (Does not need compilation): %s | %s" el-file feature))
-
          ((and compile-angel--track-no-byte-compile-files
                (gethash el-file-truename compile-angel--no-byte-compile-files-list))
           ;; Optimization: Negative Caching
@@ -1179,23 +1185,42 @@ The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
           t)
 
          (t
-          (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
-                                        el-file feature-symbol)
-          (puthash el-file-truename t compile-angel--list-processed-files)
-          (when feature-symbol
-            (puthash feature-symbol t compile-angel--list-processed-features))
-
-          (let ((compile-angel--legacy-currently-compiling
-                 (cons el-file-truename compile-angel--legacy-currently-compiling)))
-            (unwind-protect
+          (let ((decision (compile-angel--need-compilation-p el-file
+                                                             el-file-truename
+                                                             feature-symbol)))
+            (if (not decision)
                 (progn
+                  ;; Optimization: Negative Caching
+                  ;; We're recording the "Skip" decision in future requests for
+                  ;; the same file will trigger the fast-path check at the top
+                  ;; of your cond block. This prevents compile-angel from
+                  ;; re-running the expensive checks
+                  (when compile-angel-on-load-mode-compile-once
+                    (puthash el-file-truename t compile-angel--list-processed-files)
+                    (when feature-symbol
+                      (puthash feature-symbol t compile-angel--list-processed-features)))
+                  (compile-angel--debug-message
+                    "SKIP (Does not need compilation): %s | %s" el-file feature))
+              ;; There is a decision
+              (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
+                                            el-file feature-symbol)
+              (puthash el-file-truename t compile-angel--list-processed-files)
+              (when feature-symbol
+                (puthash feature-symbol t compile-angel--list-processed-features))
+
+              (let ((compile-angel--legacy-currently-compiling
+                     (cons el-file-truename compile-angel--legacy-currently-compiling))
+                    (do-byte (not (eq decision :native-comp)))
+                    (do-native (not (eq decision :byte-comp))))
+                (unwind-protect
+                    (progn
+                      (when compile-angel--currently-compiling-use-hash
+                        (puthash el-file-truename t compile-angel--currently-compiling-files)
+                        (puthash feature-symbol t compile-angel--currently-compiling-features))
+                      (compile-angel--compile-elisp el-file noerror do-byte do-native))
                   (when compile-angel--currently-compiling-use-hash
-                    (puthash el-file-truename t compile-angel--currently-compiling-files)
-                    (puthash feature-symbol t compile-angel--currently-compiling-features))
-                  (compile-angel--compile-elisp el-file noerror))
-              (when compile-angel--currently-compiling-use-hash
-                (remhash el-file-truename compile-angel--currently-compiling-files)
-                (remhash feature-symbol compile-angel--currently-compiling-features))))))))))
+                    (remhash el-file-truename compile-angel--currently-compiling-files)
+                    (remhash feature-symbol compile-angel--currently-compiling-features))))))))))))
 
 (defun compile-angel--advice-before-require (feature
                                              &optional filename noerror)
