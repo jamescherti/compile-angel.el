@@ -377,6 +377,7 @@ don't have associated .el files and therefore don't need compilation.")
 
 (defvar compile-angel--legacy-currently-compiling nil)
 
+;; TODO This can be removed in the future
 (defvar compile-angel--currently-compiling-use-hash nil)
 (defvar compile-angel--currently-compiling-files (make-hash-table :test 'equal))
 (defvar compile-angel--currently-compiling-features (make-hash-table :test 'eq))
@@ -641,6 +642,7 @@ FEATURE is a symbol representing the feature being loaded."
                  ;; (`compile-angel-excluded-files' and
                  ;; `compile-angel-excluded-files-regexps')
                  (not (eq decision :compile))
+                 (not (eq decision :force-compile))
 
                  ;; `:continue' is the same as nil
                  (not (eq decision :continue))
@@ -656,9 +658,17 @@ FEATURE is a symbol representing the feature being loaded."
                           "invalid value: %s")
                   decision))
         (setq decision t))
-
       (cond
-       ((eq decision :force-compile) decision)
+       ((or (eq decision :force-compile)
+            (eq decision :compile))
+        t)
+
+       ((or (not decision)
+            (eq decision :ignore))  ; nil = :ignore
+        (compile-angel--debug-message
+          "SKIP (Predicate function returned %s): %s | %s"
+          decision el-file feature)
+        nil)
 
        ;; Exclude features ending with -autoloads
        ((and feature
@@ -702,26 +712,19 @@ FEATURE is a symbol representing the feature being loaded."
           el-file feature)
         nil)
 
-       ((eq decision :compile) decision)
-
-       ((eq decision :ignore)
-        (compile-angel--debug-message
-          "SKIP (Predicate function returned :ignore): %s | %s"
-          el-file feature)
-        nil)
-
-       ((not decision)  ; nil = :ignore
-        (compile-angel--debug-message
-          "SKIP (Predicate function returned nil): %s | %s" el-file feature)
-        nil)
-
        ;; :continue starts here:
        ;; TODO add another one for file-truename?
-       ((compile-angel--el-file-excluded-p el-file)
-        nil)
+       ((or (eq decision t)
+            (eq decision :continue))
+        (if (compile-angel--el-file-excluded-p el-file)
+            nil
+          t))
 
        (t
-        decision))))))
+        (compile-angel--debug-message
+          "SKIP (Predicate function returned an unusual value: %s): %s | %s"
+          decision el-file feature)
+        t))))))
 
 (defun compile-angel--compile-elisp (el-file
                                      &optional noerror do-byte do-native)
@@ -1232,19 +1235,19 @@ function."
                                 filename (type-of filename)
                                 feature (type-of feature))
   (setq feature (compile-angel--normalize-feature feature))
-  (if (and feature
-           (or
-            ;; The features were not compiled when `compile-angel' started
-            (not compile-angel-on-load-compile-features)
-            ;; Compile more than once
-            (not compile-angel-on-load-mode-compile-once)
-            ;; Ignore featurep
-            (not compile-angel--advice-before-require-ignore-using-featurep)
-            ;; The feature hasn't already been loaded
-            (not (featurep feature))))
-      (compile-angel--entry-point filename feature nil noerror)
-    (compile-angel--debug-message "SKIP (Feature already loaded): %s | %s"
-                                  feature filename)))
+  (when feature
+    (if (or
+         ;; The features were not compiled when `compile-angel' started
+         (not compile-angel-on-load-compile-features)
+         ;; Compile more than once
+         (not compile-angel-on-load-mode-compile-once)
+         ;; Ignore featurep
+         (not compile-angel--advice-before-require-ignore-using-featurep)
+         ;; The feature hasn't already been loaded
+         (not (featurep feature)))
+        (compile-angel--entry-point filename feature nil noerror)
+      (compile-angel--debug-message "SKIP (Feature already loaded): %s | %s"
+                                    feature filename))))
 
 (defun compile-angel--advice-before-load (el-file &optional noerror _nomessage
                                                   nosuffix _must-suffix)
