@@ -6,7 +6,7 @@
 ;; Version: 1.1.3
 ;; URL: https://github.com/jamescherti/compile-angel.el
 ;; Keywords: abbrev
-;; Package-Requires: ((emacs "24.1"))
+;; Package-Requires: ((emacs "26.1"))
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;; This file is free software; you can redistribute it and/or modify
