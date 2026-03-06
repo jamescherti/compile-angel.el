@@ -395,7 +395,7 @@ Here are additional features provided by compile-angel that are not available in
 
 ## Comments from users
 
--  [Leading_Ad6415 on Reddit](https://www.reddit.com/r/emacs/comments/1l860wd/comment/mxblysh/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button): "Thank you for your works. My start up time gone from ~2.5 seconds to ~1.9 seconds (~25%)"
+-  [Leading_Ad6415 on Reddit](https://www.reddit.com/r/emacs/comments/1l860wd/comment/mxblysh/): "Thank you for your works. My start up time gone from ~2.5 seconds to ~1.9 seconds (~25%)"
 
 - [drizzyhouse](https://www.reddit.com/r/emacs/comments/1mqzu3z/comment/n8vyaf2/): "Thanks for your work on this."
 
