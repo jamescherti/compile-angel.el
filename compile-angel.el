@@ -323,7 +323,6 @@ containing `simple.el`."
 When non-nil, construct a hash table mapping feature names to their file paths
 by scanning all directories in `load-path' to improve lookup performance.")
 
-;; TODO Remove this
 (defvar compile-angel-native-compile-load nil
   "Experimental feature. Do not activate it.
 Non-nil to load the file after asynchronous native compilation.
