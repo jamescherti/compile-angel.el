@@ -1672,6 +1672,7 @@ DIRECTORY is the directory path to exclude from compilation."
         ;; ensures 'dash' is compiled explicitly if present.
         (when compile-angel-enable-byte-compile
           (compile-angel--entry-point nil 'dash))
+        (compile-angel--entry-point nil 'compile-angel)
         ;; Advices
         (when compile-angel-on-load-advise-require
           (advice-add 'require :before #'compile-angel--advice-before-require))
