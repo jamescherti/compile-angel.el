@@ -566,16 +566,48 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
     (when (file-newer-than-file-p eln-file el-file)
       t)))
 
-(defun compile-angel--native-compile-maybe (el-file)
-  "Native-compile EL-FILE."
+(defun compile-angel--touch-eln-file-maybe (el-file elc-file)
+  "Ensure an existing .eln file has a newer timestamp than ELC-FILE.
+If the .eln file is older than ELC-FILE but newer than EL-FILE, update its
+modification time to the current time."
+  (when (and compile-angel-enable-native-compile
+             compile-angel--native-comp-available
+             (fboundp 'comp-el-to-eln-filename))
+    (let ((eln-file (comp-el-to-eln-filename el-file)))
+      (when (and eln-file
+                 (file-newer-than-file-p elc-file eln-file)
+                 (file-newer-than-file-p eln-file el-file))
+        (condition-case err
+            (progn
+              (set-file-times eln-file)
+              (compile-angel--debug-message
+                "UPDATE .eln timestamp to remain newer than .elc: %s"
+                eln-file))
+          (error
+           (compile-angel--debug-message
+             "Failed to update .eln timestamp: %s"
+             (error-message-string err))))))))
+
+(defun compile-angel--native-compile-maybe (el-file &optional elc-file)
+  "Native-compile EL-FILE.
+ELC-FILE is the optional byte-compiled file path to avoid recalculating it."
   (if (not compile-angel--native-comp-available)
       (compile-angel--debug-message
         "Native-compilation ignored (native-comp unavailable): %s" el-file)
     (compile-angel--with-fast-file-ops
-      (let ((eln-file (and (fboundp 'comp-el-to-eln-filename)
-                           (comp-el-to-eln-filename el-file))))
+      (let* ((eln-file
+              (and (fboundp 'comp-el-to-eln-filename)
+                   (comp-el-to-eln-filename el-file)))
+             (elc-file
+              (or elc-file
+                  (funcall
+                   (if (bound-and-true-p byte-compile-dest-file-function)
+                       byte-compile-dest-file-function
+                     #'byte-compile-dest-file)
+                   el-file))))
         (cond
          ((compile-angel--elisp-native-compiled-p el-file eln-file)
+          (compile-angel--touch-eln-file-maybe el-file elc-file)
           (compile-angel--debug-message
             "Native-compilation ignored (up-to-date): %s" el-file))
 
@@ -871,6 +903,13 @@ When DO-NATIVE is non-nil, native compile."
               "")
             elc-file)))
 
+        ;; Update the timestamp of the .eln file *before* checking the JIT
+        ;; status. This guarantees that if JIT is enabled, Emacs will not
+        ;; trigger a redundant background compilation for a valid .eln file that
+        ;; is simply older than its .elc counterpart.
+        (when compile-angel-enable-native-compile
+          (compile-angel--touch-eln-file-maybe el-file elc-file))
+
         (let ((jit-enabled (or (bound-and-true-p native-comp-jit-compilation)
                                (bound-and-true-p native-comp-deferred-compilation))))
           (when (and jit-enabled
@@ -888,7 +927,7 @@ When DO-NATIVE is non-nil, native compile."
 
         (when (and compile-angel-enable-native-compile
                    decision-native-compile)
-          (compile-angel--native-compile-maybe el-file)))))))
+          (compile-angel--native-compile-maybe el-file elc-file)))))))
 
 (defun compile-angel--check-parens ()
   "Check for unbalanced parentheses in the current buffer.
