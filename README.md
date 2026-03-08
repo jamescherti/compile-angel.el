@@ -64,18 +64,6 @@ To install *compile-angel* on Emacs from MELPA:
 ;; Ensure Emacs loads the most recent byte-compiled files.
 (setq load-prefer-newer t)
 
-;; Keep `native-comp-jit-compilation`. However, uncomment the following if Emacs
-;; JIT native compilation should be disabled and completely replaced with
-;; compile-angel. This can prevent redundant or repetitive background
-;; compilations.
-;; (setq native-comp-jit-compilation nil)
-;; (setq native-comp-deferred-compilation native-comp-jit-compilation) ; Deprecated
-
-;; The following disables compilation of packages during installation;
-;; compile-angel will handle it.
-;; (setq straight-disable-native-compile nil)  ; straight.el users
-(setq package-native-compile nil)
-
 (use-package compile-angel
   :ensure t
   :demand t
@@ -120,9 +108,19 @@ Here is how to install *compile-angel* on Doom Emacs:
 ;; Uncomment the line below to compile automatically when an Elisp file is saved
 ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 
+;; The following directive prevents compile-angel from compiling your init
+;; files. If you choose to remove this push to `compile-angel-excluded-files'
+;; and compile your pre/post-init files, ensure you understand the
+;; implications and thoroughly test your code. For example, if you're using
+;; the `use-package' macro, you'll need to explicitly add:
+;; (eval-when-compile (require 'use-package))
+;; at the top of your init file.
+(push "/init.el" compile-angel-excluded-files)
+(push "/early-init.el" compile-angel-excluded-files)
+
 ;; A global mode that compiles .el files before they are loaded
 ;; using `load' or `require'.
-(compile-angel-on-load-mode)
+(compile-angel-on-load-mode 1)
 ```
 
 3. Run the `doom sync` command:
@@ -158,16 +156,7 @@ The variables that must be set **before** packages load should be placed in the 
 This function is called immediately after `dotspacemacs/init', before layer configuration."
 
   ;; Ensure Emacs loads the most recent byte-compiled files.
-  (setq load-prefer-newer t)
-
-  ;; Uncomment the following to disable compilation of packages during installation;
-  ;; compile-angel will handle it.
-  ;; (setq package-native-compile nil)
-
-  ;; Uncomment to disable Emacs JIT Native-compile to completely replace it with compile-angel
-  ;; (setq native-comp-jit-compilation nil)
-  ;; (setq native-comp-deferred-compilation native-comp-jit-compilation) ; Deprecated
-)
+  (setq load-prefer-newer t))
 
 ```
 

@@ -575,6 +575,7 @@ modification time to the current time."
              (fboundp 'comp-el-to-eln-filename))
     (let ((eln-file (comp-el-to-eln-filename el-file)))
       (when (and eln-file
+                 elc-file
                  (file-newer-than-file-p elc-file eln-file)
                  (file-newer-than-file-p eln-file el-file))
         (condition-case err
@@ -633,8 +634,8 @@ ELC-FILE is the optional byte-compiled file path to avoid recalculating it."
 
 (defun compile-angel--delete-stale-elc-file-maybe (el-file elc-file
                                                            &optional force)
-  "Delete stale ELC-FILE file, maybe.
-EL-FILE is the .el file."
+  "Delete ELC-FILE if it is older than EL-FILE.
+If FORCE is non-nil, delete ELC-FILE regardless of its modification time."
   (when (and (file-exists-p elc-file)
              (or force
                  (file-newer-than-file-p el-file elc-file))
@@ -927,13 +928,6 @@ When DO-NATIVE is non-nil, native compile."
               "")
             elc-file)))
 
-        ;; Update the timestamp of the .eln file *before* checking the JIT
-        ;; status. This guarantees that if JIT is enabled, Emacs will not
-        ;; trigger a redundant background compilation for a valid .eln file that
-        ;; is simply older than its .elc counterpart.
-        (when compile-angel-enable-native-compile
-          (compile-angel--touch-eln-file-maybe el-file elc-file))
-
         (let ((jit-enabled (or (bound-and-true-p native-comp-jit-compilation)
                                (bound-and-true-p native-comp-deferred-compilation))))
           (when (and jit-enabled
@@ -949,9 +943,14 @@ When DO-NATIVE is non-nil, native compile."
               "Native-compilation ignored (JIT compilation will do it): %s"
               el-file)))
 
-        (when (and compile-angel-enable-native-compile
-                   decision-native-compile)
-          (compile-angel--native-compile-maybe el-file elc-file)))))))
+        (if (and compile-angel-enable-native-compile
+                 decision-native-compile)
+            (compile-angel--native-compile-maybe el-file elc-file)
+          ;; Prevent redundant background JIT compilation. If JIT is enabled but
+          ;; we deferred manual compilation, we must ensure a valid .eln file
+          ;; remains newer than its .elc counterpart.
+          (when compile-angel-enable-native-compile
+            (compile-angel--touch-eln-file-maybe el-file elc-file))))))))
 
 (defun compile-angel--check-parens ()
   "Check for unbalanced parentheses in the current buffer.
@@ -1748,16 +1747,15 @@ DIRECTORY is the directory path to exclude from compilation."
       (progn
         ;; Init
         (compile-angel--init)
-        ;; This fixes: custom-initialize-default: Recursive load: debug.eln,
-        ;; comint.elc, compile*.eln.
-        (compile-angel--entry-point nil 'compile-angel)
         ;; Pre-compiling 'dash' serves as a workaround to prevent Emacs 31 from
         ;; hanging during a fresh build. Implicitly loading 'dash' source
         ;; (triggered by dependencies like 'elisp-refs') when byte-compilation
         ;; is enabled can cause Emacs to hang and require restarting. This step
         ;; ensures 'dash' is compiled explicitly if present.
-        (when compile-angel-enable-byte-compile
-          (compile-angel--entry-point nil 'dash))
+        (compile-angel--entry-point nil 'dash)
+        ;; This fixes: custom-initialize-default: Recursive load: debug.eln,
+        ;; comint.elc, compile*.eln.
+        (compile-angel--entry-point nil 'compile-angel)
         ;; Advices
         (when compile-angel-on-load-advise-require
           (advice-add 'require :before #'compile-angel--advice-before-require))
