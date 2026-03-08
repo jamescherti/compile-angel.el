@@ -631,6 +631,23 @@ ELC-FILE is the optional byte-compiled file path to avoid recalculating it."
                     "Async native-compilation: %s"
                     el-file-abbreviated)))))))))))
 
+(defun compile-angel--delete-stale-elc-file-maybe (el-file elc-file
+                                                           &optional force)
+  "Delete stale ELC-FILE file, maybe.
+EL-FILE is the .el file."
+  (when (and (file-exists-p elc-file)
+             (or force
+                 (file-newer-than-file-p el-file elc-file))
+             (file-writable-p elc-file))
+    (condition-case err
+        (progn
+          (delete-file elc-file)
+          (compile-angel--debug-message "DELETE stale .elc file: %s"
+                                        elc-file))
+      (error
+       (compile-angel--debug-message "FAILED to delete stale .elc: %s"
+                                     (error-message-string err))))))
+
 (defun compile-angel--byte-compile (el-file elc-file)
   "Byte-compile EL-FILE into ELC-FILE.
 Return the byte compile result."
@@ -641,6 +658,8 @@ Return the byte compile result."
     'byte-compile-up-to-date)
 
    (t
+    (compile-angel--delete-stale-elc-file-maybe el-file elc-file :force)
+
     (let* ((byte-compile-warnings
             (when compile-angel-byte-compile-report-issues
               byte-compile-warnings))
@@ -808,6 +827,7 @@ When DO-NATIVE is non-nil, native compile."
            (compile-angel--native-compile-when-jit-enabled
             compile-angel--native-compile-when-jit-enabled)
            no-byte-compile-defined)
+
       (cond
        ((not elc-file)
         (unless noerror
@@ -836,6 +856,10 @@ When DO-NATIVE is non-nil, native compile."
                   (puthash el-file-truename t
                            compile-angel--no-byte-compile-files-list)
                   (setq no-byte-compile-defined t)
+
+                  (compile-angel--delete-stale-elc-file-maybe
+                   el-file elc-file :force)
+
                   (compile-angel--debug-message
                     "Native-compilation ignored (no-byte-compile): %s"
                     el-file))
