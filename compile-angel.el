@@ -335,8 +335,8 @@ Non-nil to load the file after asynchronous native compilation.
 When non-nil, passing the LOAD argument to `native-compile-async' ensures that
 the file is loaded immediately after compilation finishes.")
 
-(defvar compile-angel-native-elisp-load-ignore-errors nil
-  "Non-nil means suppress errors encountered during `native-elisp-load'.
+(defvar compile-angel-run-ignore-async-compilation-errors nil
+  "Non-nil means suppress errors encountered during `comp--run-async-workers'.
 
 WARNING: This is an experimental feature and should generally remain nil.
 
@@ -345,8 +345,8 @@ and reported as messages rather than signaling a standard error. This is
 particularly convenient to prevent the debugger from halting background
 processes when `debug-on-error' is non-nil.
 
-While `native-elisp-load' rarely fails, the author's configuration encounters
-initial load failures in two built-in packages:
+While `comp--run-async-workers' rarely fails, the author's configuration
+encounters initial load failures in two built-in packages:
 - `cc-langs' throws: (error \"`c-lang-defconst' must be used in a file\")
 - `use-package-core' throws: (setting-constant nil)
 
@@ -389,11 +389,14 @@ don't have associated .el files and therefore don't need compilation.")
 (defvar compile-angel--quiet-byte-compile t)
 
 (defvar compile-angel--track-no-byte-compile-files t)
-(defvar compile-angel--no-byte-compile-files-list (make-hash-table :test 'equal))
+(defvar compile-angel--no-byte-compile-files-list
+  (make-hash-table :test 'equal))
 
-(defvar compile-angel--list-jit-native-compiled-files (make-hash-table :test 'equal))
+(defvar compile-angel--list-jit-native-compiled-files
+  (make-hash-table :test 'equal))
 (defvar compile-angel--native-compile-when-jit-enabled nil)
-(defvar compile-angel--reload-after-native-compile (make-hash-table :test 'equal))
+(defvar compile-angel--reload-after-native-compile
+  (make-hash-table :test 'equal))
 
 (defvar compile-angel--list-processed-files (make-hash-table :test 'equal))
 (defvar compile-angel--list-processed-features (make-hash-table :test 'eq))
@@ -593,7 +596,8 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
                          (gethash el-file comp-async-compilations))
                 (let ((el-file-abbreviated (abbreviate-file-name el-file)))
                   (compile-angel--verbose-message
-                    "Async native-compilation: %s" el-file-abbreviated)))))))))))
+                    "Async native-compilation: %s"
+                    el-file-abbreviated)))))))))))
 
 (defun compile-angel--byte-compile (el-file elc-file)
   "Byte-compile EL-FILE into ELC-FILE.
@@ -852,7 +856,8 @@ When DO-NATIVE is non-nil, native compile."
                     (and compile-angel-enable-native-compile do-native)))
 
              (t
-              (error "Invalid value returned by compile-angel--byte-compile")))))
+              (error
+               "Invalid value returned by compile-angel--byte-compile")))))
 
          ;; .elc not writable
          (t
@@ -1183,13 +1188,15 @@ The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
 
          ((and compile-angel--currently-compiling-use-hash
                feature-symbol
-               (gethash feature-symbol compile-angel--currently-compiling-features))
+               (gethash feature-symbol
+                        compile-angel--currently-compiling-features))
           (compile-angel--debug-message
             "SKIP feature (To prevent recursive compilation): %s | %s"
             el-file feature))
 
          ((and compile-angel--currently-compiling-use-hash
-               (gethash el-file-truename compile-angel--currently-compiling-files))
+               (gethash el-file-truename
+                        compile-angel--currently-compiling-files))
           (compile-angel--debug-message
             "SKIP file (To prevent recursive compilation): %s | %s"
             el-file feature))
@@ -1206,7 +1213,8 @@ The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
             "SKIP (In the skip hash list): %s | %s" el-file feature))
 
          ((and compile-angel--track-no-byte-compile-files
-               (gethash el-file-truename compile-angel--no-byte-compile-files-list))
+               (gethash el-file-truename
+                        compile-angel--no-byte-compile-files-list))
           ;; Optimization: Negative Caching
           ;; We're recording the "Skip" decision in future requests for the same
           ;; file will trigger the fast-path check at the top of your cond
@@ -1233,31 +1241,42 @@ The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
                   ;; of your cond block. This prevents compile-angel from
                   ;; re-running the expensive checks
                   (when compile-angel-on-load-mode-compile-once
-                    (puthash el-file-truename t compile-angel--list-processed-files)
+                    (puthash el-file-truename t
+                             compile-angel--list-processed-files)
                     (when feature-symbol
-                      (puthash feature-symbol t compile-angel--list-processed-features)))
+                      (puthash feature-symbol t
+                               compile-angel--list-processed-features)))
                   (compile-angel--debug-message
-                    "SKIP (Does not need compilation): %s | %s" el-file feature))
+                    "SKIP (Does not need compilation): %s | %s"
+                    el-file feature))
               ;; There is a decision
               (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
                                             el-file feature-symbol)
-              (puthash el-file-truename t compile-angel--list-processed-files)
+              (puthash el-file-truename t
+                       compile-angel--list-processed-files)
               (when feature-symbol
-                (puthash feature-symbol t compile-angel--list-processed-features))
+                (puthash feature-symbol t
+                         compile-angel--list-processed-features))
 
               (let ((compile-angel--legacy-currently-compiling
-                     (cons el-file-truename compile-angel--legacy-currently-compiling))
+                     (cons el-file-truename
+                           compile-angel--legacy-currently-compiling))
                     (do-byte (not (eq decision :native-comp)))
                     (do-native (not (eq decision :byte-comp))))
                 (unwind-protect
                     (progn
                       (when compile-angel--currently-compiling-use-hash
-                        (puthash el-file-truename t compile-angel--currently-compiling-files)
-                        (puthash feature-symbol t compile-angel--currently-compiling-features))
-                      (compile-angel--compile-elisp el-file noerror do-byte do-native))
+                        (puthash el-file-truename t
+                                 compile-angel--currently-compiling-files)
+                        (puthash feature-symbol t
+                                 compile-angel--currently-compiling-features))
+                      (compile-angel--compile-elisp
+                       el-file noerror do-byte do-native))
                   (when compile-angel--currently-compiling-use-hash
-                    (remhash el-file-truename compile-angel--currently-compiling-files)
-                    (remhash feature-symbol compile-angel--currently-compiling-features))))))))))))
+                    (remhash el-file-truename
+                             compile-angel--currently-compiling-files)
+                    (remhash feature-symbol
+                             compile-angel--currently-compiling-features))))))))))))
 
 (defun compile-angel--advice-before-require (feature
                                              &optional filename noerror)
@@ -1438,20 +1457,19 @@ NEW-VALUE is the value of the variable."
         (list (rassq 'jka-compr-handler
                      file-name-handler-alist))))
 
-(defun compile-angel--advice-native-elisp-load (orig-fn file &rest args)
-  "Wrap ORIG-FN to suppress errors when loading FILE.
+(defun compile-angel--advice-comp--run-async-workers (orig-fn &rest args)
+  "Wrap ORIG-FN to suppress errors.
 Additional ARGS are passed directly to ORIG-FN. When
-`compile-angel-native-elisp-load-ignore-errors' is non-nil, any error signaled
-by ORIG-FN is caught and displayed as a message."
-  (if compile-angel-native-elisp-load-ignore-errors
+`compile-angel-run-ignore-async-compilation-errors' is non-nil, any error
+signaled by ORIG-FN is caught and displayed as a message."
+  (if compile-angel-run-ignore-async-compilation-errors
       (condition-case err
-          (apply orig-fn file args)
+          (apply orig-fn args)
         (error
          (compile-angel--debug-message
-           "ERROR: Failed to load native code for '%s': %s"
-           file (error-message-string err))
+           "Error: %s" (error-message-string err))
          nil))
-    (apply orig-fn file args)))
+    (apply orig-fn args)))
 
 (defun compile-angel--init ()
   "Initialize internal variables."
@@ -1491,10 +1509,10 @@ by ORIG-FN is caught and displayed as a message."
 
     (setq compile-angel--init-completed t)
 
-    (when (and compile-angel-native-elisp-load-ignore-errors
-               (fboundp 'native-elisp-load))
-      (advice-add 'native-elisp-load :around
-                  #'compile-angel--advice-native-elisp-load))))
+    (when (and compile-angel-run-ignore-async-compilation-errors
+               (fboundp 'comp--run-async-workers))
+      (advice-add 'comp--run-async-workers :around
+                  #'compile-angel--advice-comp--run-async-workers))))
 
 (defun compile-angel--is-el-file (file)
   "Return non-nil if FILE is an el-file."
@@ -1543,7 +1561,8 @@ be JIT compiled."
       (unwind-protect
           (maphash (lambda (el-file _value)
                      (compile-angel--debug-message
-                       "Checking if Emacs really JIT Native-Compiled: %s" el-file)
+                       "Checking if Emacs really JIT Native-Compiled: %s"
+                       el-file)
                      (compile-angel--native-compile-maybe el-file))
                    compile-angel--list-jit-native-compiled-files)
         (clrhash compile-angel--list-jit-native-compiled-files)))))
@@ -1578,8 +1597,9 @@ be JIT compiled."
       (when feature
         (let* ((feature-symbol (compile-angel--normalize-feature feature)))
           (when (and feature-symbol
-                     (not (gethash feature-symbol
-                                   compile-angel--report-native-compiled-features)))
+                     (not (gethash
+                           feature-symbol
+                           compile-angel--report-native-compiled-features)))
             (when-let* ((feature-el-file (compile-angel--guess-el-file
                                           nil feature-symbol)))
               (compile-angel--debug-message
