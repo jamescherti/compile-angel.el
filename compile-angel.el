@@ -1670,9 +1670,9 @@ DIRECTORY is the directory path to exclude from compilation."
         ;; (triggered by dependencies like 'elisp-refs') when byte-compilation
         ;; is enabled can cause Emacs to hang and require restarting. This step
         ;; ensures 'dash' is compiled explicitly if present.
+        (compile-angel--entry-point nil 'compile-angel)
         (when compile-angel-enable-byte-compile
           (compile-angel--entry-point nil 'dash))
-        (compile-angel--entry-point nil 'compile-angel)
         ;; Advices
         (when compile-angel-on-load-advise-require
           (advice-add 'require :before #'compile-angel--advice-before-require))
