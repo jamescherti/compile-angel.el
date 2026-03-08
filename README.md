@@ -76,6 +76,7 @@ To install *compile-angel* on Emacs from MELPA:
   ;; The following disables compilation of packages during installation;
   ;; compile-angel will handle it.
   (setq package-native-compile nil)
+  ;; (setq straight-disable-native-compile nil)  ; straight.el users
 
   ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
   ;; (When set to nil, compile-angel won't show which file is being compiled.)
