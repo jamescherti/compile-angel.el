@@ -86,7 +86,7 @@
 ;;
 ;; The `subr-x' library provides utility functions like `string-remove-suffix'
 ;; that are invoked at runtime within `compile-angel--update-el-file-regexp'.
-(require 'subr-x)
+(eval-when-compile (require 'subr-x))
 
 ;;; Variables
 
