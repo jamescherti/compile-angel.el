@@ -1665,12 +1665,14 @@ DIRECTORY is the directory path to exclude from compilation."
       (progn
         ;; Init
         (compile-angel--init)
+        ;; This fixes: custom-initialize-default: Recursive load: debug.eln,
+        ;; comint.elc, compile*.eln.
+        (compile-angel--entry-point nil 'compile-angel)
         ;; Pre-compiling 'dash' serves as a workaround to prevent Emacs 31 from
         ;; hanging during a fresh build. Implicitly loading 'dash' source
         ;; (triggered by dependencies like 'elisp-refs') when byte-compilation
         ;; is enabled can cause Emacs to hang and require restarting. This step
         ;; ensures 'dash' is compiled explicitly if present.
-        (compile-angel--entry-point nil 'compile-angel)
         (when compile-angel-enable-byte-compile
           (compile-angel--entry-point nil 'dash))
         ;; Advices
