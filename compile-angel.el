@@ -315,6 +315,22 @@ containing `simple.el`."
       ;; Always use `file-truename'
       (file-truename (file-name-directory (file-truename library-path))))))
 
+(defcustom compile-angel-delete-stale-elc-files t
+  "Non-nil to allow deletion of stale byte-compiled .elc files.
+When enabled, the package will automatically remove .elc files that are older
+than their corresponding .el source files to ensure a clean state before
+recompilation."
+  :type 'boolean
+  :group 'compile-angel)
+
+(defcustom compile-angel-touch-eln-files t
+  "Non-nil to allow updating the timestamp of native-compiled .eln files.
+When enabled, the package will update the modification time of an existing .eln
+file to ensure it remains newer than its .elc counterpart. This prevents
+redundant background JIT compilations."
+  :type 'boolean
+  :group 'compile-angel)
+
 ;;; Experimental features
 
 (defvar compile-angel-guess-el-file-use-load-history nil)
@@ -570,7 +586,8 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
   "Ensure an existing .eln file has a newer timestamp than ELC-FILE.
 If the .eln file is older than ELC-FILE but newer than EL-FILE, update its
 modification time to the current time."
-  (when (and compile-angel-enable-native-compile
+  (when (and compile-angel-touch-eln-files
+             compile-angel-enable-native-compile
              compile-angel--native-comp-available
              (fboundp 'comp-el-to-eln-filename))
     (let ((eln-file (comp-el-to-eln-filename el-file)))
@@ -636,7 +653,8 @@ ELC-FILE is the optional byte-compiled file path to avoid recalculating it."
                                                            &optional force)
   "Delete ELC-FILE if it is older than EL-FILE.
 If FORCE is non-nil, delete ELC-FILE regardless of its modification time."
-  (when (and (file-exists-p elc-file)
+  (when (and compile-angel-delete-stale-elc-files
+             (file-exists-p elc-file)
              (or force
                  (file-newer-than-file-p el-file elc-file))
              (file-writable-p elc-file))
