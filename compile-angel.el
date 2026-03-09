@@ -1765,32 +1765,38 @@ DIRECTORY is the directory path to exclude from compilation."
       (progn
         ;; Init
         (compile-angel--init)
-        (compile-angel--entry-point nil 'compile)
+        ;; Self optimization
+        (compile-angel--entry-point nil 'bytecomp)
+        (compile-angel--entry-point nil 'seq)
+        (compile-angel--entry-point nil 'compile-angel)
+
         ;; Pre-compiling 'dash' serves as a workaround to prevent Emacs 31 from
         ;; hanging during a fresh build. Implicitly loading 'dash' source
         ;; (triggered by dependencies like 'elisp-refs') when byte-compilation
         ;; is enabled can cause Emacs to hang and require restarting. This step
         ;; ensures 'dash' is compiled explicitly if present.
         (compile-angel--entry-point nil 'dash)
-        ;; This fixes: custom-initialize-default: Recursive load: debug.eln,
-        ;; comint.elc, compile*.eln.
-        (compile-angel--entry-point nil 'compile-angel)
+
+        ;; Compile features
+        (when compile-angel-on-load-compile-features
+          (compile-angel--compile-loaded-features))
+
+        ;; Compile load-history (Keep load history after features
+        ;; for the experimental feature `compile-angel-reload-compiled-version')
+        (when compile-angel-on-load-compile-load-history
+          (compile-angel--compile-load-history))
+
         ;; Advices
         (when compile-angel-on-load-advise-require
           (advice-add 'require :before #'compile-angel--advice-before-require))
         (when compile-angel-on-load-advise-load
           (advice-add 'load :before #'compile-angel--advice-before-load))
-        ;; Compile features
-        (when compile-angel-on-load-compile-features
-          (compile-angel--compile-loaded-features))
-        ;; Compile load-history (Keep load history after features
-        ;; for the experimental feature `compile-angel-reload-compiled-version')
-        (when compile-angel-on-load-compile-load-history
-          (compile-angel--compile-load-history))
+
         ;; After load hook
         (when compile-angel-on-load-hook-after-load-functions
           (add-hook 'after-load-functions
                     #'compile-angel--hook-after-load-functions))
+
         (when compile-angel-enable-native-compile
           (add-hook 'native-comp-async-all-done-hook
                     #'compile-angel--native-comp-async-all-done)
