@@ -313,7 +313,7 @@ containing `simple.el`."
       (file-truename lisp-directory)
     (when-let* ((library-path (locate-library "simple")))
       ;; Always use `file-truename'
-      (file-truename (file-name-directory (file-truename library-path))))))
+      (file-name-directory (file-truename library-path)))))
 
 (defcustom compile-angel-delete-stale-elc-files t
   "Non-nil to allow deletion of stale byte-compiled .elc files.
