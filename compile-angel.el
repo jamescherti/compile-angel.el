@@ -693,7 +693,6 @@ Return the byte compile result."
                  (list 'global-font-lock-mode-enable-in-buffer)))
            (inhibit-message (not (or (not compile-angel-verbose)
                                      (not compile-angel-debug))))
-           (inhibit-interaction t)
            (prog-mode-hook nil)
            (emacs-lisp-mode-hook nil)
            (byte-compile-result
