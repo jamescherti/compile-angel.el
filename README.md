@@ -59,22 +59,37 @@ To install *compile-angel* on Emacs from MELPA:
 
 1. If you haven't already done so, [add MELPA repository to your Emacs configuration](https://melpa.org/#/getting-started).
 
-2. Add the following code **at the very beginning of your init.el file, before all other packages**:
+2. Add the following code snippet to your init file:
 ```emacs-lisp
 ;; Ensure Emacs loads the most recent byte-compiled files.
 (setq load-prefer-newer t)
 
+;; The following disables compilation of packages during installation;
+;; compile-angel will handle it.
+(setq package-native-compile nil)
+
 (use-package compile-angel
-  :ensure t
-  :demand t
-  :config
+  :commands (compile-angel-on-load-mode
+             compile-angel-on-save-local-mode
+             compile-angel-on-save-mode)
+
+  :hook
+  ;; A global mode that compiles .el files prior to loading them via `load' or
+  ;; `require'. Additionally, it compiles all packages that were loaded before
+  ;; the mode `compile-angel-on-load-mode' was activated.
+  (after-init . compile-angel-on-load-mode)
+
+  ;; A local mode that compiles .el files whenever the user saves them.
+  ;; (emacs-lisp-mode . compile-angel-on-save-local-mode)
+
+  :init
   ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
   ;; (When set to nil, compile-angel won't show which file is being compiled.)
   (setq compile-angel-verbose t)
 
-  ;; Uncomment the line below to compile automatically when an Elisp file is saved
-  ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
+  ;; (setq compile-angel-debug t)
 
+  :config
   ;; The following directive prevents compile-angel from compiling your init
   ;; files. If you choose to remove this push to `compile-angel-excluded-files'
   ;; and compile your pre/post-init files, ensure you understand the
@@ -83,11 +98,7 @@ To install *compile-angel* on Emacs from MELPA:
   ;; (eval-when-compile (require 'use-package))
   ;; at the top of your init file.
   (push "/init.el" compile-angel-excluded-files)
-  (push "/early-init.el" compile-angel-excluded-files)
-
-  ;; A global mode that compiles .el files before they are loaded
-  ;; using `load' or `require'.
-  (compile-angel-on-load-mode 1))
+  (push "/early-init.el" compile-angel-excluded-files))
 ```
 
 ### Doom Emacs
