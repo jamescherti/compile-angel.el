@@ -631,7 +631,13 @@ ELC-FILE is the optional byte-compiled file path to avoid recalculating it."
 
          (t
           (let ((inhibit-message (not (or (not compile-angel-verbose)
-                                          (not compile-angel-debug)))))
+                                          (not compile-angel-debug))))
+                ;; Let-bind `native-comp-async-report-warnings-errors' to
+                ;; 'silent inside your compilation function to force the
+                ;; compiler to log errors silently in the background without
+                ;; stealing focus.
+                (native-comp-async-report-warnings-errors 'silent))
+            (ignore native-comp-async-report-warnings-errors)
             (when (fboundp 'native-compile-async)
               (when (and eln-file
                          compile-angel-reload-compiled-version)
@@ -687,6 +693,7 @@ Return the byte compile result."
                  (list 'global-font-lock-mode-enable-in-buffer)))
            (inhibit-message (not (or (not compile-angel-verbose)
                                      (not compile-angel-debug))))
+           (inhibit-interaction t)
            (prog-mode-hook nil)
            (emacs-lisp-mode-hook nil)
            (byte-compile-result
@@ -1255,7 +1262,13 @@ The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
              (el-file (compile-angel--guess-el-file
                        el-file feature-symbol nosuffix))
              ;; FIX: Canonicalize path for locking mechanisms
-             (el-file-truename (when el-file (file-truename el-file))))
+             (el-file-truename (when el-file (file-truename el-file)))
+             ;; The byte compiler generates a massive amount of temporary Lisp
+             ;; objects when reading files. If Emacs is running with its default
+             ;; gc-cons-threshold, it will pause to garbage collect thousands of
+             ;; times during a bulk compilation.
+             ;; TODO Configure this with a variable
+             (gc-cons-threshold most-positive-fixnum))
         (cond
          ((not el-file)
           (compile-angel--debug-message
@@ -1765,8 +1778,9 @@ DIRECTORY is the directory path to exclude from compilation."
       (progn
         ;; Init
         (compile-angel--init)
+
         ;; Self optimization
-        (compile-angel--entry-point nil 'bytecomp)
+        ;; (compile-angel--entry-point nil 'bytecomp)
         (compile-angel--entry-point nil 'seq)
         (compile-angel--entry-point nil 'compile-angel)
 
