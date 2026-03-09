@@ -1791,6 +1791,9 @@ DIRECTORY is the directory path to exclude from compilation."
         ;; ensures 'dash' is compiled explicitly if present.
         (compile-angel--entry-point nil 'dash)
 
+        ;; Similar to dash. Many modern packages rely on it.
+        (compile-angel--entry-point nil 'compat)
+
         ;; Compile features
         (when compile-angel-on-load-compile-features
           (compile-angel--compile-loaded-features))
