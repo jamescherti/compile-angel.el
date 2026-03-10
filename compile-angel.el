@@ -586,13 +586,14 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
   "Ensure an existing .eln file has a newer timestamp than ELC-FILE.
 If the .eln file is older than ELC-FILE but newer than EL-FILE, update its
 modification time to the current time."
-  (when (and compile-angel-touch-eln-files
+  (when (and el-file
+             elc-file
+             compile-angel-touch-eln-files
              compile-angel-enable-native-compile
              compile-angel--native-comp-available
              (fboundp 'comp-el-to-eln-filename))
     (let ((eln-file (comp-el-to-eln-filename el-file)))
       (when (and eln-file
-                 elc-file
                  (file-newer-than-file-p elc-file eln-file)
                  (file-newer-than-file-p eln-file el-file))
         (condition-case err
