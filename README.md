@@ -215,6 +215,23 @@ Below are a few interesting options:
 (setq native-comp-async-query-on-exit t)
 (setq confirm-kill-processes t)
 
+;;
+;; Keep `native-comp-jit-compilation`. However, uncomment the following if Emacs
+;; JIT native compilation should be disabled and completely replaced with
+;; compile-angel. This can prevent redundant or repetitive background
+;; compilations.
+;;
+;; (setq native-comp-jit-compilation nil)
+;; (setq native-comp-deferred-compilation native-comp-jit-compilation) ; Deprecated
+
+;;
+;; The following disables compilation of packages during installation;
+;; compile-angel will handle it.
+;;
+;; (setq package-native-compile nil)
+;; (setq straight-disable-native-compile nil)  ; straight.el users
+;; (setq straight-disable-compile nil)  ; straight.el users
+
 ;; -------------------------------------------------
 ;; Show buffer when there is a warning.
 ;; (NOT RECOMMENDED, except during development).
