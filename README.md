@@ -65,7 +65,6 @@ To install *compile-angel* on Emacs from MELPA:
 (setq load-prefer-newer t)
 
 (use-package compile-angel
-  :ensure t
   :demand t
   :config
   ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
