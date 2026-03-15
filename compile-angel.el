@@ -547,12 +547,21 @@ declaration is absent or not trusted under safe-local-variable rules."
 
           ;; Prevent Emacs from silently skipping unsafe or blacklisted values.
           ;; This ensures accurate reading of declared variables.
-          (ignored-local-variable-values nil))
-      ;; Read and apply local variables under the restricted settings above.
-      (hack-local-variables)
+          (ignored-local-variable-values nil)
 
-      ;; Return the parsed value of `no-byte-compile', or nil if not present.
-      (alist-get 'no-byte-compile file-local-variables-alist))))
+          ;; Prevent any unexpected prompts from halting the process.
+          (inhibit-interaction t))
+      (condition-case nil
+          (progn
+            ;; Read and apply local variables under the restricted settings above.
+            (hack-local-variables)
+            ;; Return the parsed value of `no-byte-compile', or nil if not present.
+            (alist-get 'no-byte-compile file-local-variables-alist))
+        (inhibited-interaction
+         (compile-angel--verbose-message
+           "SKIP reading local variables (interaction required): %s"
+           (abbreviate-file-name file-path))
+         nil)))))
 
 (defun compile-angel--el-file-excluded-p (el-file)
   "Check if EL-FILE matches any regex in `compile-angel-excluded-files-regexps'.
@@ -695,9 +704,18 @@ Return the byte compile result."
                                      (not compile-angel-debug))))
            (prog-mode-hook nil)
            (emacs-lisp-mode-hook nil)
+
+           ;; Prevent any interactive prompts during byte compilation.
+           (inhibit-interaction t)
+
            (byte-compile-result
             (condition-case err
                 (byte-compile-file el-file)
+              (inhibited-interaction
+               (compile-angel--verbose-message
+                 "Byte-compilation ignored (interaction required): %s"
+                 (abbreviate-file-name el-file))
+               nil)
               (permission-denied
                (progn
                  (compile-angel--debug-message
@@ -705,7 +723,6 @@ Return the byte compile result."
                    (error-message-string err))
                  ;; Try to native compile
                  'byte-compile-exception-error))
-
               (t
                (compile-angel--debug-message
                  "Byte-compilation ignored: Error: %s"
