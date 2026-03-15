@@ -551,6 +551,7 @@ declaration is absent or not trusted under safe-local-variable rules."
 
           ;; Prevent any unexpected prompts from halting the process.
           (inhibit-interaction t))
+      (ignore inhibit-interaction)
       (condition-case nil
           (progn
             ;; Read and apply local variables under the restricted settings above.
@@ -710,7 +711,8 @@ Return the byte compile result."
 
            (byte-compile-result
             (condition-case err
-                (byte-compile-file el-file)
+                (progn
+                  (byte-compile-file el-file))
               (inhibited-interaction
                (compile-angel--verbose-message
                  "Byte-compilation ignored (interaction required): %s"
@@ -729,6 +731,7 @@ Return the byte compile result."
                  (error-message-string err))
                ;; Do not native compile
                nil))))
+      (ignore inhibit-interaction)
       byte-compile-result))))
 
 (defun compile-angel--need-compilation-p (el-file el-file-truename feature)
