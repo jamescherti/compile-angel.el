@@ -637,7 +637,8 @@ If FORCE is non-nil, delete ELC-FILE regardless of its modification time."
   (when (and compile-angel-delete-stale-elc-files
              el-file
              elc-file
-             (string-suffix-p ".elc" elc-file)
+             (string-suffix-p ".elc" elc-file
+                              (file-name-case-insensitive-p elc-file))
              (file-regular-p elc-file)
              (or force
                  (file-newer-than-file-p el-file elc-file))
