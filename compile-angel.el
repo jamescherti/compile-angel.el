@@ -590,25 +590,15 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
     (when (file-newer-than-file-p eln-file el-file)
       t)))
 
-;; TODO remove _elc-file
-(defun compile-angel--native-compile-maybe (el-file &optional _elc-file)
-  "Native-compile EL-FILE.
-ELC-FILE is the optional byte-compiled file path to avoid recalculating it."
+(defun compile-angel--native-compile-maybe (el-file)
+  "Native-compile EL-FILE."
   (if (not compile-angel--native-comp-available)
       (compile-angel--debug-message
         "Native-compilation ignored (native-comp unavailable): %s" el-file)
     (compile-angel--with-fast-file-ops
       (let* ((eln-file
               (and (fboundp 'comp-el-to-eln-filename)
-                   (comp-el-to-eln-filename el-file)))
-             ;; (elc-file
-             ;;  (or elc-file
-             ;;      (funcall
-             ;;       (if (bound-and-true-p byte-compile-dest-file-function)
-             ;;           byte-compile-dest-file-function
-             ;;         #'byte-compile-dest-file)
-             ;;       el-file)))
-             )
+                   (comp-el-to-eln-filename el-file))))
         (cond
          ((compile-angel--elisp-native-compiled-p el-file eln-file)
           (compile-angel--debug-message
@@ -964,7 +954,7 @@ When DO-NATIVE is non-nil, native compile."
 
         (when (and compile-angel-enable-native-compile
                    decision-native-compile)
-          (compile-angel--native-compile-maybe el-file elc-file)))))))
+          (compile-angel--native-compile-maybe el-file)))))))
 
 (defun compile-angel--check-parens ()
   "Check for unbalanced parentheses in the current buffer.
