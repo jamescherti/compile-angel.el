@@ -635,13 +635,17 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
   "Delete ELC-FILE if it is older than EL-FILE.
 If FORCE is non-nil, delete ELC-FILE regardless of its modification time."
   (when (and compile-angel-delete-stale-elc-files
+             el-file
+             elc-file
+             (string-suffix-p ".elc" elc-file)
              (file-exists-p elc-file)
              (or force
                  (file-newer-than-file-p el-file elc-file))
              (file-writable-p elc-file))
     (condition-case err
         (progn
-          (delete-file elc-file)
+          (let ((delete-by-moving-to-trash nil))
+            (delete-file elc-file))
           (compile-angel--debug-message "DELETE stale .elc file: %s"
                                         elc-file))
       (error
