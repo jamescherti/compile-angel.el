@@ -332,7 +332,6 @@ redundant background JIT compilations."
 
 ;;; Experimental features
 
-(defvar compile-angel-guess-el-file-use-load-history nil)
 (defvar compile-angel-use-file-index nil
   "EXPERIMENTAL: Enable a faster feature-to-file lookup.
 When non-nil, construct a hash table mapping feature names to their file paths
@@ -591,32 +590,8 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
     (when (file-newer-than-file-p eln-file el-file)
       t)))
 
-(defun compile-angel--touch-eln-file-maybe (el-file elc-file)
-  "Ensure an existing .eln file has a newer timestamp than ELC-FILE.
-If the .eln file is older than ELC-FILE but newer than EL-FILE, update its
-modification time to the current time."
-  (when (and el-file
-             elc-file
-             compile-angel-touch-eln-files
-             compile-angel-enable-native-compile
-             compile-angel--native-comp-available
-             (fboundp 'comp-el-to-eln-filename))
-    (let ((eln-file (comp-el-to-eln-filename el-file)))
-      (when (and eln-file
-                 (file-newer-than-file-p elc-file eln-file)
-                 (file-newer-than-file-p eln-file el-file))
-        (condition-case err
-            (progn
-              (set-file-times eln-file)
-              (compile-angel--debug-message
-                "UPDATE .eln timestamp to remain newer than .elc: %s"
-                eln-file))
-          (error
-           (compile-angel--debug-message
-             "Failed to update .eln timestamp: %s"
-             (error-message-string err))))))))
-
-(defun compile-angel--native-compile-maybe (el-file &optional elc-file)
+;; TODO remove _elc-file
+(defun compile-angel--native-compile-maybe (el-file &optional _elc-file)
   "Native-compile EL-FILE.
 ELC-FILE is the optional byte-compiled file path to avoid recalculating it."
   (if (not compile-angel--native-comp-available)
@@ -626,16 +601,16 @@ ELC-FILE is the optional byte-compiled file path to avoid recalculating it."
       (let* ((eln-file
               (and (fboundp 'comp-el-to-eln-filename)
                    (comp-el-to-eln-filename el-file)))
-             (elc-file
-              (or elc-file
-                  (funcall
-                   (if (bound-and-true-p byte-compile-dest-file-function)
-                       byte-compile-dest-file-function
-                     #'byte-compile-dest-file)
-                   el-file))))
+             ;; (elc-file
+             ;;  (or elc-file
+             ;;      (funcall
+             ;;       (if (bound-and-true-p byte-compile-dest-file-function)
+             ;;           byte-compile-dest-file-function
+             ;;         #'byte-compile-dest-file)
+             ;;       el-file)))
+             )
         (cond
          ((compile-angel--elisp-native-compiled-p el-file eln-file)
-          (compile-angel--touch-eln-file-maybe el-file elc-file)
           (compile-angel--debug-message
             "Native-compilation ignored (up-to-date): %s" el-file))
 
@@ -987,14 +962,9 @@ When DO-NATIVE is non-nil, native compile."
               "Native-compilation ignored (JIT compilation will do it): %s"
               el-file)))
 
-        (if (and compile-angel-enable-native-compile
-                 decision-native-compile)
-            (compile-angel--native-compile-maybe el-file elc-file)
-          ;; Prevent redundant background JIT compilation. If JIT is enabled but
-          ;; we deferred manual compilation, we must ensure a valid .eln file
-          ;; remains newer than its .elc counterpart.
-          (when compile-angel-enable-native-compile
-            (compile-angel--touch-eln-file-maybe el-file elc-file))))))))
+        (when (and compile-angel-enable-native-compile
+                   decision-native-compile)
+          (compile-angel--native-compile-maybe el-file elc-file)))))))
 
 (defun compile-angel--check-parens ()
   "Check for unbalanced parentheses in the current buffer.
@@ -1253,8 +1223,7 @@ resolved file path or nil if not found."
      ;; Experimental feature
      ;; Try load-history if feature is loaded
      ((when-let* ((el-file-from-history
-                   (and compile-angel-guess-el-file-use-load-history
-                        feature-name
+                   (and feature-name
                         (compile-angel--feature-el-file-from-load-history
                          feature-name))))
         (compile-angel--debug-message
