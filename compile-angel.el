@@ -638,7 +638,7 @@ If FORCE is non-nil, delete ELC-FILE regardless of its modification time."
              el-file
              elc-file
              (string-suffix-p ".elc" elc-file)
-             (file-exists-p elc-file)
+             (file-regular-p elc-file)
              (or force
                  (file-newer-than-file-p el-file elc-file))
              (file-writable-p elc-file))
