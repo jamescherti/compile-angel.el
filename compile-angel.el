@@ -645,8 +645,7 @@ If FORCE is non-nil, delete ELC-FILE regardless of its modification time."
              (file-writable-p elc-file))
     (condition-case err
         (progn
-          (let ((delete-by-moving-to-trash nil))
-            (delete-file elc-file))
+          (delete-file elc-file)
           (compile-angel--debug-message "DELETE stale .elc file: %s"
                                         elc-file))
       (error
