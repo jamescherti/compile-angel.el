@@ -1453,7 +1453,17 @@ otherwise, return nil."
       (let ((el-file (let* ((base (file-name-sans-extension file)))
                        (seq-some (lambda (suffix)
                                    (let ((candidate (concat base ".el" suffix)))
-                                     (and (file-exists-p candidate) candidate)))
+                                     ;; `file-exists-p' returns t for
+                                     ;; directories, named pipes, and sockets.
+                                     ;; If a user accidentally creates a
+                                     ;; directory named file.el or file.eln,
+                                     ;; `file-exists-p' would return t, leading
+                                     ;; to read or load errors when Emacs tries
+                                     ;; to parse a directory as Lisp code or
+                                     ;; compiled machine code.
+                                     (and (file-regular-p candidate)
+                                          ;; Return candidate
+                                          candidate)))
                                  load-file-rep-suffixes))))
         ;; (compile-angel--debug-message
         ;;   "compile-angel--normalize-el-file: elc file: %s -> %s"
@@ -1611,7 +1621,11 @@ be JIT compiled."
                (fboundp 'native-elisp-load))
       (unwind-protect
           (maphash (lambda (eln-file el-file)
-                     (when (and (file-exists-p eln-file)
+                     ;; `file-regular-p' guarantees that the target is an actual
+                     ;; file (or a symlink pointing to a regular file). This
+                     ;; prevents native-elisp-load from failing on invalid file
+                     ;; system objects.
+                     (when (and (file-regular-p eln-file)
                                 (file-newer-than-file-p eln-file el-file))
                        (compile-angel--debug-message
                          "Loading the natively compiled version of %s: %s"
