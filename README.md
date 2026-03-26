@@ -10,7 +10,7 @@ The *compile-angel* package **speeds up Emacs by ensuring that all Elisp librari
 - Native compilation improves performance by generating machine code that runs directly on the hardware, leveraging the full capabilities of the host CPU. The actual speedup varies with the characteristics of the Lisp code, but it is typically 2.5 to 5 times faster than the equivalent byte-compiled version.
 
 This package offers:
-- `(compile-angel-on-load-mode)`: A global mode that compiles `.el` files both before they are loaded via `load` or `require`, and after they are loaded, using `after-load-functions`.
+- `(compile-angel-on-load-mode)`: A global mode that compiles .el files both before they are loaded via `load` or `require`, and after they are loaded, using `after-load-functions`.
 - `(compile-angel-on-save-local-mode)`: A local mode that compiles .el files whenever the user saves them.
 
 If this package enhances your workflow, please show your support by **⭐ starring compile-angel on GitHub** to help more users discover its benefits.
