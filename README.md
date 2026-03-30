@@ -223,6 +223,10 @@ Below are a few interesting options:
 ;; (setq native-comp-jit-compilation nil)
 ;; (setq native-comp-deferred-compilation native-comp-jit-compilation) ; Deprecated
 
+;; The following enables compilation of packages during installation;
+;; compile-angel will handle it.
+(setq package-native-compile t)
+
 ;;
 ;; The following disables compilation of packages during installation;
 ;; compile-angel will handle it.
