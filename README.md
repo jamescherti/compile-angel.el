@@ -9,7 +9,7 @@ The *compile-angel* package **speeds up Emacs by ensuring that all Elisp librari
 - Byte compilation reduces the overhead of loading Emacs Lisp code at runtime.
 - Native compilation improves performance by generating machine code that runs directly on the hardware, leveraging the full capabilities of the host CPU. The actual speedup varies with the characteristics of the Lisp code, but it is typically 2.5 to 5 times faster than the equivalent byte-compiled version.
 
-Integrating compile-angel guarantees that every .el file in your load path, including your own configuration and manually managed .el files, are properly byte and natively compiled. This ensures a consistent performance boost across the entire editor. Once installed, you can simply run `M-x compile-angel-report` to verify that all files have been successfully processed..)
+Integrating compile-angel guarantees that every .el file in your load path, including your own configuration and manually managed .el files, are properly byte and natively compiled. This ensures a consistent performance boost across the entire editor.
 
 This package offers:
 - `(compile-angel-on-load-mode)`: A global mode that compiles .el files both before they are loaded via `load` or `require`, and after they are loaded, using `after-load-functions`.
