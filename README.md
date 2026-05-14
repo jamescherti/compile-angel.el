@@ -43,6 +43,7 @@ If this package enhances your workflow, please show your support by **⭐ starri
     - [What's the difference between native and byte compiled?](#whats-the-difference-between-native-and-byte-compiled)
     - [What are some use-cases of compile-angel?](#what-are-some-use-cases-of-compile-angel)
     - [What is the difference between auto-compile and compile-angel?](#what-is-the-difference-between-auto-compile-and-compile-angel)
+    - [How to compile Emacs for Performance on Linux and Unix systems?](#how-to-compile-emacs-for-performance-on-linux-and-unix-systems)
   - [Comments from users](#comments-from-users)
   - [Author and License](#author-and-license)
   - [Links](#links)
@@ -406,6 +407,14 @@ Here are additional features provided by compile-angel that are not available in
 - Compile-Angel double-checks after packages are loaded to ensure that Emacs properly performs native compilation when JIT is enabled, as Emacs sometimes skips native-compiling .elc files that should be JIT compiled.
 - Prevent `byte-compile-file` from displaying Wrote messages in the *Messages* buffer unless `compile-angel-verbose` customization is set to `t`.
 - It has the ability to skip compiling features provided by Emacs core without associated Elisp files (e.g., pgtk, w32, lcms2, kqueue, emacs, mps, etc.). This includes features provided directly by C code as well as features provided by core Elisp that don't have their own .el files. These features are excluded from compilation attempts since they have no source files to compile.
+
+### How to compile Emacs for Performance on Linux and Unix systems?
+
+Most Linux distributions ship generic binaries compiled to run safely on a vast array of older hardware configurations. While this ensures broad compatibility, it sacrifices the speed that comes from using the specific, modern instruction sets of your processor. Compiling Emacs directly from source allows instructing the compiler to generate machine code targeted at your CPU architecture, resulting in a faster and more efficient runtime environment.
+
+Beyond raw hardware optimization, building from source enables dropping decades of legacy compatibility layers and embracing modern desktop technologies. For example, Wayland users can configure the build to bypass old X11 display protocols in favor of a Wayland environment, ensuring smoother rendering and better system integration...
+
+If you are interested in compiling Emacs, read: [A Technical Guide to Compiling Emacs for Performance on Linux and Unix systems](https://www.jamescherti.com/compiling-emacs/)
 
 ## Comments from users
 
