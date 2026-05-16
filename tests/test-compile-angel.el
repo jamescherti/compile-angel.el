@@ -99,8 +99,9 @@
     (let ((coding-system-for-write 'utf-8)
           (write-region-annotate-functions nil)
           (write-region-post-annotation-function nil))
-      (write-region (point-min) (point-max)
-                    test-compile-angel--el-file nil 'silent))))
+      (let ((inhibit-quit t))
+        (write-region (point-min) (point-max)
+                      test-compile-angel--el-file nil 'silent)))))
 
 (defmacro test-compile-angel--test-all-macro (init-func &rest body)
   "Macro to test compile-angel behavior on file loading."

@@ -1038,54 +1038,56 @@ For other types, return nil and log a debug message."
 This creates a mapping from feature symbols to their file paths."
   (compile-angel--debug-message "Building Elisp file index from load-path...")
   (compile-angel--with-fast-file-ops
-    (clrhash compile-angel--file-index)
-    (setq compile-angel--file-index-hits 0
-          compile-angel--file-index-misses 0)
+    (let ((inhibit-quit t))
+      (clrhash compile-angel--file-index)
+      (setq compile-angel--file-index-hits 0
+            compile-angel--file-index-misses 0)
 
-    ;; Pre-compute the combined pattern once
-    (let* ((combined-pattern (concat "\\`[^.].*\\("
-                                     (mapconcat #'regexp-quote
-                                                compile-angel--el-file-extensions
-                                                "\\|")
-                                     "\\)\\'"))
-           ;; Filter load-path once
-           (filtered-load-path (seq-filter #'file-directory-p load-path)))
+      ;; Pre-compute the combined pattern once
+      (let* ((combined-pattern
+              (concat "\\`[^.].*\\("
+                      (mapconcat #'regexp-quote
+                                 compile-angel--el-file-extensions
+                                 "\\|")
+                      "\\)\\'"))
+             ;; Filter load-path once
+             (filtered-load-path (seq-filter #'file-directory-p load-path)))
 
-      ;; Process each directory in load-path
-      (dolist (dir filtered-load-path)
-        (dolist (file (directory-files dir t combined-pattern t))
-          (when (file-regular-p file)
-            ;; Extract the feature symbol from the filename - intern directly
-            (let ((feature-symbol (intern (file-name-base file))))
-              ;; Store in the index, with the first occurrence taking precedence
-              (unless (gethash feature-symbol compile-angel--file-index)
-                (puthash feature-symbol file compile-angel--file-index)))))))
+        ;; Process each directory in load-path
+        (dolist (dir filtered-load-path)
+          (dolist (file (directory-files dir t combined-pattern t))
+            (when (file-regular-p file)
+              ;; Extract the feature symbol from the filename - intern directly
+              (let ((feature-symbol (intern (file-name-base file))))
+                ;; Store in the index, with the first occurrence taking precedence
+                (unless (gethash feature-symbol compile-angel--file-index)
+                  (puthash feature-symbol file compile-angel--file-index)))))))
 
-    ;; `archive-mode' is a special case.
-    (puthash 'archive-mode (gethash 'arc-mode compile-angel--file-index)
-             compile-angel--file-index)
+      ;; `archive-mode' is a special case.
+      (puthash 'archive-mode (gethash 'arc-mode compile-angel--file-index)
+               compile-angel--file-index)
 
-    ;; Special handling for evil-collection package
-    (let ((evil-collection-file (gethash 'evil-collection
-                                         compile-angel--file-index)))
-      (when evil-collection-file
-        (let ((evil-collection-modes-dir
-               (expand-file-name "modes" (file-name-directory
-                                          evil-collection-file))))
-          (when (file-directory-p evil-collection-modes-dir)
-            ;; Process all mode directories in a single pass
-            (dolist (file (directory-files
-                           evil-collection-modes-dir t
-                           directory-files-no-dot-files-regexp t))
-              (when (file-directory-p file)
-                (let* ((mode-name (file-name-nondirectory file))
-                       ;; Create symbol directly without intermediate string
-                       (feature-symbol (intern (format "evil-collection-%s"
-                                                       mode-name)))
-                       (expected-file (format "%s/evil-collection-%s.el"
-                                              file mode-name)))
-                  (puthash feature-symbol expected-file
-                           compile-angel--file-index)))))))))
+      ;; Special handling for evil-collection package
+      (let ((evil-collection-file (gethash 'evil-collection
+                                           compile-angel--file-index)))
+        (when evil-collection-file
+          (let ((evil-collection-modes-dir
+                 (expand-file-name "modes" (file-name-directory
+                                            evil-collection-file))))
+            (when (file-directory-p evil-collection-modes-dir)
+              ;; Process all mode directories in a single pass
+              (dolist (file (directory-files
+                             evil-collection-modes-dir t
+                             directory-files-no-dot-files-regexp t))
+                (when (file-directory-p file)
+                  (let* ((mode-name (file-name-nondirectory file))
+                         ;; Create symbol directly without intermediate string
+                         (feature-symbol (intern (format "evil-collection-%s"
+                                                         mode-name)))
+                         (expected-file (format "%s/evil-collection-%s.el"
+                                                file mode-name)))
+                    (puthash feature-symbol expected-file
+                             compile-angel--file-index))))))))))
 
   (compile-angel--debug-message
     "Elisp file index built with %d entries"
@@ -1499,44 +1501,45 @@ otherwise, return nil."
   "Update the `compile-angel--el-file-regexp' variable.
 SYMBOL is the symbol.
 NEW-VALUE is the value of the variable."
-  (when (eq symbol 'load-file-rep-suffixes)
-    (compile-angel--debug-message
-      "WATCHER: Update compile-angel--el-file-regexp: %s" new-value)
-    (setq compile-angel--el-file-extensions
-          (mapcar (lambda (ext) (concat ".el" ext)) load-file-rep-suffixes))
-    (setq compile-angel--el-file-regexp
-          (format "\\.el%s\\'" (regexp-opt new-value))))
+  (let ((inhibit-quit t))
+    (when (eq symbol 'load-file-rep-suffixes)
+      (compile-angel--debug-message
+        "WATCHER: Update compile-angel--el-file-regexp: %s" new-value)
+      (setq compile-angel--el-file-extensions
+            (mapcar (lambda (ext) (concat ".el" ext)) load-file-rep-suffixes))
+      (setq compile-angel--el-file-regexp
+            (format "\\.el%s\\'" (regexp-opt new-value))))
 
-  (when (eq symbol 'compile-angel-excluded-files)
-    (compile-angel--debug-message
-      "WATCHER: Update compile-angel-excluded-files: %s"
-      compile-angel-excluded-files)
-    (let ((path-suffixes-regexp nil))
-      ;; Process `compile-angel-excluded-files' to generate regular
-      ;; expressions.
-      ;; For each suffix:
-      ;; - If it ends with `.el`, remove the `.el` and concatenate it with
-      ;;   `compile-angel--el-file-regexp`, then add \\' at the end.
-      ;; - Otherwise, convert it into a regular expression and add \\' at the
-      ;;   end.
-      (dolist (suffix new-value)
-        (when (and suffix (not (string= suffix "")))
-          (let* ((el-suffix-p (string-suffix-p ".el" suffix))
-                 (suffix-without-el (if el-suffix-p
-                                        (string-remove-suffix ".el" suffix)
-                                      suffix))
-                 (el-file-regexp (if (and el-suffix-p
-                                          compile-angel--el-file-regexp)
-                                     compile-angel--el-file-regexp)))
-            (push (concat (regexp-quote suffix-without-el)
-                          el-file-regexp
-                          (unless (string-prefix-p "\\'" el-file-regexp)
-                            "\\'" ))
-                  path-suffixes-regexp))))
+    (when (eq symbol 'compile-angel-excluded-files)
+      (compile-angel--debug-message
+        "WATCHER: Update compile-angel-excluded-files: %s"
+        compile-angel-excluded-files)
+      (let ((path-suffixes-regexp nil))
+        ;; Process `compile-angel-excluded-files' to generate regular
+        ;; expressions.
+        ;; For each suffix:
+        ;; - If it ends with `.el`, remove the `.el` and concatenate it with
+        ;;   `compile-angel--el-file-regexp`, then add \\' at the end.
+        ;; - Otherwise, convert it into a regular expression and add \\' at the
+        ;;   end.
+        (dolist (suffix new-value)
+          (when (and suffix (not (string= suffix "")))
+            (let* ((el-suffix-p (string-suffix-p ".el" suffix))
+                   (suffix-without-el (if el-suffix-p
+                                          (string-remove-suffix ".el" suffix)
+                                        suffix))
+                   (el-file-regexp (if (and el-suffix-p
+                                            compile-angel--el-file-regexp)
+                                       compile-angel--el-file-regexp)))
+              (push (concat (regexp-quote suffix-without-el)
+                            el-file-regexp
+                            (unless (string-prefix-p "\\'" el-file-regexp)
+                              "\\'" ))
+                    path-suffixes-regexp))))
 
-      ;; TODO only start after the mode starts?
-      (setq compile-angel--excluded-path-suffixes-regexps
-            (nreverse path-suffixes-regexp)))))
+        ;; TODO only start after the mode starts?
+        (setq compile-angel--excluded-path-suffixes-regexps
+              (nreverse path-suffixes-regexp))))))
 
 (defun compile-angel--update-file-name-handler-alist (&rest _)
   "Update the `file-name-handler-alist' variable."
@@ -1620,43 +1623,45 @@ be JIT compiled."
     (when (and compile-angel-reload-compiled-version
                (> (hash-table-count compile-angel--reload-after-native-compile) 0)
                (fboundp 'native-elisp-load))
-      (unwind-protect
-          (maphash (lambda (eln-file el-file)
-                     ;; `file-regular-p' guarantees that the target is an actual
-                     ;; file (or a symlink pointing to a regular file). This
-                     ;; prevents native-elisp-load from failing on invalid file
-                     ;; system objects.
-                     (when (and (file-regular-p eln-file)
-                                (file-newer-than-file-p eln-file el-file))
-                       (compile-angel--debug-message
-                         "Loading the natively compiled version of %s: %s"
-                         el-file eln-file)
+      (let ((inhibit-quit t))
+        (unwind-protect
+            (maphash (lambda (eln-file el-file)
+                       ;; `file-regular-p' guarantees that the target is an actual
+                       ;; file (or a symlink pointing to a regular file). This
+                       ;; prevents native-elisp-load from failing on invalid file
+                       ;; system objects.
+                       (when (and (file-regular-p eln-file)
+                                  (file-newer-than-file-p eln-file el-file))
+                         (compile-angel--debug-message
+                           "Loading the natively compiled version of %s: %s"
+                           el-file eln-file)
 
-                       (condition-case err
-                           (progn
-                             (native-elisp-load eln-file t)
-                             (compile-angel--debug-message
-                               "SUCCESS: `native-elisp-load': %s"
-                               eln-file))
-                         (error
-                          (compile-angel--debug-message
-                            "ERROR: `native-elisp-load': %s: %s"
-                            eln-file
-                            (error-message-string err))))))
-                   compile-angel--reload-after-native-compile)
-        (clrhash compile-angel--reload-after-native-compile)))
+                         (condition-case err
+                             (progn
+                               (native-elisp-load eln-file t)
+                               (compile-angel--debug-message
+                                 "SUCCESS: `native-elisp-load': %s"
+                                 eln-file))
+                           (error
+                            (compile-angel--debug-message
+                              "ERROR: `native-elisp-load': %s: %s"
+                              eln-file
+                              (error-message-string err))))))
+                     compile-angel--reload-after-native-compile)
+          (clrhash compile-angel--reload-after-native-compile))))
 
     ;; Double check and ensure Emacs compiled them
     ;; TODO remhash instead of clrhash?
     (when (> (hash-table-count compile-angel--list-jit-native-compiled-files) 0)
-      (unwind-protect
-          (maphash (lambda (el-file _value)
-                     (compile-angel--debug-message
-                       "Checking if Emacs really JIT Native-Compiled: %s"
-                       el-file)
-                     (compile-angel--native-compile-maybe el-file))
-                   compile-angel--list-jit-native-compiled-files)
-        (clrhash compile-angel--list-jit-native-compiled-files)))))
+      (let ((inhibit-quit t))
+        (unwind-protect
+            (maphash (lambda (el-file _value)
+                       (compile-angel--debug-message
+                         "Checking if Emacs really JIT Native-Compiled: %s"
+                         el-file)
+                       (compile-angel--native-compile-maybe el-file))
+                     compile-angel--list-jit-native-compiled-files)
+          (clrhash compile-angel--list-jit-native-compiled-files))))))
 
 (defvar compile-angel--report-native-compiled-features
   (make-hash-table :test 'equal))
