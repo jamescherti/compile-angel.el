@@ -449,7 +449,20 @@ When enabled, compile-angel will count how many times the file index cache
 was hit or missed. This information can be displayed using the
 `compile-angel-display-file-index-stats' function.")
 
+(defvar compile-angel-gc-threshold (* 256 1024 1024)
+  "GC threshold to use during compilation.")
+
+(defvar compile-angel-gc-percentage 0.5
+  "GC percentage to use during compilation.")
+
 ;;; Internal functions
+
+(defmacro compile-angel--with-increased-gc (&rest body)
+  "Evaluate BODY with temporarily increased garbage collection limits."
+  (declare (indent 0) (debug t))
+  `(let ((gc-cons-threshold (max gc-cons-threshold compile-angel-gc-threshold))
+         (gc-cons-percentage (max gc-cons-percentage compile-angel-gc-percentage)))
+     ,@body))
 
 (defvar compile-angel--file-name-handler-alist nil)
 
@@ -1239,114 +1252,109 @@ The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
              (el-file (compile-angel--guess-el-file
                        el-file feature-symbol nosuffix))
              ;; FIX: Canonicalize path for locking mechanisms
-             (el-file-truename (when el-file (file-truename el-file)))
-             ;; The byte compiler generates a massive amount of temporary Lisp
-             ;; objects when reading files. If Emacs is running with its default
-             ;; gc-cons-threshold, it will pause to garbage collect thousands of
-             ;; times during a bulk compilation.
-             ;; TODO Configure this with a variable
-             (gc-cons-threshold most-positive-fixnum))
-        (cond
-         ((not el-file)
-          (compile-angel--debug-message
-            "SKIP file (Returned a nil .el file): %s | %s" el-file feature))
+             (el-file-truename (when el-file (file-truename el-file))))
+        (compile-angel--with-increased-gc
+          (cond
+           ((not el-file)
+            (compile-angel--debug-message
+              "SKIP file (Returned a nil .el file): %s | %s" el-file feature))
 
-         ((member el-file-truename compile-angel--legacy-currently-compiling)
-          (compile-angel--debug-message
-            "SKIP file - LEGACY (To prevent recursive compilation): %s | %s"
-            el-file feature))
+           ((member el-file-truename compile-angel--legacy-currently-compiling)
+            (compile-angel--debug-message
+              "SKIP file - LEGACY (To prevent recursive compilation): %s | %s"
+              el-file feature))
 
-         ((and compile-angel--currently-compiling-use-hash
-               feature-symbol
-               (gethash feature-symbol
-                        compile-angel--currently-compiling-features))
-          (compile-angel--debug-message
-            "SKIP feature (To prevent recursive compilation): %s | %s"
-            el-file feature))
+           ((and compile-angel--currently-compiling-use-hash
+                 feature-symbol
+                 (gethash feature-symbol
+                          compile-angel--currently-compiling-features))
+            (compile-angel--debug-message
+              "SKIP feature (To prevent recursive compilation): %s | %s"
+              el-file feature))
 
-         ((and compile-angel--currently-compiling-use-hash
-               (gethash el-file-truename
-                        compile-angel--currently-compiling-files))
-          (compile-angel--debug-message
-            "SKIP file (To prevent recursive compilation): %s | %s"
-            el-file feature))
+           ((and compile-angel--currently-compiling-use-hash
+                 (gethash el-file-truename
+                          compile-angel--currently-compiling-files))
+            (compile-angel--debug-message
+              "SKIP file (To prevent recursive compilation): %s | %s"
+              el-file feature))
 
-         ;; Optimization: Check if we have already processed this file (compiled
-         ;; OR skipped) We treat `compile-angel--list-processed-files' as a
-         ;; "processed" cache.
-         ((and compile-angel-on-load-mode-compile-once
-               (or (gethash el-file-truename compile-angel--list-processed-files)
-                   (when feature-symbol
-                     (gethash feature-symbol
-                              compile-angel--list-processed-features))))
-          (compile-angel--debug-message
-            "SKIP (In the skip hash list): %s | %s" el-file feature))
+           ;; Optimization: Check if we have already processed this file (compiled
+           ;; OR skipped) We treat `compile-angel--list-processed-files' as a
+           ;; "processed" cache.
+           ((and compile-angel-on-load-mode-compile-once
+                 (or (gethash el-file-truename compile-angel--list-processed-files)
+                     (when feature-symbol
+                       (gethash feature-symbol
+                                compile-angel--list-processed-features))))
+            (compile-angel--debug-message
+              "SKIP (In the skip hash list): %s | %s" el-file feature))
 
-         ((and compile-angel--track-no-byte-compile-files
-               (gethash el-file-truename
-                        compile-angel--no-byte-compile-files-list))
-          ;; Optimization: Negative Caching
-          ;; We're recording the "Skip" decision in future requests for the same
-          ;; file will trigger the fast-path check at the top of your cond
-          ;; block. This prevents compile-angel from re-running the expensive
-          ;; checks
-          (when compile-angel-on-load-mode-compile-once
-            (puthash el-file-truename t compile-angel--list-processed-files)
-            (when feature-symbol
-              (puthash feature-symbol t compile-angel--list-processed-features)))
-
-          (compile-angel--debug-message
-            "Compilation ignored (in the no-byte-compile list): %s" el-file)
-          t)
-
-         (t
-          (let ((decision (compile-angel--need-compilation-p el-file
-                                                             el-file-truename
-                                                             feature-symbol)))
-            (if (not decision)
-                (progn
-                  ;; Optimization: Negative Caching
-                  ;; We're recording the "Skip" decision in future requests for
-                  ;; the same file will trigger the fast-path check at the top
-                  ;; of your cond block. This prevents compile-angel from
-                  ;; re-running the expensive checks
-                  (when compile-angel-on-load-mode-compile-once
-                    (puthash el-file-truename t
-                             compile-angel--list-processed-files)
-                    (when feature-symbol
-                      (puthash feature-symbol t
-                               compile-angel--list-processed-features)))
-                  (compile-angel--debug-message
-                    "SKIP (Does not need compilation): %s | %s"
-                    el-file feature))
-              ;; There is a decision
-              (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
-                                            el-file feature-symbol)
-              (puthash el-file-truename t
-                       compile-angel--list-processed-files)
+           ((and compile-angel--track-no-byte-compile-files
+                 (gethash el-file-truename
+                          compile-angel--no-byte-compile-files-list))
+            ;; Optimization: Negative Caching
+            ;; We're recording the "Skip" decision in future requests for the same
+            ;; file will trigger the fast-path check at the top of your cond
+            ;; block. This prevents compile-angel from re-running the expensive
+            ;; checks
+            (when compile-angel-on-load-mode-compile-once
+              (puthash el-file-truename t compile-angel--list-processed-files)
               (when feature-symbol
-                (puthash feature-symbol t
-                         compile-angel--list-processed-features))
+                (puthash feature-symbol t compile-angel--list-processed-features)))
 
-              (let ((compile-angel--legacy-currently-compiling
-                     (cons el-file-truename
-                           compile-angel--legacy-currently-compiling))
-                    (do-byte (not (eq decision :native-comp)))
-                    (do-native (not (eq decision :byte-comp))))
-                (unwind-protect
-                    (progn
-                      (when compile-angel--currently-compiling-use-hash
-                        (puthash el-file-truename t
-                                 compile-angel--currently-compiling-files)
+            (compile-angel--debug-message
+              "Compilation ignored (in the no-byte-compile list): %s" el-file)
+            t)
+
+           (t
+            (let ((decision (compile-angel--need-compilation-p el-file
+                                                               el-file-truename
+                                                               feature-symbol)))
+              (if (not decision)
+                  (progn
+                    ;; Optimization: Negative Caching
+                    ;; We're recording the "Skip" decision in future requests for
+                    ;; the same file will trigger the fast-path check at the top
+                    ;; of your cond block. This prevents compile-angel from
+                    ;; re-running the expensive checks
+                    (when compile-angel-on-load-mode-compile-once
+                      (puthash el-file-truename t
+                               compile-angel--list-processed-files)
+                      (when feature-symbol
                         (puthash feature-symbol t
-                                 compile-angel--currently-compiling-features))
-                      (compile-angel--compile-elisp
-                       el-file noerror do-byte do-native))
-                  (when compile-angel--currently-compiling-use-hash
-                    (remhash el-file-truename
-                             compile-angel--currently-compiling-files)
-                    (remhash feature-symbol
-                             compile-angel--currently-compiling-features))))))))))))
+                                 compile-angel--list-processed-features)))
+                    (compile-angel--debug-message
+                      "SKIP (Does not need compilation): %s | %s"
+                      el-file feature))
+                ;; There is a decision
+                (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
+                                              el-file feature-symbol)
+                (puthash el-file-truename t
+                         compile-angel--list-processed-files)
+                (when feature-symbol
+                  (puthash feature-symbol t
+                           compile-angel--list-processed-features))
+
+                (let ((compile-angel--legacy-currently-compiling
+                       (cons el-file-truename
+                             compile-angel--legacy-currently-compiling))
+                      (do-byte (not (eq decision :native-comp)))
+                      (do-native (not (eq decision :byte-comp))))
+                  (unwind-protect
+                      (progn
+                        (when compile-angel--currently-compiling-use-hash
+                          (puthash el-file-truename t
+                                   compile-angel--currently-compiling-files)
+                          (puthash feature-symbol t
+                                   compile-angel--currently-compiling-features))
+                        (compile-angel--compile-elisp
+                         el-file noerror do-byte do-native))
+                    (when compile-angel--currently-compiling-use-hash
+                      (remhash el-file-truename
+                               compile-angel--currently-compiling-files)
+                      (remhash feature-symbol
+                               compile-angel--currently-compiling-features)))))))))))))
 
 (defun compile-angel--advice-before-require (feature
                                              &optional filename noerror)
@@ -1472,20 +1480,19 @@ otherwise, return nil."
 
 (defun compile-angel--hook-after-load-functions (file)
   "Compile FILE after load."
-  (compile-angel--with-fast-file-ops
-    (compile-angel--debug-message
-      "\n[TASK] compile-angel--hook-after-load-functions: %s"
-      file)
-    (let ((file (compile-angel--normalize-el-file file))
-          ;; Do not add loaded files to the list. Only features.
-          (compile-angel-native-compile-load nil)
-          (compile-angel-reload-compiled-version nil)
-          ;; Only compile once
-          (compile-angel-on-load-mode-compile-once t)
-          ;; Do not add loaded files to the list. Only features.
-          (compile-angel-reload-compiled-version nil))
-      (when file
-        (compile-angel--entry-point file)))))
+  (compile-angel--debug-message
+    "\n[TASK] compile-angel--hook-after-load-functions: %s"
+    file)
+  (let ((file (compile-angel--normalize-el-file file))
+        ;; Do not add loaded files to the list. Only features.
+        (compile-angel-native-compile-load nil)
+        (compile-angel-reload-compiled-version nil)
+        ;; Only compile once
+        (compile-angel-on-load-mode-compile-once t)
+        ;; Do not add loaded files to the list. Only features.
+        (compile-angel-reload-compiled-version nil))
+    (when file
+      (compile-angel--entry-point file))))
 
 (defun compile-angel--update-el-file-regexp (symbol new-value
                                                     _operation _where)
