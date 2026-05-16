@@ -1332,16 +1332,11 @@ The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
                 ;; There is a decision
                 (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
                                               el-file feature-symbol)
-                (puthash el-file-truename t compile-angel--list-processed-files)
-                (when feature-symbol
-                  (puthash feature-symbol t compile-angel--list-processed-features))
-
                 (let ((compile-angel--legacy-currently-compiling
                        (cons el-file-truename
                              compile-angel--legacy-currently-compiling))
                       (do-byte (not (eq decision :native-comp)))
-                      (do-native (not (eq decision :byte-comp)))
-                      (compilation-completed nil))
+                      (do-native (not (eq decision :byte-comp))))
                   (unwind-protect
                       (progn
                         (when compile-angel--currently-compiling-use-hash
@@ -1352,19 +1347,18 @@ The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
                         (compile-angel--compile-elisp el-file
                                                       noerror
                                                       do-byte
-                                                      do-native)
-                        (setq compilation-completed t))
+                                                      do-native))
                     (when compile-angel--currently-compiling-use-hash
                       (remhash el-file-truename
                                compile-angel--currently-compiling-files)
                       (remhash feature-symbol
                                compile-angel--currently-compiling-features))
 
-                    ;; Only remove from processed cache if aborted via C-g
-                    (unless compilation-completed
-                      (remhash el-file-truename compile-angel--list-processed-files)
-                      (when feature-symbol
-                        (remhash feature-symbol compile-angel--list-processed-features))))))))))))))
+                    ;; Only add to the processed cache if compilation succeeded
+                    ;; (not aborted via C-g)
+                    (puthash el-file-truename t compile-angel--list-processed-files)
+                    (when feature-symbol
+                      (puthash feature-symbol t compile-angel--list-processed-features)))))))))))))
 
 (defun compile-angel--advice-before-require (feature
                                              &optional filename noerror)
