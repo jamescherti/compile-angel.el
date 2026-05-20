@@ -332,6 +332,12 @@ redundant background JIT compilations."
 
 ;;; Experimental features
 
+(defvar compile-angel-cache-file-truename nil
+  "Experimental.")
+
+(defvar compile-angel-cache-locate-file nil
+  "Experimental.")
+
 (defvar compile-angel-use-load-history nil
   "EXPERIMENTAL: Try to resolve feature files using `load-history'.
 When non-nil, `compile-angel--guess-el-file' will attempt to find the
@@ -372,6 +378,18 @@ is non-nil. The errors resolve themselves and do not persist after Emacs is
 restarted.")
 
 ;;; Internal variables
+
+(defvar compile-angel--truename-cache (make-hash-table :test 'equal)
+  "Cache for `file-truename' to prevent excessive disk I/O during load loops.")
+
+(defvar compile-angel--locate-file-cache (make-hash-table :test 'equal)
+  "Cache for `compile-angel--locate-feature-file' to speed up file lookups.")
+
+(defvar compile-angel--locate-file-load-path nil
+  "Cached `load-path' to detect changes and invalidate the file cache.")
+
+(defvar compile-angel--locate-file-load-path-len 0
+  "Length of `compile-angel--locate-file-load-path' for fast invalidation.")
 
 (defconst compile-angel--builtin-features
   '(tty-child-frames xwidget-internal move-toolbar dbusbind native-compile
@@ -417,12 +435,7 @@ don't have associated .el files and therefore don't need compilation.")
 (defvar compile-angel--list-processed-files (make-hash-table :test 'equal))
 (defvar compile-angel--list-processed-features (make-hash-table :test 'eq))
 
-(defvar compile-angel--legacy-currently-compiling nil)
-
-;; TODO This can be removed in the future
-(defvar compile-angel--currently-compiling-use-hash nil)
-(defvar compile-angel--currently-compiling-files (make-hash-table :test 'equal))
-(defvar compile-angel--currently-compiling-features (make-hash-table :test 'eq))
+(defvar compile-angel--currently-compiling nil)
 
 (defvar compile-angel--el-file-regexp nil)
 (defvar compile-angel--el-file-extensions nil)
@@ -1034,12 +1047,6 @@ Returns nil for features provided directly by C code."
       (and (listp history-file)
            (compile-angel--normalize-el-file (car history-file))))))
 
-(defvar compile-angel-cache-file-truename nil
-  "Experimental.")
-
-(defvar compile-angel--truename-cache (make-hash-table :test 'equal)
-  "Cache for `file-truename' to prevent excessive disk I/O during load loops.")
-
 (defun compile-angel--file-truename (file)
   "Return the cached `truename' of FILE to avoid excessive disk I/O."
   (when file
@@ -1049,19 +1056,6 @@ Returns nil for features provided directly by C code."
               cached
             (puthash file (file-truename file) compile-angel--truename-cache)))
       (file-truename file))))
-
-(defvar compile-angel-cache-locate-file nil
-  "Experimental.")
-
-;;; Add these new variables to cache file lookups safely
-(defvar compile-angel--locate-file-cache (make-hash-table :test 'equal)
-  "Cache for `compile-angel--locate-feature-file' to speed up file lookups.")
-
-(defvar compile-angel--locate-file-load-path nil
-  "Cached `load-path' to detect changes and invalidate the file cache.")
-
-(defvar compile-angel--locate-file-load-path-len 0
-  "Length of `compile-angel--locate-file-load-path' for fast invalidation.")
 
 ;;; Replace the existing function
 (defun compile-angel--locate-feature-file (feature-or-file nosuffix)
@@ -1174,24 +1168,9 @@ The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
             (compile-angel--debug-message
               "SKIP file (Returned a nil .el file): %s | %s" el-file feature))
 
-           ((member el-file-truename compile-angel--legacy-currently-compiling)
+           ((member el-file-truename compile-angel--currently-compiling)
             (compile-angel--debug-message
               "SKIP file - LEGACY (To prevent recursive compilation): %s | %s"
-              el-file feature))
-
-           ((and compile-angel--currently-compiling-use-hash
-                 feature-symbol
-                 (gethash feature-symbol
-                          compile-angel--currently-compiling-features))
-            (compile-angel--debug-message
-              "SKIP feature (To prevent recursive compilation): %s | %s"
-              el-file feature))
-
-           ((and compile-angel--currently-compiling-use-hash
-                 (gethash el-file-truename
-                          compile-angel--currently-compiling-files))
-            (compile-angel--debug-message
-              "SKIP file (To prevent recursive compilation): %s | %s"
               el-file feature))
 
            ;; Optimization: Check if we have already processed this file (compiled
@@ -1245,28 +1224,16 @@ The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
                 ;; There is a decision
                 (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
                                               el-file feature-symbol)
-                (let ((compile-angel--legacy-currently-compiling
+                (let ((compile-angel--currently-compiling
                        (cons el-file-truename
-                             compile-angel--legacy-currently-compiling))
+                             compile-angel--currently-compiling))
                       (do-byte (not (eq decision :native-comp)))
                       (do-native (not (eq decision :byte-comp))))
                   (unwind-protect
-                      (progn
-                        (when compile-angel--currently-compiling-use-hash
-                          (puthash el-file-truename t
-                                   compile-angel--currently-compiling-files)
-                          (puthash feature-symbol t
-                                   compile-angel--currently-compiling-features))
-                        (compile-angel--compile-elisp el-file
-                                                      noerror
-                                                      do-byte
-                                                      do-native))
-                    (when compile-angel--currently-compiling-use-hash
-                      (remhash el-file-truename
-                               compile-angel--currently-compiling-files)
-                      (remhash feature-symbol
-                               compile-angel--currently-compiling-features))
-
+                      (compile-angel--compile-elisp el-file
+                                                    noerror
+                                                    do-byte
+                                                    do-native)
                     ;; Only add to the processed cache if compilation succeeded
                     ;; (not aborted via C-g)
                     (puthash el-file-truename t compile-angel--list-processed-files)
@@ -1629,6 +1596,19 @@ be JIT compiled."
     result))
 
 ;;; Functions
+
+;;;###autoload
+(defun compile-angel-clear-cache ()
+  "Clear all `compile-angel' caches.
+Call this function if you perform complex filesystem operations, such as moving
+entire directory trees or updating symlinks, to ensure that cached file paths do
+not become stale."
+  (interactive)
+  (clrhash compile-angel--truename-cache)
+  (clrhash compile-angel--locate-file-cache)
+  (setq compile-angel--locate-file-load-path nil
+        compile-angel--locate-file-load-path-len 0)
+  (message "[compile-angel] Caches cleared."))
 
 ;;;###autoload
 (defun compile-angel-exclude-file (file)
