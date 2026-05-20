@@ -337,6 +337,13 @@ redundant background JIT compilations."
 When non-nil, construct a hash table mapping feature names to their file paths
 by scanning all directories in `load-path' to improve lookup performance.")
 
+(defvar compile-angel-use-load-history nil
+  "EXPERIMENTAL: Try to resolve feature files using `load-history'.
+When non-nil, `compile-angel--guess-el-file' will attempt to find the
+source file of a loaded feature by inspecting `load-history'.
+Warning: Enabling this may incur a performance penalty during load
+operations due to scanning the history list.")
+
 (defvar compile-angel-native-compile-load nil
   "Experimental feature. Do not activate it.
 Non-nil to load the file after asynchronous native compilation.
@@ -1227,7 +1234,8 @@ resolved file path or nil if not found."
      ;; Experimental feature
      ;; Try load-history if feature is loaded
      ((when-let* ((el-file-from-history
-                   (and feature-name
+                   (and compile-angel-use-load-history
+                        feature-name
                         (compile-angel--feature-el-file-from-load-history
                          feature-name))))
         (compile-angel--debug-message
