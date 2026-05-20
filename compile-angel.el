@@ -961,14 +961,14 @@ When DO-NATIVE is non-nil, native compile."
                      (not compile-angel--native-compile-when-jit-enabled))
             ;; Do not native-compile. Let the JIT compiler do it.
             (setq decision-native-compile nil)
-            (unless no-byte-compile-defined
-              ;; The `compile-angel--list-jit-native-compiled-files' hash table
-              ;; serves as a safeguard to verify later that the JIT compiler has
-              ;; not overlooked any files.
-              (puthash el-file t compile-angel--list-jit-native-compiled-files))
-            (compile-angel--debug-message
-              "Native-compilation ignored (JIT compilation will do it): %s"
-              el-file)))
+
+            ;; Properly record and report explicit skip definitions
+            (if no-byte-compile-defined
+                (compile-angel--debug-message
+                  "Native-compilation ignored (File explicitly requests no-byte-compile): %s" el-file)
+              (puthash el-file t compile-angel--list-jit-native-compiled-files)
+              (compile-angel--debug-message
+                "Native-compilation ignored (JIT compilation will do it): %s" el-file))))
 
         (when (and compile-angel-enable-native-compile
                    decision-native-compile)
