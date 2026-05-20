@@ -1063,13 +1063,13 @@ Returns nil for features provided directly by C code."
 If NOSUFFIX is non-nil, use `load-file-rep-suffixes' instead of
 `compile-angel--el-file-extensions'."
   (when feature-or-file
-    (if (not compile-angel-cache-locate-file)
-        (locate-file feature-or-file
-                     load-path
-                     (if nosuffix
-                         load-file-rep-suffixes
-                       compile-angel--el-file-extensions))
-      (compile-angel--with-fast-file-ops
+    (compile-angel--with-fast-file-ops
+      (if (not compile-angel-cache-locate-file)
+          (locate-file feature-or-file
+                       load-path
+                       (if nosuffix
+                           load-file-rep-suffixes
+                         compile-angel--el-file-extensions))
         ;; Cache Invalidation: Safely check if `load-path' has been modified.
         ;; We check the length first for an instant O(1) fast-path, falling back
         ;; to an O(N) `equal' check only if the length hasn't changed.
