@@ -1371,9 +1371,7 @@ otherwise, return nil."
         (compile-angel-native-compile-load nil)
         (compile-angel-reload-compiled-version nil)
         ;; Only compile once
-        (compile-angel-on-load-mode-compile-once t)
-        ;; Do not add loaded files to the list. Only features.
-        (compile-angel-reload-compiled-version nil))
+        (compile-angel-on-load-mode-compile-once t))
     (when file
       (compile-angel--entry-point file))))
 
@@ -1720,7 +1718,11 @@ DIRECTORY is the directory path to exclude from compilation."
                  #'compile-angel--native-comp-async-all-done)
     ;; Advices
     (advice-remove 'require #'compile-angel--advice-before-require)
-    (advice-remove 'load #'compile-angel--advice-before-load)))
+    (advice-remove 'load #'compile-angel--advice-before-load)
+
+    ;; Variable Watchers
+    (remove-variable-watcher 'load-file-rep-suffixes #'compile-angel--update-el-file-regexp)
+    (remove-variable-watcher 'compile-angel-excluded-files #'compile-angel--update-el-file-regexp)))
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-save-mode
