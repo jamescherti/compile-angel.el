@@ -640,12 +640,16 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
                                     (when compile-angel-native-compile-load
                                       'late))
 
-              (when (and (boundp 'comp-async-compilations)
-                         (gethash el-file comp-async-compilations))
-                (let ((el-file-abbreviated (abbreviate-file-name el-file)))
-                  (compile-angel--verbose-message
-                    "Async native-compilation: %s"
-                    el-file-abbreviated)))))))))))
+              (when compile-angel-verbose
+                (if (or (and (boundp 'comp-async-compilations)
+                             (not (gethash el-file comp-async-compilations))))
+                    (let ((el-file-abbreviated (abbreviate-file-name el-file)))
+                      (compile-angel--verbose-message
+                        "Async native-compilation: %s"
+                        el-file-abbreviated))
+                  (compile-angel--debug-message
+                    "Native-compilation ignored (Already in the queue): %s"
+                    el-file)))))))))))
 
 (defun compile-angel--delete-stale-elc-file-maybe (el-file elc-file
                                                            &optional force)
@@ -852,7 +856,6 @@ When DO-NATIVE is non-nil, native compile."
            (compile-angel--native-compile-when-jit-enabled
             compile-angel--native-compile-when-jit-enabled)
            no-byte-compile-defined)
-
       (cond
        ((not elc-file)
         (unless noerror
