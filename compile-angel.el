@@ -1291,23 +1291,29 @@ EL-FILE, NOERROR, and NOSUFFIX are the same args as `load'."
             ;; Do not add loaded files to the list. Only features.
             (compile-angel-reload-compiled-version nil)
             (compile-angel-native-compile-load nil))
-        (compile-angel--entry-point
-         ;; Emulate `load' path resolution:
-         ;; Expand absolute paths (including "~/") so they are absolute.
-         ;; Keep relative paths (even those with directories like "subdir/foo")
-         ;; as-is so that `locate-file' will correctly search `load-path'.
-         (if (or (file-name-absolute-p el-file)
-                 ;; TODO Find a more standard way to detect a path
-                 (string-match-p "/" el-file))
-             (expand-file-name el-file)
-           el-file)
-         nil  ; Feature
-         nosuffix
-         noerror))
+        ;; Emulate `load'
+        (setq el-file (substitute-in-file-name el-file))
 
+        ;; Emulate `load' path resolution:
+        ;; Only expand absolute paths. Leave relative paths (even with
+        ;; directories) to be resolved via `locate-file' and `load-path'.
+        (when (or (file-name-absolute-p el-file)
+                  (file-name-directory el-file))
+          (setq el-file (expand-file-name el-file)))
+
+        (when el-file
+          (compile-angel--entry-point
+           ;; Emulate `load' path resolution:
+           ;; Expand absolute paths (including "~/") so they are absolute.
+           ;; Keep relative paths (even those with directories like "subdir/foo")
+           ;; as-is so that `locate-file' will correctly search `load-path'.
+           el-file
+           nil ; feature
+           nosuffix
+           noerror)))
     (compile-angel--debug-message
       (concat "ISSUE: Wrong type passed to "
-              "compile-angel--advice-before-require %s (%s)")
+              "compile-angel--advice-before-load %s (%s)")
       el-file (type-of el-file))))
 
 (defun compile-angel--compile-load-history ()
