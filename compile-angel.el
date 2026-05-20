@@ -327,12 +327,19 @@ redundant background JIT compilations."
   :type 'boolean
   :group 'compile-angel)
 
+(defcustom compile-angel-cache-locate-file t
+  "Enable caching for `locate-file' results.
+When non-nil, `compile-angel' caches the results of `locate-file' lookups in a
+hash table. This reduces disk I/O during load operations.
+This cache does not automatically track filesystem changes. If you add or remove
+files from directories within `load-path', you must call
+`compile-angel-clear-cache' to force a refresh."
+  :type 'boolean
+  :group 'compile-angel)
+
 ;;; Experimental features
 
 (defvar compile-angel-cache-file-truename nil
-  "Experimental.")
-
-(defvar compile-angel-cache-locate-file nil
   "Experimental.")
 
 (defvar compile-angel-use-load-history nil
