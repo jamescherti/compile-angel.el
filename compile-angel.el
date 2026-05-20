@@ -332,11 +332,6 @@ redundant background JIT compilations."
 
 ;;; Experimental features
 
-(defvar compile-angel-use-file-index nil
-  "EXPERIMENTAL: Enable a faster feature-to-file lookup.
-When non-nil, construct a hash table mapping feature names to their file paths
-by scanning all directories in `load-path' to improve lookup performance.")
-
 (defvar compile-angel-use-load-history nil
   "EXPERIMENTAL: Try to resolve feature files using `load-history'.
 When non-nil, `compile-angel--guess-el-file' will attempt to find the
@@ -444,17 +439,6 @@ don't have associated .el files and therefore don't need compilation.")
 (defvar compile-angel--doom-modules-dir
   (when (bound-and-true-p doom-modules-dir)
     (concat (directory-file-name (file-truename doom-modules-dir)) "/")))
-
-;; EXPERIMENTAL (Disabled by default):
-;; Speed up file lookups when `compile-angel-use-file-index' is non-nil.
-(defvar compile-angel--file-index (make-hash-table :test 'eq))
-(defvar compile-angel--file-index-hits 0)
-(defvar compile-angel--file-index-misses 0)
-(defvar compile-angel-track-file-index-stats nil
-  "Non-nil to track statistics about file index cache hits and misses.
-When enabled, compile-angel will count how many times the file index cache
-was hit or missed. This information can be displayed using the
-`compile-angel-display-file-index-stats' function.")
 
 (defvar compile-angel-gc-threshold (* 256 1024 1024)
   "GC threshold to use during compilation.")
@@ -1040,86 +1024,6 @@ For other types, return nil and log a debug message."
       feature (type-of feature))
     nil)))
 
-(defun compile-angel--build-file-index ()
-  "Build an index of all Elisp files in `load-path'.
-This creates a mapping from feature symbols to their file paths."
-  (compile-angel--debug-message "Building Elisp file index from load-path...")
-  (compile-angel--with-fast-file-ops
-    (let ((inhibit-quit t))
-      (clrhash compile-angel--file-index)
-      (setq compile-angel--file-index-hits 0
-            compile-angel--file-index-misses 0)
-
-      ;; Pre-compute the combined pattern once
-      (let* ((combined-pattern
-              (concat "\\`[^.].*\\("
-                      (mapconcat #'regexp-quote
-                                 compile-angel--el-file-extensions
-                                 "\\|")
-                      "\\)\\'"))
-             ;; Filter load-path once
-             (filtered-load-path (seq-filter #'file-directory-p load-path)))
-
-        ;; Process each directory in load-path
-        (dolist (dir filtered-load-path)
-          (dolist (file (directory-files dir t combined-pattern t))
-            (when (file-regular-p file)
-              ;; Extract the feature symbol from the filename - intern directly
-              (let ((feature-symbol (intern (file-name-base file))))
-                ;; Store in the index, with the first occurrence taking precedence
-                (unless (gethash feature-symbol compile-angel--file-index)
-                  (puthash feature-symbol file compile-angel--file-index)))))))
-
-      ;; `archive-mode' is a special case.
-      (puthash 'archive-mode (gethash 'arc-mode compile-angel--file-index)
-               compile-angel--file-index)
-
-      ;; Special handling for evil-collection package
-      (let ((evil-collection-file (gethash 'evil-collection
-                                           compile-angel--file-index)))
-        (when evil-collection-file
-          (let ((evil-collection-modes-dir
-                 (expand-file-name "modes" (file-name-directory
-                                            evil-collection-file))))
-            (when (file-directory-p evil-collection-modes-dir)
-              ;; Process all mode directories in a single pass
-              (dolist (file (directory-files
-                             evil-collection-modes-dir t
-                             directory-files-no-dot-files-regexp t))
-                (when (file-directory-p file)
-                  (let* ((mode-name (file-name-nondirectory file))
-                         ;; Create symbol directly without intermediate string
-                         (feature-symbol (intern (format "evil-collection-%s"
-                                                         mode-name)))
-                         (expected-file (format "%s/evil-collection-%s.el"
-                                                file mode-name)))
-                    (puthash feature-symbol expected-file
-                             compile-angel--file-index))))))))))
-
-  (compile-angel--debug-message
-    "Elisp file index built with %d entries"
-    (hash-table-count compile-angel--file-index)))
-
-(defun compile-angel-display-file-index-stats ()
-  "Display statistics about the file index cache hits and misses.
-This shows how effective the file index optimization has been."
-  (let* ((total (+ compile-angel--file-index-hits
-                   compile-angel--file-index-misses))
-         (hit-percentage (if (> total 0)
-                             (* 100.0 (/ (float compile-angel--file-index-hits)
-                                         total))
-                           0.0))
-         (miss-percentage (if (> total 0)
-                              (* 100.0
-                                 (/ (float compile-angel--file-index-misses)
-                                    total))
-                            0.0)))
-    (message
-     "File index stats: %d hits (%.2f%%), %d misses (%.2f%%), %d total lookups"
-     compile-angel--file-index-hits hit-percentage
-     compile-angel--file-index-misses miss-percentage
-     total)))
-
 (defun compile-angel--feature-el-file-from-load-history (feature-name)
   "Return the source file for FEATURE-NAME if it is loaded.
 Uses `load-history' to determine the file where the feature was loaded from.
@@ -1131,62 +1035,49 @@ Returns nil for features provided directly by C code."
       (and (listp history-file)
            (compile-angel--normalize-el-file (car history-file))))))
 
+;;; Add these new variables to cache file lookups safely
+(defvar compile-angel--locate-file-cache (make-hash-table :test 'equal)
+  "Cache for `compile-angel--locate-feature-file' to speed up file lookups.")
+
+(defvar compile-angel--locate-file-load-path nil
+  "Cached `load-path' to detect changes and invalidate the file cache.")
+
+(defvar compile-angel--locate-file-load-path-len 0
+  "Length of `compile-angel--locate-file-load-path' for fast invalidation.")
+
+;;; Replace the existing function
 (defun compile-angel--locate-feature-file (feature-or-file nosuffix)
-  "Locate a file for FEATURE-OR-FILE using `locate-file'.
+  "Locate a file for FEATURE-OR-FILE using an optimized caching mechanism.
 If NOSUFFIX is non-nil, use `load-file-rep-suffixes' instead of
 `compile-angel--el-file-extensions'."
   (when feature-or-file
     (compile-angel--with-fast-file-ops
-      (locate-file feature-or-file
-                   load-path
-                   (if nosuffix
-                       load-file-rep-suffixes
-                     compile-angel--el-file-extensions)))))
+      ;; Cache Invalidation: Safely check if `load-path' has been modified.
+      ;; We check the length first for an instant O(1) fast-path, falling back
+      ;; to an O(N) `equal' check only if the length hasn't changed.
+      (let ((current-len (length load-path)))
+        (unless (and (= current-len compile-angel--locate-file-load-path-len)
+                     (equal load-path compile-angel--locate-file-load-path))
+          (clrhash compile-angel--locate-file-cache)
+          (setq compile-angel--locate-file-load-path-len current-len)
+          (setq compile-angel--locate-file-load-path (copy-sequence load-path))))
 
-(defun compile-angel--guess-el-file-using-file-index (feature-symbol nosuffix)
-  "Locate the .el file using the file index.
-FEATURE-SYMBOL is the feature (string) and NOSUFFIX is the same NOSUFFIX
-argument as `load'."
-  (let* ((feature-name (symbol-name feature-symbol))
-         (cached-result (and feature-symbol
-                             (gethash feature-symbol
-                                      compile-angel--file-index))))
-    (cond
-     (cached-result
-      ;; Cache hit
-      (when compile-angel-track-file-index-stats
-        (setq compile-angel--file-index-hits
-              (1+ compile-angel--file-index-hits))
-        (compile-angel--debug-message
-          "File index cache HIT for feature: %s" feature-symbol))
-      cached-result)
-
-     ;; Try `load-history' if feature is loaded
-     ((and feature-symbol (featurep feature-symbol))
-      (when compile-angel-track-file-index-stats
-        (setq compile-angel--file-index-misses
-              (1+ compile-angel--file-index-misses))
-        (compile-angel--debug-message
-          "File index cache MISS for feature: %s" feature-symbol))
-
-      ;; Store feature-symbol once to avoid repeated symbol-name calls
-      (let* ((history-regexp (load-history-regexp feature-name))
-             (history-file (and (listp history-regexp)
-                                (car (load-history-filename-element
-                                      history-regexp)))))
-        (when (stringp history-file)
-          (compile-angel--normalize-el-file history-file))))
-
-     ;; Cache miss and feature not loaded
-     (t
-      (when compile-angel-track-file-index-stats
-        (setq compile-angel--file-index-misses
-              (1+ compile-angel--file-index-misses))
-        (compile-angel--debug-message
-          "File index cache MISS for feature: %s" feature-symbol))
-
-      ;; Avoid unnecessary symbol->string conversion
-      (compile-angel--locate-feature-file feature-name nosuffix)))))
+      ;; Cache Lookup
+      (let* ((cache-key (cons feature-or-file nosuffix))
+             (cached-result
+              (gethash cache-key compile-angel--locate-file-cache 'not-found)))
+        (if (not (eq cached-result 'not-found))
+            ;; Return the cached hit (even if it is `nil`)
+            cached-result
+          ;; Cache Miss: Perform the actual expensive disk lookup
+          (let ((result (locate-file feature-or-file
+                                     load-path
+                                     (if nosuffix
+                                         load-file-rep-suffixes
+                                       compile-angel--el-file-extensions))))
+            ;; Save the result (including nil for "negative caching")
+            (puthash cache-key result compile-angel--locate-file-cache)
+            result))))))
 
 (defun compile-angel--guess-el-file (el-file
                                      &optional feature-symbol nosuffix)
@@ -1219,17 +1110,6 @@ resolved file path or nil if not found."
         "compile-angel--guess-el-file: SKIP (Built-in feature): %s"
         feature-symbol)
       nil)
-
-     ;; Experimental feature
-     ((when-let* ((file-index-result
-                   (and compile-angel-use-file-index
-                        feature-symbol
-                        (compile-angel--guess-el-file-using-file-index
-                         feature-symbol
-                         nosuffix))))
-        (compile-angel--debug-message
-          "compile-angel--guess-el-file: CACHE: %s" file-index-result)
-        file-index-result))
 
      ;; Experimental feature
      ;; Try load-history if feature is loaded
@@ -1600,10 +1480,6 @@ signaled by ORIG-FN is caught and displayed as a message."
     (add-variable-watcher 'compile-angel-excluded-files
                           #'compile-angel--update-el-file-regexp)
 
-    ;; Build the file index if enabled
-    (when compile-angel-use-file-index
-      (compile-angel--build-file-index))
-
     ;; Minimal `file-name-handler-alist'
     (compile-angel--update-file-name-handler-alist)
 
@@ -1715,7 +1591,7 @@ be JIT compiled."
 
     ;; Check each file and build result
     (maphash
-     (lambda (el-file _)
+     (lambda (el-file _value)
        (if (compile-angel--report-is-native-compiled el-file)
            (push el-file result)
          (puthash el-file t compile-angel--report-native-compiled-features)
