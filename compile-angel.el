@@ -1709,8 +1709,11 @@ DIRECTORY is the directory path to exclude from compilation."
 
         (when compile-angel-enable-native-compile
           (add-hook 'native-comp-async-all-done-hook
-                    #'compile-angel--native-comp-async-all-done)
-          -30))
+                    #'compile-angel--native-comp-async-all-done
+                    -30)))
+    ;; Mode Disabled Teardown
+    (setq compile-angel--init-completed nil)
+
     ;; Hooks
     (remove-hook 'after-load-functions
                  #'compile-angel--hook-after-load-functions)
