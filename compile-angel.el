@@ -1249,19 +1249,16 @@ function."
                                 filename (type-of filename)
                                 feature (type-of feature))
   (setq feature (compile-angel--normalize-feature feature))
+
   (when feature
-    (if (or
-         ;; The features were not compiled when `compile-angel' started
-         (not compile-angel-on-load-compile-features)
-         ;; Compile more than once
-         (not compile-angel-on-load-mode-compile-once)
-         ;; Ignore featurep
-         (not compile-angel--advice-before-require-ignore-using-featurep)
-         ;; The feature hasn't already been loaded
-         (not (featurep feature)))
-        (compile-angel--entry-point filename feature nil noerror)
-      (compile-angel--debug-message "SKIP (Feature already loaded): %s | %s"
-                                    feature filename))))
+    ;; The features were already compiled when `compile-angel' started
+    (if (and compile-angel-on-load-compile-features
+             compile-angel-on-load-mode-compile-once
+             compile-angel--advice-before-require-ignore-using-featurep
+             (featurep feature))
+        (compile-angel--debug-message "SKIP (Feature already loaded): %s | %s"
+                                      feature filename)
+      (compile-angel--entry-point filename feature nil noerror))))
 
 (defun compile-angel--advice-before-load (el-file &optional noerror _nomessage
                                                   nosuffix _must-suffix)
