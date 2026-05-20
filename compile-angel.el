@@ -1010,17 +1010,17 @@ detected, it raises an error and returns nil."
 (defun compile-angel--compile-on-save ()
   "Compile the current buffer."
   (when (derived-mode-p 'emacs-lisp-mode)
-    (let ((el-file (buffer-file-name (buffer-base-buffer)))
-          ;; Do not add loaded files to the list. Only features.
-          (compile-angel-native-compile-load nil)
-          (compile-angel-reload-compiled-version nil)
-          ;; Ensure that compile-angel performs the native compilation itself,
-          ;; rather than waiting for Emacs to do it.
-          (compile-angel--native-compile-when-jit-enabled t)
-          (compile-angel-on-load-mode-compile-once nil))
-      (when (or (not compile-angel-on-save-check-parens)
-                (compile-angel--check-parens))
-        (compile-angel--entry-point el-file)))))
+    (when-let* ((el-file (buffer-file-name (buffer-base-buffer))))
+      (let (;; Do not add loaded files to the list. Only features.
+            (compile-angel-native-compile-load nil)
+            (compile-angel-reload-compiled-version nil)
+            ;; Ensure that compile-angel performs the native compilation itself,
+            ;; rather than waiting for Emacs to do it.
+            (compile-angel--native-compile-when-jit-enabled t)
+            (compile-angel-on-load-mode-compile-once nil))
+        (when (or (not compile-angel-on-save-check-parens)
+                  (compile-angel--check-parens))
+          (compile-angel--entry-point el-file))))))
 
 (defun compile-angel--normalize-feature (feature)
   "Normalize FEATURE to a symbol when possible.
