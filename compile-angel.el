@@ -1292,15 +1292,19 @@ EL-FILE, NOERROR, and NOSUFFIX are the same args as `load'."
             (compile-angel-reload-compiled-version nil)
             (compile-angel-native-compile-load nil))
         (compile-angel--entry-point
-         ;; Only expand if it looks like a path, not a library name
-         ;; TODO Find a more standard way to detect a path
+         ;; Emulate `load' path resolution:
+         ;; Expand absolute paths (including "~/") so they are absolute.
+         ;; Keep relative paths (even those with directories like "subdir/foo")
+         ;; as-is so that `locate-file' will correctly search `load-path'.
          (if (or (file-name-absolute-p el-file)
+                 ;; TODO Find a more standard way to detect a path
                  (string-match-p "/" el-file))
-             (expand-file-name (substitute-in-file-name el-file))
+             (expand-file-name el-file)
            el-file)
          nil  ; Feature
          nosuffix
          noerror))
+
     (compile-angel--debug-message
       (concat "ISSUE: Wrong type passed to "
               "compile-angel--advice-before-require %s (%s)")
