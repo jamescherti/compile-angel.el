@@ -835,8 +835,7 @@ When DO-NATIVE is non-nil, native compile."
                                 #'byte-compile-dest-file)
                               el-file))
            (decision-native-compile nil)
-           (el-file-truename (when el-file
-                               (file-truename el-file)))
+           (el-file-truename (compile-angel--file-truename el-file))
            (compile-angel--native-compile-when-jit-enabled
             compile-angel--native-compile-when-jit-enabled)
            no-byte-compile-defined)
@@ -1035,6 +1034,25 @@ Returns nil for features provided directly by C code."
       (and (listp history-file)
            (compile-angel--normalize-el-file (car history-file))))))
 
+(defvar compile-angel-cache-file-truename nil
+  "Experimental.")
+
+(defvar compile-angel--truename-cache (make-hash-table :test 'equal)
+  "Cache for `file-truename' to prevent excessive disk I/O during load loops.")
+
+(defun compile-angel--file-truename (file)
+  "Return the cached `truename' of FILE to avoid excessive disk I/O."
+  (when file
+    (if compile-angel-cache-file-truename
+        (let ((cached (gethash file compile-angel--truename-cache 'not-found)))
+          (if (not (eq cached 'not-found))
+              cached
+            (puthash file (file-truename file) compile-angel--truename-cache)))
+      (file-truename file))))
+
+(defvar compile-angel-cache-locate-file nil
+  "Experimental.")
+
 ;;; Add these new variables to cache file lookups safely
 (defvar compile-angel--locate-file-cache (make-hash-table :test 'equal)
   "Cache for `compile-angel--locate-feature-file' to speed up file lookups.")
@@ -1051,33 +1069,40 @@ Returns nil for features provided directly by C code."
 If NOSUFFIX is non-nil, use `load-file-rep-suffixes' instead of
 `compile-angel--el-file-extensions'."
   (when feature-or-file
-    (compile-angel--with-fast-file-ops
-      ;; Cache Invalidation: Safely check if `load-path' has been modified.
-      ;; We check the length first for an instant O(1) fast-path, falling back
-      ;; to an O(N) `equal' check only if the length hasn't changed.
-      (let ((current-len (length load-path)))
-        (unless (and (= current-len compile-angel--locate-file-load-path-len)
-                     (equal load-path compile-angel--locate-file-load-path))
-          (clrhash compile-angel--locate-file-cache)
-          (setq compile-angel--locate-file-load-path-len current-len)
-          (setq compile-angel--locate-file-load-path (copy-sequence load-path))))
+    (if (not compile-angel-cache-locate-file)
+        (locate-file feature-or-file
+                     load-path
+                     (if nosuffix
+                         load-file-rep-suffixes
+                       compile-angel--el-file-extensions))
+      (compile-angel--with-fast-file-ops
+        ;; Cache Invalidation: Safely check if `load-path' has been modified.
+        ;; We check the length first for an instant O(1) fast-path, falling back
+        ;; to an O(N) `equal' check only if the length hasn't changed.
+        (let ((current-len (length load-path)))
+          (unless (and (= current-len compile-angel--locate-file-load-path-len)
+                       (equal load-path compile-angel--locate-file-load-path))
+            (clrhash compile-angel--locate-file-cache)
+            (clrhash compile-angel--truename-cache)
+            (setq compile-angel--locate-file-load-path-len current-len)
+            (setq compile-angel--locate-file-load-path (copy-sequence load-path))))
 
-      ;; Cache Lookup
-      (let* ((cache-key (cons feature-or-file nosuffix))
-             (cached-result
-              (gethash cache-key compile-angel--locate-file-cache 'not-found)))
-        (if (not (eq cached-result 'not-found))
-            ;; Return the cached hit (even if it is `nil`)
-            cached-result
-          ;; Cache Miss: Perform the actual expensive disk lookup
-          (let ((result (locate-file feature-or-file
-                                     load-path
-                                     (if nosuffix
-                                         load-file-rep-suffixes
-                                       compile-angel--el-file-extensions))))
-            ;; Save the result (including nil for "negative caching")
-            (puthash cache-key result compile-angel--locate-file-cache)
-            result))))))
+        ;; Cache Lookup
+        (let* ((cache-key (cons feature-or-file nosuffix))
+               (cached-result
+                (gethash cache-key compile-angel--locate-file-cache 'not-found)))
+          (if (not (eq cached-result 'not-found))
+              ;; Return the cached hit (even if it is `nil`)
+              cached-result
+            ;; Cache Miss: Perform the actual expensive disk lookup
+            (let ((result (locate-file feature-or-file
+                                       load-path
+                                       (if nosuffix
+                                           load-file-rep-suffixes
+                                         compile-angel--el-file-extensions))))
+              ;; Save the result (including nil for "negative caching")
+              (puthash cache-key result compile-angel--locate-file-cache)
+              result)))))))
 
 (defun compile-angel--guess-el-file (el-file
                                      &optional feature-symbol nosuffix)
@@ -1142,7 +1167,7 @@ The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
              (el-file (compile-angel--guess-el-file
                        el-file feature-symbol nosuffix))
              ;; FIX: Canonicalize path for locking mechanisms
-             (el-file-truename (when el-file (file-truename el-file))))
+             (el-file-truename (compile-angel--file-truename el-file)))
         (compile-angel--with-increased-gc
           (cond
            ((not el-file)
@@ -1554,7 +1579,7 @@ be JIT compiled."
 
 (defun compile-angel--report-is-native-compiled (el-file)
   "Return non-nil if EL-FILE is natively compiled."
-  (when-let* ((el-file-truename (file-truename el-file)))
+  (when-let* ((el-file-truename (compile-angel--file-truename el-file)))
     (when (and (not (gethash el-file-truename
                              compile-angel--no-byte-compile-files-list))
                (not (compile-angel--el-file-excluded-p el-file)))
@@ -1572,7 +1597,7 @@ be JIT compiled."
       (when-let* ((fname (compile-angel--normalize-el-file (car entry))))
         (compile-angel--debug-message
           "compile-angel--get-list-non-native-compiled: ADD: %s" fname)
-        (puthash (file-truename fname) t list-el-files)))
+        (puthash (compile-angel--file-truename fname) t list-el-files)))
 
     ;; Collect .el files from features
     (dolist (feature features)
@@ -1587,7 +1612,8 @@ be JIT compiled."
               (compile-angel--debug-message
                 "compile-angel--get-list-non-native-compiled: ADD: %s"
                 feature-el-file)
-              (puthash (file-truename feature-el-file) t list-el-files))))))
+              (puthash (compile-angel--file-truename feature-el-file)
+                       t list-el-files))))))
 
     ;; Check each file and build result
     (maphash
@@ -1621,7 +1647,8 @@ FILE is the file path to exclude from compilation."
   "Add a specific DIRECTORY to `compile-angel-excluded-files-regexps'.
 DIRECTORY is the directory path to exclude from compilation."
   (let* ((dir (file-name-as-directory (expand-file-name directory)))
-         (dir-truename (file-name-as-directory (file-truename dir))))
+         (dir-truename (file-name-as-directory
+                        (file-truename dir))))
     (add-to-list 'compile-angel-excluded-files-regexps
                  (concat "^" (regexp-quote dir)))
     (unless (string= dir dir-truename)
