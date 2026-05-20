@@ -1077,7 +1077,6 @@ If NOSUFFIX is non-nil, use `load-file-rep-suffixes' instead of
           (unless (and (= current-len compile-angel--locate-file-load-path-len)
                        (equal load-path compile-angel--locate-file-load-path))
             (clrhash compile-angel--locate-file-cache)
-            (clrhash compile-angel--truename-cache)
             (setq compile-angel--locate-file-load-path-len current-len)
             (setq compile-angel--locate-file-load-path (copy-sequence load-path))))
 
