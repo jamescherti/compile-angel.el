@@ -79,13 +79,10 @@
 (require 'bytecomp)
 (require 'seq)
 
-;; This is for Emacs 28 or older. Starting with Emacs 29.1,
-;; `string-remove-suffix' was moved to the core, making it available
-;; automatically without requiring extra libraries.
-;;
-;; The `subr-x' library provides utility functions like `string-remove-suffix'
-;; that are invoked at runtime within `compile-angel--update-el-file-regexp'.
-(eval-when-compile (require 'subr-x))
+;; `subr-x' provides utility functions such as `string-remove-suffix'. These
+;; functions are used at runtime within `compile-angel--update-el-file-regexp',
+;; so `subr-x' must be loaded normally rather than through `eval-when-compile'.
+(require 'subr-x)
 
 ;;; Variables
 
@@ -516,6 +513,19 @@ The messages are displayed in the *compile-angel* buffer."
        (compile-angel--debug-message ,(car args) ,@(cdr args)))
      (when compile-angel-verbose
        (message (concat "[compile-angel] " ,(car args)) ,@(cdr args)))))
+
+;; TODO Use the safe alternative?
+;; (defun compile-angel--no-byte-compile-p (file-path)
+;;   "Return non-nil if FILE-PATH explicitly requests `no-byte-compile'.
+;; This safely scans the file header without running `hack-local-variables`,
+;; preventing security risks, user prompts, and massive I/O overhead."
+;;   (when (file-readable-p file-path)
+;;     (with-temp-buffer
+;;       ;; 4096 bytes is safely large enough to capture Emacs file headers
+;;       (insert-file-contents file-path nil 0 4096)
+;;       (let ((case-fold-search t))
+;;         ;; Standard Emacs `-*- no-byte-compile: t -*-` extraction regex
+;;         (re-search-forward "-[*]-.*no-byte-compile:[ \t]*t.*-[*]-" nil t)))))
 
 (defvar enable-local-variables)
 (defvar local-enable-local-variables)
@@ -1226,21 +1236,25 @@ The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
                 ;; There is a decision
                 (compile-angel--debug-message "COMPILATION ARGS: %s | %s"
                                               el-file feature-symbol)
+
                 (let ((compile-angel--currently-compiling
                        (cons el-file-truename
                              compile-angel--currently-compiling))
                       (do-byte (not (eq decision :native-comp)))
-                      (do-native (not (eq decision :byte-comp))))
+                      (do-native (not (eq decision :byte-comp)))
+                      compilation-completed)
                   (unwind-protect
-                      (compile-angel--compile-elisp el-file
-                                                    noerror
-                                                    do-byte
-                                                    do-native)
-                    ;; Only add to the processed cache if compilation succeeded
-                    ;; (not aborted via C-g)
-                    (puthash el-file-truename t compile-angel--list-processed-files)
-                    (when feature-symbol
-                      (puthash feature-symbol t compile-angel--list-processed-features)))))))))))))
+                      (progn
+                        (compile-angel--compile-elisp el-file
+                                                      noerror
+                                                      do-byte
+                                                      do-native)
+                        (setq compilation-completed t))
+                    ;; Add to the processed cache
+                    (when compilation-completed
+                      (puthash el-file-truename t compile-angel--list-processed-files)
+                      (when feature-symbol
+                        (puthash feature-symbol t compile-angel--list-processed-features))))))))))))))
 
 (defun compile-angel--advice-before-require (feature
                                              &optional filename noerror)
