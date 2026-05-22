@@ -60,8 +60,8 @@
   (clrhash compile-angel--list-jit-native-compiled-files)
   (clrhash compile-angel--list-processed-files)
   (clrhash compile-angel--list-processed-features)
-  (setq compile-angel-excluded-files '("/random-thing.el"))
-  (setq compile-angel-excluded-files-regexps '("random-thing.el"))
+  (setq compile-angel-excluded-path-suffixes '("/random-thing.el"))
+  (setq compile-angel-excluded-path-regexps '("random-thing.el"))
   (setq compile-angel-on-load-mode-compile-once t)
   (setq compile-angel-enable-byte-compile t)
   (setq compile-angel-enable-native-compile t)
@@ -169,13 +169,13 @@
   (test-compile-angel--test-all-macro
    #'(lambda()
        (test-compile-angel--init)
-       (setq compile-angel-excluded-files (list "/random-thing.el")))
+       (setq compile-angel-excluded-path-suffixes (list "/random-thing.el")))
    (should (file-exists-p test-compile-angel--elc-file)))
 
   (test-compile-angel--test-all-macro
    #'(lambda()
        (test-compile-angel--init)
-       (setq compile-angel-excluded-files
+       (setq compile-angel-excluded-path-suffixes
              (list (concat "/" (file-name-nondirectory
                                 test-compile-angel--el-file)))))
    (should-not (file-exists-p test-compile-angel--elc-file))))
@@ -184,13 +184,13 @@
   (test-compile-angel--test-all-macro
    #'(lambda()
        (test-compile-angel--init)
-       (setq compile-angel-excluded-files-regexps (list "random-thing.el")))
+       (setq compile-angel-excluded-path-regexps (list "random-thing.el")))
    (should (file-exists-p test-compile-angel--elc-file)))
 
   (test-compile-angel--test-all-macro
    #'(lambda()
        (test-compile-angel--init)
-       (setq compile-angel-excluded-files-regexps
+       (setq compile-angel-excluded-path-regexps
              (list (file-name-nondirectory test-compile-angel--el-file))))
    (should-not (file-exists-p test-compile-angel--elc-file))))
 

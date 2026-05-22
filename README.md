@@ -78,14 +78,14 @@ To install *compile-angel* on Emacs from MELPA:
   ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 
   ;; The following directive prevents compile-angel from compiling your init
-  ;; files. If you choose to remove this push to `compile-angel-excluded-files'
+  ;; files. If you choose to remove this push to `compile-angel-excluded-path-suffixes'
   ;; and compile your pre/post-init files, ensure you understand the
   ;; implications and thoroughly test your code. For example, if you're using
   ;; the `use-package' macro, you'll need to explicitly add:
   ;; (eval-when-compile (require 'use-package))
   ;; at the top of your init file.
-  (push "/init.el" compile-angel-excluded-files)
-  (push "/early-init.el" compile-angel-excluded-files)
+  (push "/init.el" compile-angel-excluded-path-suffixes)
+  (push "/early-init.el" compile-angel-excluded-path-suffixes)
 
   ;; A global mode that compiles .el files before they are loaded
   ;; using `load' or `require'.
@@ -111,14 +111,14 @@ Here is how to install *compile-angel* on Doom Emacs:
 ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 
 ;; The following directive prevents compile-angel from compiling your init
-;; files. If you choose to remove this push to `compile-angel-excluded-files'
+;; files. If you choose to remove this push to `compile-angel-excluded-path-suffixes'
 ;; and compile your pre/post-init files, ensure you understand the
 ;; implications and thoroughly test your code. For example, if you're using
 ;; the `use-package' macro, you'll need to explicitly add:
 ;; (eval-when-compile (require 'use-package))
 ;; at the top of your init file.
-(push "/init.el" compile-angel-excluded-files)
-(push "/early-init.el" compile-angel-excluded-files)
+(push "/init.el" compile-angel-excluded-path-suffixes)
+(push "/early-init.el" compile-angel-excluded-path-suffixes)
 
 ;; A global mode that compiles .el files before they are loaded
 ;; using `load' or `require'.
@@ -179,14 +179,14 @@ This function is called at the very end of Spacemacs startup, after layer config
     ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 
     ;; The following directive prevents compile-angel from compiling your init
-    ;; files. If you choose to remove this push to `compile-angel-excluded-files'
+    ;; files. If you choose to remove this push to `compile-angel-excluded-path-suffixes'
     ;; and compile your pre/post-init files, ensure you understand the
     ;; implications and thoroughly test your code. For example, if you're using
     ;; the `use-package' macro, you'll need to explicitly add:
     ;; (eval-when-compile (require 'use-package))
     ;; at the top of your init file.
-    (push "/init.el" compile-angel-excluded-files)
-    (push "/early-init.el" compile-angel-excluded-files)
+    (push "/init.el" compile-angel-excluded-path-suffixes)
+    (push "/early-init.el" compile-angel-excluded-path-suffixes)
 
     (compile-angel-on-load-mode 1))
 )
@@ -254,19 +254,19 @@ Below are a few interesting options:
 
 ### How to exclude certain .el files from compilation in compile-angel?
 
-You can exclude .el files from compilation by adding path suffixes to the `compile-angel-excluded-files` list.
+You can exclude .el files from compilation by adding path suffixes to the `compile-angel-excluded-path-suffixes` list.
 
 For instance, the following excludes any path that ends with `suffix.el` (or its variations, such as `/path/ANYTHINGsuffix.el.gz` or `ANYTHINGsuffix.el.gz`) and exactly matches paths that end with `/filename.el` (including their variations, like `/filename.el.gz` or `ANYTHING/filename.el.gz`).
 
 ```elisp
 ;; Run the following before enabling `compile-angel-on-load-mode'
-(push "suffix.el" compile-angel-excluded-files)
-(push "/filename.el" compile-angel-excluded-files)
+(push "suffix.el" compile-angel-excluded-path-suffixes)
+(push "/filename.el" compile-angel-excluded-path-suffixes)
 
 ;; Run here: (compile-angel-on-load-mode)
 ```
 
-If a path suffix in `compile-angel-excluded-files` ends with `.el`, `compile-angel` will automatically exclude the `.el.gz` variant of that file. For instance, specifying `suffix.el` will also exclude `suffix.el.gz`.
+If a path suffix in `compile-angel-excluded-path-suffixes` ends with `.el`, `compile-angel` will automatically exclude the `.el.gz` variant of that file. For instance, specifying `suffix.el` will also exclude `suffix.el.gz`.
 
 ### How to exclude custom-file, recentf, savehist files?
 
@@ -275,24 +275,24 @@ You can exclude the custom-file, recentf, and savehist files using the following
 ;; Exclude the custom-file, recentf, and savehist files
 ;;
 ;; Ensure that compile-angel is loaded using `require`, `use-package`, or
-;; another package manager, as compile-angel-excluded-files is declared after
+;; another package manager, as compile-angel-excluded-path-suffixes is declared after
 ;; the package is loaded.
 
 ;; Ensure that the value of `savehist-file` is updated before proceeding
 (with-eval-after-load "savehist"
   (push (concat "/" (file-name-nondirectory savehist-file))
-        compile-angel-excluded-files))
+        compile-angel-excluded-path-suffixes))
 
 ;; Ensure that the value of `recentf-save-file` is updated before proceeding
 (with-eval-after-load "recentf"
   (push (concat "/" (file-name-nondirectory recentf-save-file))
-        compile-angel-excluded-files))
+        compile-angel-excluded-path-suffixes))
 
 ;; Ensure that the value of `custom-file` is updated before proceeding
 (with-eval-after-load "cus-edit"
   (when (stringp custom-file)
     (push (concat "/" (file-name-nondirectory custom-file))
-          compile-angel-excluded-files)))
+          compile-angel-excluded-path-suffixes)))
 
 ;; Enable the (compile-angel-on-load-mode) mode after the above
 ```
@@ -317,14 +317,14 @@ If you need to prevent **compile-angel** from compiling specific files or entire
 * Use the `compile-angel-exclude-file` function to exclude a single file:
   ```elisp
   ;; This adds exact match regular expression to the
-  ;; `compile-angel-excluded-files-regexps' variable
+  ;; `compile-angel-excluded-path-regexps' variable
   (compile-angel-exclude-file "~/.emacs.d/init.el")
   ```
 
 * Use the `compile-angel-exclude-directory` function to exclude a directory and all of its contents:
 ```elisp
 ;; It ensures the path is treated as a directory and adds a prefix match regular
-;; expression to the `compile-angel-excluded-files-regexps' variable
+;; expression to the `compile-angel-excluded-path-regexps' variable
 (compile-angel-exclude-directory "~/.emacs.d/local-packages/")
 ```
 
@@ -394,8 +394,8 @@ Here are additional features provided by compile-angel that are not available in
 
 - Compile-angel ensures that even when when the .elc file doesn't exist, the .el source file is compiled. Auto-compile, on the other hand, requires (by design, as explained above) an existing .elc file in order to compile.
 - Compile-angel ensures that files are compiled before and after they are loaded, In addition to compiling the `.el` files loaded using *load* and *require*, also handles files that auto-compile misses, using the `after-load-functions` hook. This ensures that all files are byte-compiled and native-compiled.
-- Compile-angel can exclude files from compilation using regular expressions in *compile-angel-excluded-files-regexps*.
-- `compile-angel` can exclude files from compilation based on path suffixes listed in `compile-angel-excluded-files`. This list contains path suffixes such as `("loaddefs.el" "/cus-load.el" "/charprop.el")`, which excludes any path ending with `loaddefs.el` (or its variations, such as `loaddefs.el.gz`) and exactly matches paths ending with `/cus-load.el` and `/charprop.el` (including their variations, like `/cus-load.el.gz` and `/charprop.el.gz`). If a path in `compile-angel-excluded-files` ends with `.el`, it will automatically exclude the corresponding `.el.gz` variant when Emacs is configured to load `.el.gz` files.
+- Compile-angel can exclude files from compilation using regular expressions in *compile-angel-excluded-path-regexps*.
+- `compile-angel` can exclude files from compilation based on path suffixes listed in `compile-angel-excluded-path-suffixes`. This list contains path suffixes such as `("loaddefs.el" "/cus-load.el" "/charprop.el")`, which excludes any path ending with `loaddefs.el` (or its variations, such as `loaddefs.el.gz`) and exactly matches paths ending with `/cus-load.el` and `/charprop.el` (including their variations, like `/cus-load.el.gz` and `/charprop.el.gz`). If a path in `compile-angel-excluded-path-suffixes` ends with `.el`, it will automatically exclude the corresponding `.el.gz` variant when Emacs is configured to load `.el.gz` files.
 - Compile-angel provides options to allow enabling and disabling specific functions that should be advised (load, require, etc.).
 - Compile-angel allows enabling debug mode, which allows knowing exactly what compile-angel does. Additionally, compiled files and features are stored in variables that help identify what was compiled.
 - *compile-angel-on-save-mode* supports compiling indirect buffers (clones).

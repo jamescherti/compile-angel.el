@@ -57,13 +57,13 @@
 ;;
 ;;   ;; The following directive prevents compile-angel from compiling your init
 ;;   ;; files. If you choose to remove this push to
-;;   ;; `compile-angel-excluded-files' and compile your pre/post-init files,
-;;   ;; ensure you understand the implications and thoroughly test your code.
+;;   ;; `compile-angel-excluded-path-suffixes' and compile your pre/post-init
+;;   ;; files, ensure you understand the implications and test your code.
 ;;   ;; For example, if you're using the `use-package' macro, you'll need to
 ;;   ;; explicitly add: (eval-when-compile (require 'use-package)) at the top of
 ;;   ;; your init file.
-;;   (push "/init.el" compile-angel-excluded-files)
-;;   (push "/early-init.el" compile-angel-excluded-files)
+;;   (push "/init.el" compile-angel-excluded-path-suffixes)
+;;   (push "/early-init.el" compile-angel-excluded-path-suffixes)
 ;;
 ;;   ;; A global mode that compiles .el files before they are loaded
 ;;   ;; using `load' or `require'.
@@ -71,7 +71,7 @@
 ;;
 ;; Links:
 ;; ------
-;; - More information about compile-angel (Frequently asked questions, usage...):
+;; - More information about compile-angel (Frequently asked questions...):
 ;;   https://github.com/jamescherti/compile-angel.el
 
 ;;; Code:
@@ -101,7 +101,13 @@
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-excluded-files
+(define-obsolete-variable-alias
+  'compile-angel-excluded-files
+  'compile-angel-excluded-path-suffixes
+  "1.2.1"
+  "Obsolete. Use `compile-angel-excluded-path-suffixes' instead.")
+
+(defcustom compile-angel-excluded-path-suffixes
   (delq nil (list "-loaddefs.el"
                   "-autoloads.el"
                   "-pkg.el"          ; Straight (package metadata)
@@ -126,16 +132,22 @@ with \"suffix.el\" (or its variations, such as \"/path/ANYTHINGsuffix.el.gz\")
 and exactly matches paths that end with \"/filename.el\" (including their
 variations, like \"/filename.el.gz\" or \"ANYTHING/filename.el.gz\").
 
-If a path suffix in `compile-angel-excluded-files' ends with .el, compile-angel
-will automatically exclude the .el.gz variant of that file as well (e.g.,
-\"suffix.el\" will also exclude \"ANYTHINGsuffix.el.gz\").
+If a path suffix in `compile-angel-excluded-path-suffixes' ends with .el,
+compile-angel will automatically exclude the .el.gz variant of that file as
+well (e.g., \"suffix.el\" will also exclude \"ANYTHINGsuffix.el.gz\").
 
 The variable `load-file-rep-suffixes' is used by compile-angel to detect and
 include all extensions associated with .el files."
   :type '(repeat string)
   :group 'compile-angel)
 
-(defcustom compile-angel-excluded-files-regexps
+(define-obsolete-variable-alias
+  'compile-angel-excluded-files-regexps
+  'compile-angel-excluded-path-regexps
+  "1.2.1"
+  "Obsolete. Use `compile-angel-excluded-path-regexps' instead.")
+
+(defcustom compile-angel-excluded-path-regexps
   (delq nil (list
              ;; Emacs
              "/lisp/international/.*\\.el\\(?:\\.gz\\)?$"
@@ -169,9 +181,9 @@ include all extensions associated with .el files."
                                           user-emacs-directory))))))
   "A list of regular expressions to exclude certain .el files from compilation.
 
-It is advisable to use `compile-angel-excluded-files' instead of
-`compile-angel-excluded-files-regexps', as it simplifies matching file names.
-Regular expressions may become unnecessarily complex in this context,
+It is advisable to use `compile-angel-excluded-path-suffixes' instead of
+`compile-angel-excluded-path-regexps', as it simplifies matching file
+names. Regular expressions may become unnecessarily complex in this context,
 particularly since .el files might also end with the extension .el.gz on certain
 configurations. Furthermore, Emacs regular expressions differ from PCRE, adding
 another layer of potential complexity.
@@ -598,7 +610,7 @@ declaration is absent or not trusted under safe-local-variable rules."
          nil)))))
 
 (defun compile-angel--el-file-excluded-p (el-file)
-  "Check if EL-FILE matches any regex in `compile-angel-excluded-files-regexps'.
+  "Check if EL-FILE matches `compile-angel-excluded-path-regexps'.
 Return non-nil if the file should be ignored, nil otherwise."
   (when (or
          (and compile-angel--excluded-path-suffixes-regexps
@@ -606,10 +618,10 @@ Return non-nil if the file should be ignored, nil otherwise."
                           (string-match-p regex el-file))
                         compile-angel--excluded-path-suffixes-regexps))
 
-         (and compile-angel-excluded-files-regexps
+         (and compile-angel-excluded-path-regexps
               (seq-some (lambda (regex)
                           (string-match-p regex el-file))
-                        compile-angel-excluded-files-regexps)))
+                        compile-angel-excluded-path-regexps)))
     (compile-angel--debug-message
       "SKIP (.el file excluded with a regex): %s" el-file)
     t))
@@ -769,8 +781,8 @@ FEATURE is a symbol representing the feature being loaded."
                  (not (eq decision :byte-comp))
 
                  ;; `:compile' have precedence over excluded files
-                 ;; (`compile-angel-excluded-files' and
-                 ;; `compile-angel-excluded-files-regexps')
+                 ;; (`compile-angel-excluded-path-suffixes' and
+                 ;; `compile-angel-excluded-path-regexps')
                  (not (eq decision :compile))
                  (not (eq decision :force-compile))
 
@@ -1420,12 +1432,12 @@ NEW-VALUE is the value of the variable."
       (setq compile-angel--el-file-regexp
             (format "\\.el%s\\'" (regexp-opt new-value))))
 
-    (when (eq symbol 'compile-angel-excluded-files)
+    (when (eq symbol 'compile-angel-excluded-path-suffixes)
       (compile-angel--debug-message
-        "WATCHER: Update compile-angel-excluded-files: %s"
-        compile-angel-excluded-files)
+        "WATCHER: Update compile-angel-excluded-path-suffixes: %s"
+        compile-angel-excluded-path-suffixes)
       (let ((path-suffixes-regexp nil))
-        ;; Process `compile-angel-excluded-files' to generate regular
+        ;; Process `compile-angel-excluded-path-suffixes' to generate regular
         ;; expressions.
         ;; For each suffix:
         ;; - If it ends with `.el`, remove the `.el` and concatenate it with
@@ -1494,10 +1506,10 @@ signaled by ORIG-FN is caught and displayed as a message."
                           #'compile-angel--update-el-file-regexp)
 
     ;; compile-angel--update-el-file-regexp
-    (compile-angel--update-el-file-regexp 'compile-angel-excluded-files
-                                          compile-angel-excluded-files
+    (compile-angel--update-el-file-regexp 'compile-angel-excluded-path-suffixes
+                                          compile-angel-excluded-path-suffixes
                                           nil nil)
-    (add-variable-watcher 'compile-angel-excluded-files
+    (add-variable-watcher 'compile-angel-excluded-path-suffixes
                           #'compile-angel--update-el-file-regexp)
 
     ;; Minimal `file-name-handler-alist'
@@ -1640,27 +1652,27 @@ not become stale."
 
 ;;;###autoload
 (defun compile-angel-exclude-file (file)
-  "Add a specific FILE to `compile-angel-excluded-files-regexps'.
+  "Add a specific FILE to `compile-angel-excluded-path-regexps'.
 FILE is the file path to exclude from compilation."
   (let* ((file (expand-file-name file))
          (file-truename (file-truename file)))
-    (add-to-list 'compile-angel-excluded-files-regexps
+    (add-to-list 'compile-angel-excluded-path-regexps
                  (concat "^" (regexp-quote file) "$"))
     (unless (string= file file-truename)
-      (add-to-list 'compile-angel-excluded-files-regexps
+      (add-to-list 'compile-angel-excluded-path-regexps
                    (concat "^" (regexp-quote file-truename) "$")))))
 
 ;;;###autoload
 (defun compile-angel-exclude-directory (directory)
-  "Add a specific DIRECTORY to `compile-angel-excluded-files-regexps'.
+  "Add a specific DIRECTORY to `compile-angel-excluded-path-regexps'.
 DIRECTORY is the directory path to exclude from compilation."
   (let* ((dir (file-name-as-directory (expand-file-name directory)))
          (dir-truename (file-name-as-directory
                         (file-truename dir))))
-    (add-to-list 'compile-angel-excluded-files-regexps
+    (add-to-list 'compile-angel-excluded-path-regexps
                  (concat "^" (regexp-quote dir)))
     (unless (string= dir dir-truename)
-      (add-to-list 'compile-angel-excluded-files-regexps
+      (add-to-list 'compile-angel-excluded-path-regexps
                    (concat "^" (regexp-quote dir-truename))))))
 
 ;;;###autoload
@@ -1755,8 +1767,10 @@ DIRECTORY is the directory path to exclude from compilation."
     (advice-remove 'load #'compile-angel--advice-before-load)
 
     ;; Variable Watchers
-    (remove-variable-watcher 'load-file-rep-suffixes #'compile-angel--update-el-file-regexp)
-    (remove-variable-watcher 'compile-angel-excluded-files #'compile-angel--update-el-file-regexp)))
+    (remove-variable-watcher 'load-file-rep-suffixes
+                             #'compile-angel--update-el-file-regexp)
+    (remove-variable-watcher 'compile-angel-excluded-path-suffixes
+                             #'compile-angel--update-el-file-regexp)))
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-save-mode
