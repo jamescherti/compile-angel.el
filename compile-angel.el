@@ -245,10 +245,10 @@ loaded."
   :group 'compile-angel)
 
 ;; Enable/Disable features
-(defvar compile-angel-on-load-advise-load t
+(defvar compile-angel-on-load-advise-load nil
   "When non-nil, automatically compile .el files loaded using `load'.")
 
-(defvar compile-angel-on-load-advise-require t
+(defvar compile-angel-on-load-advise-require nil
   "When non-nil, automatically compile .el files loaded using `require'.")
 
 (defvar compile-angel-on-load-hook-after-load-functions t
