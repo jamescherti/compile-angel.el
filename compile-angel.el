@@ -941,7 +941,7 @@ When DO-NATIVE is non-nil, native compile."
           (let ((byte-compile-result (compile-angel--byte-compile el-file
                                                                   elc-file)))
             (cond
-             ((or (eq byte-compile-result 'byte-compile-up-to-date))
+             ((eq byte-compile-result 'byte-compile-up-to-date)
               ;; Even if the .elc file is up to date, the native-compiled
               ;; version may be absent
               (setq decision-native-compile
@@ -954,13 +954,13 @@ When DO-NATIVE is non-nil, native compile."
                     (and compile-angel-enable-native-compile do-native)))
 
              ((eq byte-compile-result 'no-byte-compile)
+              (setq no-byte-compile-defined t)
               (puthash el-file-truename t
                        compile-angel--no-byte-compile-files-list)
-              (setq no-byte-compile-defined t)
               (compile-angel--debug-message
                 "Byte-compilation Ignore (no-byte-compile): %s"
                 (abbreviate-file-name el-file))
-              ;; TODO: Does no byte compile count = native compile?
+              ;; TODO: Does no byte compile count = no native compile?
               (setq decision-native-compile nil))
 
              ((not byte-compile-result)
@@ -1031,7 +1031,7 @@ detected, it raises an error and returns nil."
        (compile-angel--debug-message
          "SKIP compile-angel--compile-on-save (Unmatched parenthesis): %s"
          (buffer-file-name (buffer-base-buffer)))
-       (user-error
+       (message
         (concat "[compile-angel] Compilation aborted: Unmatched bracket or "
                 "quote in line %s, column %s in %s")
         (line-number-at-pos char)
@@ -1542,7 +1542,6 @@ Occasionally, Emacs fails to `native-compile' certain `.elc` files that should
 be JIT compiled."
   (when compile-angel-enable-native-compile
     ;; Reload the modules that need reloading
-    ;; TODO remhash instead of clrhash?
     (when (and compile-angel-reload-compiled-version
                (> (hash-table-count compile-angel--reload-after-native-compile) 0)
                (fboundp 'native-elisp-load))
@@ -1574,7 +1573,6 @@ be JIT compiled."
           (clrhash compile-angel--reload-after-native-compile))))
 
     ;; Double check and ensure Emacs compiled them
-    ;; TODO remhash instead of clrhash?
     (when (> (hash-table-count compile-angel--list-jit-native-compiled-files) 0)
       (let ((inhibit-quit t))
         (unwind-protect
