@@ -1409,12 +1409,7 @@ otherwise, return nil."
   (compile-angel--debug-message
     "\n[TASK] compile-angel--hook-after-load-functions: %s"
     file)
-  (let ((file (compile-angel--normalize-el-file file))
-        ;; Do not add loaded files to the list. Only features.
-        (compile-angel-native-compile-load nil)
-        (compile-angel-reload-compiled-version nil)
-        ;; Only compile once
-        (compile-angel-on-load-mode-compile-once t))
+  (let ((file (compile-angel--normalize-el-file file)))
     (when file
       (compile-angel--entry-point file))))
 
