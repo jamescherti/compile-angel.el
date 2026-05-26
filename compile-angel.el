@@ -1418,50 +1418,52 @@ otherwise, return nil."
     (when file
       (compile-angel--entry-point file))))
 
-(defun compile-angel--update-el-file-regexp (symbol new-value
-                                                    _operation _where)
+(defun compile-angel--update-el-file-regexp (symbol new-value operation _where)
   "Update the `compile-angel--el-file-regexp' variable.
+OPERATION is the operation.
 SYMBOL is the symbol.
 NEW-VALUE is the value of the variable."
   (let ((inhibit-quit t))
-    (when (eq symbol 'load-file-rep-suffixes)
-      (compile-angel--debug-message
-        "WATCHER: Update compile-angel--el-file-regexp: %s" new-value)
-      (setq compile-angel--el-file-extensions
-            (mapcar (lambda (ext) (concat ".el" ext)) load-file-rep-suffixes))
-      (setq compile-angel--el-file-regexp
-            (format "\\.el%s\\'" (regexp-opt new-value))))
+    ;; Safely ignore defvaralias operations to prevent type errors
+    (unless (eq operation 'defvaralias)
+      (when (eq symbol 'load-file-rep-suffixes)
+        (compile-angel--debug-message
+          "WATCHER: Update compile-angel--el-file-regexp: %s" new-value)
+        (setq compile-angel--el-file-extensions
+              (mapcar (lambda (ext) (concat ".el" ext)) load-file-rep-suffixes))
+        (setq compile-angel--el-file-regexp
+              (format "\\.el%s\\'" (regexp-opt new-value))))
 
-    (when (eq symbol 'compile-angel-excluded-path-suffixes)
-      (compile-angel--debug-message
-        "WATCHER: Update compile-angel-excluded-path-suffixes: %s"
-        compile-angel-excluded-path-suffixes)
-      (let ((path-suffixes-regexp nil))
-        ;; Process `compile-angel-excluded-path-suffixes' to generate regular
-        ;; expressions.
-        ;; For each suffix:
-        ;; - If it ends with `.el`, remove the `.el` and concatenate it with
-        ;;   `compile-angel--el-file-regexp`, then add \\' at the end.
-        ;; - Otherwise, convert it into a regular expression and add \\' at the
-        ;;   end.
-        (dolist (suffix new-value)
-          (when (and suffix (not (string= suffix "")))
-            (let* ((el-suffix-p (string-suffix-p ".el" suffix))
-                   (suffix-without-el (if el-suffix-p
-                                          (string-remove-suffix ".el" suffix)
-                                        suffix))
-                   (el-file-regexp (if (and el-suffix-p
-                                            compile-angel--el-file-regexp)
-                                       compile-angel--el-file-regexp)))
-              (push (concat (regexp-quote suffix-without-el)
-                            el-file-regexp
-                            (unless (string-prefix-p "\\'" el-file-regexp)
-                              "\\'" ))
-                    path-suffixes-regexp))))
+      (when (eq symbol 'compile-angel-excluded-path-suffixes)
+        (compile-angel--debug-message
+          "WATCHER: Update compile-angel-excluded-path-suffixes: %s"
+          compile-angel-excluded-path-suffixes)
+        (let ((path-suffixes-regexp nil))
+          ;; Process `compile-angel-excluded-path-suffixes' to generate regular
+          ;; expressions.
+          ;; For each suffix:
+          ;; - If it ends with `.el`, remove the `.el` and concatenate it with
+          ;;   `compile-angel--el-file-regexp`, then add \\' at the end.
+          ;; - Otherwise, convert it into a regular expression and add \\' at the
+          ;;   end.
+          (dolist (suffix new-value)
+            (when (and suffix (not (string= suffix "")))
+              (let* ((el-suffix-p (string-suffix-p ".el" suffix))
+                     (suffix-without-el (if el-suffix-p
+                                            (string-remove-suffix ".el" suffix)
+                                          suffix))
+                     (el-file-regexp (if (and el-suffix-p
+                                              compile-angel--el-file-regexp)
+                                         compile-angel--el-file-regexp)))
+                (push (concat (regexp-quote suffix-without-el)
+                              el-file-regexp
+                              (unless (string-prefix-p "\\'" el-file-regexp)
+                                "\\'" ))
+                      path-suffixes-regexp))))
 
-        ;; TODO only start after the mode starts?
-        (setq compile-angel--excluded-path-suffixes-regexps
-              (nreverse path-suffixes-regexp))))))
+          ;; TODO only start after the mode starts?
+          (setq compile-angel--excluded-path-suffixes-regexps
+                (nreverse path-suffixes-regexp)))))))
 
 (defun compile-angel--update-file-name-handler-alist (&rest _)
   "Update the `file-name-handler-alist' variable."
