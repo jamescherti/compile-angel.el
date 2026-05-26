@@ -475,6 +475,13 @@ don't have associated .el files and therefore don't need compilation.")
 (defvar compile-angel-gc-percentage 0.5
   "GC percentage to use during compilation.")
 
+(defcustom compile-angel-defer-native-compile-to-jit nil
+  "Non-nil to defer native compilation to the Emacs JIT compiler.
+When nil (the default), compile-angel forces ahead-of-time (AOT) native
+compilation even if JIT or deferred compilation is active."
+  :type 'boolean
+  :group 'compile-angel)
+
 ;;; Internal functions
 
 (defmacro compile-angel--with-increased-gc (&rest body)
@@ -984,7 +991,8 @@ When DO-NATIVE is non-nil, native compile."
               "")
             elc-file)))
 
-        (when (and (not compile-angel--native-compile-when-jit-enabled)
+        (when (and compile-angel-defer-native-compile-to-jit
+                   (not compile-angel--native-compile-when-jit-enabled)
                    ;; Jit is enabled
                    (or (bound-and-true-p native-comp-jit-compilation)
                        (bound-and-true-p native-comp-deferred-compilation)))
