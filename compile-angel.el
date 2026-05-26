@@ -984,20 +984,20 @@ When DO-NATIVE is non-nil, native compile."
               "")
             elc-file)))
 
-        (let ((jit-enabled (or (bound-and-true-p native-comp-jit-compilation)
-                               (bound-and-true-p native-comp-deferred-compilation))))
-          (when (and jit-enabled
-                     (not compile-angel--native-compile-when-jit-enabled))
-            ;; Do not native-compile. Let the JIT compiler do it.
-            (setq decision-native-compile nil)
+        (when (and (not compile-angel--native-compile-when-jit-enabled)
+                   ;; Jit is enabled
+                   (or (bound-and-true-p native-comp-jit-compilation)
+                       (bound-and-true-p native-comp-deferred-compilation)))
+          ;; Do not native-compile. Let the JIT compiler do it.
+          (setq decision-native-compile nil)
 
-            ;; Properly record and report explicit skip definitions
-            (if no-byte-compile-defined
-                (compile-angel--debug-message
-                  "Native-compilation ignored (File explicitly requests no-byte-compile): %s" el-file)
-              (puthash el-file t compile-angel--list-jit-native-compiled-files)
+          ;; Properly record and report explicit skip definitions
+          (if no-byte-compile-defined
               (compile-angel--debug-message
-                "Native-compilation ignored (JIT compilation will do it): %s" el-file))))
+                "Native-compilation ignored (File explicitly requests no-byte-compile): %s" el-file)
+            (puthash el-file t compile-angel--list-jit-native-compiled-files)
+            (compile-angel--debug-message
+              "Native-compilation ignored (JIT compilation will do it): %s" el-file)))
 
         (when (and compile-angel-enable-native-compile
                    decision-native-compile)

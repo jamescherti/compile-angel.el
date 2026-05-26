@@ -12,7 +12,7 @@ The *compile-angel* package **speeds up Emacs by ensuring that all Elisp librari
 For users looking to ensure a fully optimized environment, the compile-angel package is a valuable addition to the native compilation workflow. Integrating compile-angel guarantees that every .el file in your load path, including your own configuration and manually managed .el files, is properly byte and natively compiled. This ensures a consistent performance boost across the entire editor.
 
 This package offers:
-- `(compile-angel-on-load-mode)`: A global mode that compiles .el files both before they are loaded via `load` or `require`, and after they are loaded, using `after-load-functions`.
+- `(compile-angel-on-load-mode)`: A global mode that compiles .el files when they are loaded.
 - `(compile-angel-on-save-local-mode)`: A local mode that compiles .el files whenever the user saves them.
 
 If this package enhances your workflow, please show your support by **⭐ starring compile-angel on GitHub** to help more users discover its benefits.
@@ -62,13 +62,12 @@ To install *compile-angel* on Emacs from MELPA:
 
 1. If you haven't already done so, [add MELPA repository to your Emacs configuration](https://melpa.org/#/getting-started).
 
-2. Add the following code **at the very beginning of your init.el file, before all other packages**:
+2. Add the following code to your init file:
 ```emacs-lisp
 ;; Ensure Emacs loads the most recent byte-compiled files.
 (setq load-prefer-newer t)
 
 (use-package compile-angel
-  :demand t
   :config
   ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
   ;; (When set to nil, compile-angel won't show which file is being compiled.)
@@ -87,7 +86,7 @@ To install *compile-angel* on Emacs from MELPA:
   (push "/init.el" compile-angel-excluded-path-suffixes)
   (push "/early-init.el" compile-angel-excluded-path-suffixes)
 
-  ;; A global mode that compiles .el files before they are loaded
+  ;; A global mode that compiles .el files when they are loaded
   ;; using `load' or `require'.
   (compile-angel-on-load-mode 1))
 ```
@@ -120,8 +119,7 @@ Here is how to install *compile-angel* on Doom Emacs:
 (push "/init.el" compile-angel-excluded-path-suffixes)
 (push "/early-init.el" compile-angel-excluded-path-suffixes)
 
-;; A global mode that compiles .el files before they are loaded
-;; using `load' or `require'.
+;; A global mode that compiles .el files when they are loaded
 (compile-angel-on-load-mode 1)
 ```
 
@@ -344,7 +342,7 @@ Observe whether `compile-angel` compiles any Elisp files (you will see "Wrote" `
 
 Compiling a large number of Emacs Lisp files regardless of their actual usage is inefficient.
 
-One of the advantages of *compile-angel* is that it compiles files just before they are loaded, restricting the compilation process to only what is necessary and as a result significantly reducing compilation time.
+One of the advantages of *compile-angel* is that it compiles files when they are loaded, restricting the compilation process to only what is necessary and as a result significantly reducing compilation time.
 
 Moreover, *compile-angel* guarantees that all relevant files are transparently both byte-compiled and native-compiled without requiring the user to invoke any scripts manually, which simplifies maintenance and reduces the risk of outdated files.
 
@@ -393,7 +391,7 @@ The author of auto-compile has made some decisions that prevent it from guarante
 Here are additional features provided by compile-angel that are not available in auto-compile:
 
 - Compile-angel ensures that even when when the .elc file doesn't exist, the .el source file is compiled. Auto-compile, on the other hand, requires (by design, as explained above) an existing .elc file in order to compile.
-- Compile-angel ensures that files are compiled before and after they are loaded, In addition to compiling the `.el` files loaded using *load* and *require*, also handles files that auto-compile misses, using the `after-load-functions` hook. This ensures that all files are byte-compiled and native-compiled.
+- Compile-angel ensures that files are compiled before and/or after they are loaded, In addition to compiling the `.el` files loaded using *load* and *require*, also handles files that auto-compile misses, using the `after-load-functions` hook. This ensures that all files are byte-compiled and native-compiled.
 - Compile-angel can exclude files from compilation using regular expressions in *compile-angel-excluded-path-regexps*.
 - `compile-angel` can exclude files from compilation based on path suffixes listed in `compile-angel-excluded-path-suffixes`. This list contains path suffixes such as `("loaddefs.el" "/cus-load.el" "/charprop.el")`, which excludes any path ending with `loaddefs.el` (or its variations, such as `loaddefs.el.gz`) and exactly matches paths ending with `/cus-load.el` and `/charprop.el` (including their variations, like `/cus-load.el.gz` and `/charprop.el.gz`). If a path in `compile-angel-excluded-path-suffixes` ends with `.el`, it will automatically exclude the corresponding `.el.gz` variant when Emacs is configured to load `.el.gz` files.
 - Compile-angel provides options to allow enabling and disabling specific functions that should be advised (load, require, etc.).
