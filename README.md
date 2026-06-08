@@ -17,39 +17,6 @@ This package offers:
 
 If this package enhances your workflow, please show your support by **⭐ starring compile-angel on GitHub** to help more users discover its benefits.
 
-<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
-## Table of Contents
-
-- [compile-angel.el - Speed up Emacs by Byte-compiling and Native-compiling all Elisp files](#compile-angelel---speed-up-emacs-by-byte-compiling-and-native-compiling-all-elisp-files)
-  - [Why use compile-angel?](#why-use-compile-angel)
-  - [Installation of compile-angel](#installation-of-compile-angel)
-    - [Emacs](#emacs)
-    - [Doom Emacs](#doom-emacs)
-    - [Spacemacs](#spacemacs)
-      - [1. Add the package](#1-add-the-package)
-      - [2. Configure pre-load variables](#2-configure-pre-load-variables)
-      - [3. Configure the package](#3-configure-the-package)
-  - [Frequently Asked Questions](#frequently-asked-questions)
-    - [Should files be compiled every time Emacs starts? How can I determine why compile-angel compiled a file?](#should-files-be-compiled-every-time-emacs-starts-how-can-i-determine-why-compile-angel-compiled-a-file)
-    - [What are some interesting Emacs customizations to consider alongside compile-angel?](#what-are-some-interesting-emacs-customizations-to-consider-alongside-compile-angel)
-    - [How to exclude certain .el files from compilation in compile-angel?](#how-to-exclude-certain-el-files-from-compilation-in-compile-angel)
-    - [How to exclude custom-file, recentf, savehist files?](#how-to-exclude-custom-file-recentf-savehist-files)
-    - [How to enable or disable byte compilation and native compilation?](#how-to-enable-or-disable-byte-compilation-and-native-compilation)
-    - [Excluding specific files and directories using helper functions](#excluding-specific-files-and-directories-using-helper-functions)
-    - [What's the point of using compile-angel? My Emacs compiles packages automatically anyway!](#whats-the-point-of-using-compile-angel-my-emacs-compiles-packages-automatically-anyway)
-    - [Could compiling all Elisp files not be accomplished with a script? (e.g., a GNU Parallel along with Emacs's -batch mode.)](#could-compiling-all-elisp-files-not-be-accomplished-with-a-script-eg-a-gnu-parallel-along-with-emacss--batch-mode)
-    - [Why not just use the package-recompile-all function?](#why-not-just-use-the-package-recompile-all-function)
-    - [What is the impact on Emacs startup?](#what-is-the-impact-on-emacs-startup)
-    - [What's the difference between native and byte compiled?](#whats-the-difference-between-native-and-byte-compiled)
-    - [What are some use-cases of compile-angel?](#what-are-some-use-cases-of-compile-angel)
-    - [What is the difference between auto-compile and compile-angel?](#what-is-the-difference-between-auto-compile-and-compile-angel)
-    - [How to compile Emacs for Performance on Linux and Unix systems?](#how-to-compile-emacs-for-performance-on-linux-and-unix-systems)
-  - [Comments from users](#comments-from-users)
-  - [Author and License](#author-and-license)
-  - [Links](#links)
-
-<!-- markdown-toc end -->
-
 ## Why use compile-angel?
 
 Because you are likely running a significant amount of interpreted, slow Elisp code that Emacs did not compile automatically. Ensuring that Elisp is native-compiled significantly improves Emacs' performance. Unfortunately, functions like *package-install* and *package-recompile-all* do not compile .el files that were not installed using *package.el*. Since these files are not byte-compiled, the Emacs JIT compiler does not native-compile them either, as a byte-compiled file signals the JIT compiler to perform native compilation. **In contrast, **compile-angel** modes ensure that all loaded `.el` files are compiled transparently, regardless of whether they are part of a package.**
