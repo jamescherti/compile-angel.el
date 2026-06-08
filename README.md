@@ -420,6 +420,8 @@ If you are interested in compiling Emacs, read: [A Technical Guide to Compiling 
 
 - [drizzyhouse](https://www.reddit.com/r/emacs/comments/1mqzu3z/comment/n8vyaf2/): "Thanks for your work on this."
 
+- [JamesBrickley](https://www.reddit.com/r/emacs/comments/1tzfbsq/comment/oqds13q/): "I'm really enjoying James Cherti's Minimal-Emacs.d, Compile-Angle, Easy-Session, and Buffer-Terminator packages."
+
 ## Author and License
 
 The *compile-angel* Emacs package has been written by [James Cherti](https://www.jamescherti.com/) and is distributed under terms of the GNU General Public License version 3, or, at your choice, any later version.
