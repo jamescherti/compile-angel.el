@@ -35,13 +35,11 @@ To install *compile-angel* on Emacs from MELPA:
 (setq load-prefer-newer t)
 
 (use-package compile-angel
+  :demand t
   :config
   ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
   ;; (When set to nil, compile-angel won't show which file is being compiled.)
   (setq compile-angel-verbose t)
-
-  ;; Uncomment the line below to compile automatically when an Elisp file is saved
-  ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 
   ;; The following directive prevents compile-angel from compiling your init
   ;; files. If you choose to remove this push to `compile-angel-excluded-path-suffixes'
@@ -52,6 +50,9 @@ To install *compile-angel* on Emacs from MELPA:
   ;; at the top of your init file.
   (push "/init.el" compile-angel-excluded-path-suffixes)
   (push "/early-init.el" compile-angel-excluded-path-suffixes)
+
+  ;; Uncomment the line below to compile automatically when an Elisp file is saved
+  ;; (add-hook 'emacs-lisp-mode-hook #'compile-angel-on-save-local-mode)
 
   ;; A global mode that compiles .el files when they are loaded
   ;; using `load' or `require'.
