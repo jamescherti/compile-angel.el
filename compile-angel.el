@@ -478,6 +478,9 @@ compilation even if JIT or deferred compilation is active."
   :type 'boolean
   :group 'compile-angel)
 
+(defvar inhibit-interaction)
+(defvar native-comp-async-report-warnings-errors)
+
 ;;; Internal functions
 
 (defmacro compile-angel--with-increased-gc (&rest body)
@@ -599,7 +602,6 @@ declaration is absent or not trusted under safe-local-variable rules."
 
           ;; Prevent any unexpected prompts from halting the process.
           (inhibit-interaction t))
-      (ignore inhibit-interaction)
       (condition-case nil
           (progn
             ;; Read and apply local variables under the restricted settings above.
@@ -661,7 +663,6 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
                 ;; compiler to log errors silently in the background without
                 ;; stealing focus.
                 (native-comp-async-report-warnings-errors 'silent))
-            (ignore native-comp-async-report-warnings-errors)
             (when (fboundp 'native-compile-async)
               (when (and eln-file
                          compile-angel-reload-compiled-version)
