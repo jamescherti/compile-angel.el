@@ -245,17 +245,17 @@ You can exclude the custom-file, recentf, and savehist files using the following
 ;; the package is loaded.
 
 ;; Ensure that the value of `savehist-file` is updated before proceeding
-(with-eval-after-load "savehist"
+(with-eval-after-load 'savehist
   (push (concat "/" (file-name-nondirectory savehist-file))
         compile-angel-excluded-path-suffixes))
 
 ;; Ensure that the value of `recentf-save-file` is updated before proceeding
-(with-eval-after-load "recentf"
+(with-eval-after-load 'recentf
   (push (concat "/" (file-name-nondirectory recentf-save-file))
         compile-angel-excluded-path-suffixes))
 
 ;; Ensure that the value of `custom-file` is updated before proceeding
-(with-eval-after-load "cus-edit"
+(with-eval-after-load 'cus-edit
   (when (stringp custom-file)
     (push (concat "/" (file-name-nondirectory custom-file))
           compile-angel-excluded-path-suffixes)))
