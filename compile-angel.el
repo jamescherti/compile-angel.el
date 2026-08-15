@@ -1426,7 +1426,7 @@ NEW-VALUE is the value of the variable."
         (compile-angel--debug-message
           "WATCHER: Update compile-angel--el-file-regexp: %s" new-value)
         (setq compile-angel--el-file-extensions
-              (mapcar (lambda (ext) (concat ".el" ext)) load-file-rep-suffixes))
+              (mapcar (lambda (ext) (concat ".el" ext)) new-value))
         (setq compile-angel--el-file-regexp
               (format "\\.el%s\\'" (regexp-opt new-value))))
 
