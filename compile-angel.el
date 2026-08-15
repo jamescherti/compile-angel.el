@@ -790,9 +790,6 @@ FEATURE is a symbol representing the feature being loaded."
                  ;; `:continue' is the same as nil
                  (not (eq decision :continue))
 
-                 ;; Do not use `:force-compile'. Use `:compile' instead.
-                 (not (eq decision :force-compile))
-
                  ;; Do not compile the file
                  (not (eq decision :ignore)))
         (message (format
