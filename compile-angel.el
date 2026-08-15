@@ -665,7 +665,8 @@ Return nil if it is not native-compiled or if its .eln file is out of date."
                 (puthash eln-file el-file
                          compile-angel--reload-after-native-compile))
 
-              (if (and (boundp 'comp-async-compilations)
+              (if (and (bound-and-true-p comp-async-compilations)
+                       (hash-table-p comp-async-compilations)
                        (gethash el-file comp-async-compilations))
                   (compile-angel--debug-message
                     "Native-compilation ignored (Already in the queue): %s"
