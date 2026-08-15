@@ -1454,7 +1454,7 @@ NEW-VALUE is the value of the variable."
                                          compile-angel--el-file-regexp)))
                 (push (concat (regexp-quote suffix-without-el)
                               el-file-regexp
-                              (unless (string-prefix-p "\\'" el-file-regexp)
+                              (unless (and el-file-regexp (string-prefix-p "\\'" el-file-regexp))
                                 "\\'" ))
                       path-suffixes-regexp))))
 
