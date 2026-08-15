@@ -1318,8 +1318,7 @@ EL-FILE, NOERROR, and NOSUFFIX are the same args as `load'."
         ;; Emulate `load' path resolution:
         ;; Only expand absolute paths. Leave relative paths (even with
         ;; directories) to be resolved via `locate-file' and `load-path'.
-        (when (or (file-name-absolute-p el-file)
-                  (file-name-directory el-file))
+        (when (file-name-absolute-p el-file)
           (setq el-file (expand-file-name el-file)))
 
         (when el-file
