@@ -1580,15 +1580,13 @@ be JIT compiled."
 (defvar compile-angel--report-native-compiled-features
   (make-hash-table :test 'equal))
 
-(defun compile-angel--report-is-native-compiled (el-file)
-  "Return non-nil if EL-FILE is natively compiled."
+(defun compile-angel--report-needs-native-compile-p (el-file)
+  "Return non-nil if EL-FILE needs to be natively compiled."
   (when-let* ((el-file-truename (compile-angel--file-truename el-file)))
     (when (and (not (gethash el-file-truename
                              compile-angel--no-byte-compile-files-list))
                (not (compile-angel--el-file-excluded-p el-file)))
-      (if (not (compile-angel--elisp-native-compiled-p el-file))
-          t ; up-to-date
-        nil))))
+      (not (compile-angel--elisp-native-compiled-p el-file)))))
 
 (defun compile-angel--get-list-non-native-compiled ()
   "Return a list of non natively compiled feature symbols."
@@ -1621,7 +1619,7 @@ be JIT compiled."
     ;; Check each file and build result
     (maphash
      (lambda (el-file _value)
-       (if (compile-angel--report-is-native-compiled el-file)
+       (if (compile-angel--report-needs-native-compile-p el-file)
            (push el-file result)
          (puthash el-file t compile-angel--report-native-compiled-features)
          (compile-angel--debug-message
