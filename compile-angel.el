@@ -741,7 +741,7 @@ Return the byte compile result."
                    (error-message-string err))
                  ;; Try to native compile
                  'byte-compile-exception-error))
-              (t
+              (error
                (compile-angel--debug-message
                  "Byte-compilation ignored: Error: %s"
                  (error-message-string err))
