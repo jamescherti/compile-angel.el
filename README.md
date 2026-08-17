@@ -266,6 +266,7 @@ You can exclude the custom-file, recentf, and savehist files using the following
 ### How to enable or disable byte compilation and native compilation?
 
 You can control whether *compile-angel* performs byte compilation or native compilation of your .el files by setting the following variables in your configuration:
+
 - **`compile-angel-enable-byte-compile`**: Set this variable to `t` to enable byte compilation. When enabled, *compile-angel* will generate .elc files for your .el files, making them load faster by converting them into bytecode. Set it to `nil` to disable byte compilation.
 - **`compile-angel-enable-native-compile`**: Set this variable to `t` to enable native compilation, which generates machine code for supported systems, further improving performance. Set it to `nil` to disable native compilation.
 
@@ -407,6 +408,7 @@ This program is free software: you can redistribute it and/or modify it under th
 - [Emacs documentation: Byte Compilation](https://www.gnu.org/software/emacs/manual/html_node/elisp/Byte-Compilation.html)
 
 Other Emacs packages by the same author:
+
 - [minimal-emacs.d](https://github.com/jamescherti/minimal-emacs.d): This repository hosts a minimal Emacs configuration designed to serve as a foundation for your vanilla Emacs setup and provide a solid base for an enhanced Emacs experience.
 - [compile-angel.el](https://github.com/jamescherti/compile-angel.el): **Speed up Emacs!** This package guarantees that all .el files are both byte-compiled and native-compiled, which significantly speeds up Emacs.
 - [outline-indent.el](https://github.com/jamescherti/outline-indent.el): An Emacs package that provides a minor mode that enables code folding and outlining based on indentation levels for various indentation-based text files, such as YAML, Python, and other indented text files.
