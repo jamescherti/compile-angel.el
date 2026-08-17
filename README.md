@@ -63,12 +63,12 @@ To install *compile-angel* on Emacs from MELPA:
 
 Here is how to install *compile-angel* on Doom Emacs:
 
-1. Add to the `~/.doom.d/packages.el` file:
+Add to the `~/.doom.d/packages.el` file:
 ```elisp
 (package! compile-angel)
 ```
 
-2. Add to the top of `~/.doom.d/config.el`:
+Add to the top of `~/.doom.d/config.el`:
 ```elisp
 ;; Set `compile-angel-verbose' to nil to disable compile-angel messages.
 ;; (When set to nil, compile-angel won't show which file is being compiled.)
@@ -91,7 +91,7 @@ Here is how to install *compile-angel* on Doom Emacs:
 (compile-angel-on-load-mode 1)
 ```
 
-3. Run the `doom sync` command:
+Run the `doom sync` command:
 ```
 doom sync
 ```
