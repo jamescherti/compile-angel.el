@@ -5,7 +5,7 @@
 ;; Author: James Cherti <https://www.jamescherti.com/contact/>
 ;; Version: 1.2.1
 ;; URL: https://github.com/jamescherti/compile-angel.el
-;; Keywords: convenience
+;; Keywords: lisp, tools, convenience
 ;; Package-Requires: ((emacs "27.1"))
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -84,7 +84,7 @@
 
 (defgroup compile-angel nil
   "Compile Emacs Lisp libraries automatically."
-  :group 'compile-angel
+  :group 'lisp
   :prefix "compile-angel-")
 
 (defcustom compile-angel-enable-byte-compile t
