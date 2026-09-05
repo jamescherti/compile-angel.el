@@ -25,7 +25,7 @@ Here is how to find out what files Emacs missed and didn't native compile:
 
 - Install `compile-angel` with `M-x package-install RET compile-angel`.
 - Do NOT enable `compile-angel-on-load-mode` yet, because it will compile all the files that Emacs missed.
-- Finally, display the report using `M-x compile-angel-report`.
+- Finally, display the report using `M-x compile-angel-report`. (This displays a report listing all files that were not natively compiled.)
 
 ## Installation of compile-angel
 
