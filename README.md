@@ -19,15 +19,13 @@ If this package enhances your workflow, please show your support by **⭐ starri
 
 ## Is it really necessary?
 
+You are likely running a significant amount of interpreted, slow Elisp code that Emacs did not compile automatically. Ensuring that Elisp is native-compiled significantly improves Emacs' performance. Unfortunately, functions like *package-install* and *package-recompile-all* do not compile .el files that were not installed using *package.el*. Since these files are not byte-compiled, the Emacs JIT compiler does not native-compile them either, as a byte-compiled file signals the JIT compiler to perform native compilation. **In contrast, **compile-angel** modes ensure that all loaded `.el` files are compiled transparently, regardless of whether they are part of a package.**
+
 Here is how to find out what files Emacs missed and didn't native compile:
 
 - Install `compile-angel` with `M-x package-install RET compile-angel`.
 - Do NOT enable `compile-angel-on-load-mode` yet, because it will compile all the files that Emacs missed.
 - Finally, display the report using `M-x compile-angel-report`.
-
-## Why use compile-angel?
-
-Because you are likely running a significant amount of interpreted, slow Elisp code that Emacs did not compile automatically. Ensuring that Elisp is native-compiled significantly improves Emacs' performance. Unfortunately, functions like *package-install* and *package-recompile-all* do not compile .el files that were not installed using *package.el*. Since these files are not byte-compiled, the Emacs JIT compiler does not native-compile them either, as a byte-compiled file signals the JIT compiler to perform native compilation. **In contrast, **compile-angel** modes ensure that all loaded `.el` files are compiled transparently, regardless of whether they are part of a package.**
 
 ## Installation of compile-angel
 
