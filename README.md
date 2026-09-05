@@ -17,7 +17,7 @@ This package offers:
 
 If this package enhances your workflow, please show your support by **⭐ starring compile-angel on GitHub** to help more users discover its benefits.
 
-## Is it really necessary?
+## Is compile-angel really necessary?
 
 Here is how to find out what files Emacs missed and didn't native compile:
 
