@@ -175,7 +175,7 @@ Here are the most common scenarios where Emacs misses compiling files:
 - **Unmanaged Local Packages:** Files loaded directly using `load`, `require`, or `use-package` with `:ensure nil`. Emacs does not automatically track or compile these files.
 - **Manual Git Repositories:** Packages installed or updated manually via `git clone` or `git pull`. When the .el source code changes externally, Emacs will not automatically generate new compiled files.
 - **Stale Bytecode:** If you modify an .el file so that it becomes newer than its existing .elc counterpart, Emacs will often load the raw .el source instead.
-* **Missing Bytecode Files:** If `.elc` files are deleted during a configuration cleanup or were never generated, the source files will not be natively compiled.
+* **Missing Bytecode Files:** If .elc files are deleted during a configuration cleanup or were never generated, the source files will not be natively compiled.
 
 The issue compounds due to how Emacs handles compilation:
 
