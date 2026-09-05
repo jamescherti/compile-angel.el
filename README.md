@@ -27,8 +27,6 @@ Here is how to find out what files Emacs missed and didn't native compile:
 
 If this displays files that were not natively compiled, it means **you are running slow Elisp code** that Emacs did not compile automatically.
 
-Note: Unfortunately, functions like *package-install* and *package-recompile-all* do not compile .el files that were not installed using *package.el*. Since these files are not byte-compiled, the Emacs JIT compiler does not native-compile them either, as a byte-compiled file signals the JIT compiler to perform native compilation. **In contrast, **compile-angel** modes ensure that all loaded .el files are compiled transparently, regardless of whether they are part of a package.**
-
 ## Installation of compile-angel
 
 ### Emacs
@@ -169,9 +167,26 @@ This function is called at the very end of Spacemacs startup, after layer config
 
 ## Frequently Asked Questions
 
+### Why does Emacs miss compiling some files?
+
+Here are the most common scenarios where Emacs misses compiling files:
+
+- **Unmanaged .el files:** Built-in functions like `package-install` and `package-recompile-all` only process files explicitly managed by `package.el`. This causes a silent performance penalty for unmanaged .el files.
+- **Unmanaged Local Packages:** Files loaded directly using `load`, `require`, or `use-package` with `:ensure nil`. Emacs does not automatically track or compile these files.
+- **Manual Git Repositories:** Packages installed or updated manually via `git clone` or `git pull`. When the .el source code changes externally, Emacs will not automatically generate new compiled files.
+- **Stale Bytecode:** If you modify an .el file so that it becomes newer than its existing .elc counterpart, Emacs will often load the raw .el source instead.
+* **Missing Bytecode Files:** If `.elc` files are deleted during a configuration cleanup or were never generated, the source files will not be natively compiled.
+
+The issue compounds due to how Emacs handles compilation:
+
+- **No Byte-Compilation:** Emacs leaves unmanaged or externally updated files as raw source code.
+- **No Native-Compilation:** The Emacs JIT compiler requires an existing byte-compiled file to trigger native compilation. Since the initial byte-compilation step is skipped, the JIT compiler ignores the file entirely.
+
+The *compile-angel* package resolves this by ensuring that every loaded .el file is both byte-compiled and natively compiled transparently, regardless of how it was installed or updated.
+
 ### Should files be compiled every time Emacs starts? How can I determine why compile-angel compiled a file?
 
-The `compile-angel-on-load-mode` does not recompile packages every time Emacs starts; it only compiles a file when its `.el` source has changed.
+The `compile-angel-on-load-mode` does not recompile packages every time Emacs starts; it only compiles a file when its .el source has changed.
 
 To determine why an Emacs Lisp file was compiled, add the following to your init file **before** enabling `compile-angel-on-load-mode`:
 
@@ -240,7 +255,7 @@ For instance, the following excludes any path that ends with `suffix.el` (or its
 ;; Run here: (compile-angel-on-load-mode)
 ```
 
-If a path suffix in `compile-angel-excluded-path-suffixes` ends with `.el`, `compile-angel` will automatically exclude the `.el.gz` variant of that file. For instance, specifying `suffix.el` will also exclude `suffix.el.gz`.
+If a path suffix in `compile-angel-excluded-path-suffixes` ends with .el, `compile-angel` will automatically exclude the `.el.gz` variant of that file. For instance, specifying `suffix.el` will also exclude `suffix.el.gz`.
 
 ### How to exclude custom-file, recentf, savehist files?
 
@@ -313,7 +328,7 @@ Emacs often skips the compilation of certain Elisp files. To verify this:
 - Enable verbose mode: `(setq compile-angel-verbose t)`
 - Enable the mode: `(compile-angel-on-load-mode)`
 
-Observe whether `compile-angel` compiles any Elisp files (you will see "Wrote" `.elc` files in the `*Messages*` buffer). If it does, this indicates that Emacs missed compiling those files and that `compile-angel` can help improve the performance of your Emacs.
+Observe whether `compile-angel` compiles any Elisp files (you will see "Wrote" .elc files in the `*Messages*` buffer). If it does, this indicates that Emacs missed compiling those files and that `compile-angel` can help improve the performance of your Emacs.
 
 ### Could compiling all Elisp files not be accomplished with a script? (e.g., a GNU Parallel along with Emacs's -batch mode.)
 
@@ -368,9 +383,9 @@ The author of auto-compile has made some decisions that prevent it from guarante
 Here are additional features provided by compile-angel that are not available in auto-compile:
 
 - Compile-angel ensures that even when when the .elc file doesn't exist, the .el source file is compiled. Auto-compile, on the other hand, requires (by design, as explained above) an existing .elc file in order to compile.
-- Compile-angel ensures that files are compiled before and/or after they are loaded, In addition to compiling the `.el` files loaded using *load* and *require*, also handles files that auto-compile misses, using the `after-load-functions` hook. This ensures that all files are byte-compiled and native-compiled.
+- Compile-angel ensures that files are compiled before and/or after they are loaded, In addition to compiling the .el files loaded using *load* and *require*, also handles files that auto-compile misses, using the `after-load-functions` hook. This ensures that all files are byte-compiled and native-compiled.
 - Compile-angel can exclude files from compilation using regular expressions in *compile-angel-excluded-path-regexps*.
-- `compile-angel` can exclude files from compilation based on path suffixes listed in `compile-angel-excluded-path-suffixes`. This list contains path suffixes such as `("loaddefs.el" "/cus-load.el" "/charprop.el")`, which excludes any path ending with `loaddefs.el` (or its variations, such as `loaddefs.el.gz`) and exactly matches paths ending with `/cus-load.el` and `/charprop.el` (including their variations, like `/cus-load.el.gz` and `/charprop.el.gz`). If a path in `compile-angel-excluded-path-suffixes` ends with `.el`, it will automatically exclude the corresponding `.el.gz` variant when Emacs is configured to load `.el.gz` files.
+- `compile-angel` can exclude files from compilation based on path suffixes listed in `compile-angel-excluded-path-suffixes`. This list contains path suffixes such as `("loaddefs.el" "/cus-load.el" "/charprop.el")`, which excludes any path ending with `loaddefs.el` (or its variations, such as `loaddefs.el.gz`) and exactly matches paths ending with `/cus-load.el` and `/charprop.el` (including their variations, like `/cus-load.el.gz` and `/charprop.el.gz`). If a path in `compile-angel-excluded-path-suffixes` ends with .el, it will automatically exclude the corresponding `.el.gz` variant when Emacs is configured to load `.el.gz` files.
 - Compile-angel provides options to allow enabling and disabling specific functions that should be advised (load, require, etc.).
 - Compile-angel allows enabling debug mode, which allows knowing exactly what compile-angel does. Additionally, compiled files and features are stored in variables that help identify what was compiled.
 - *compile-angel-on-save-mode* supports compiling indirect buffers (clones).
