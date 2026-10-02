@@ -474,7 +474,6 @@ compilation even if JIT or deferred compilation is active."
   :type 'boolean
   :group 'compile-angel)
 
-(defvar inhibit-interaction)
 (defvar native-comp-async-report-warnings-errors)
 
 ;;; Internal functions
@@ -594,21 +593,11 @@ declaration is absent or not trusted under safe-local-variable rules."
 
           ;; Prevent Emacs from silently skipping unsafe or blacklisted values.
           ;; This ensures accurate reading of declared variables.
-          (ignored-local-variable-values nil)
-
-          ;; Prevent any unexpected prompts from halting the process.
-          (inhibit-interaction t))
-      (condition-case nil
-          (progn
-            ;; Read and apply local variables under the restricted settings above.
-            (hack-local-variables)
-            ;; Return the parsed value of `no-byte-compile', or nil if not present.
-            (alist-get 'no-byte-compile file-local-variables-alist))
-        (inhibited-interaction
-         (compile-angel--verbose-message
-           "SKIP reading local variables (interaction required): %s"
-           (abbreviate-file-name file-path))
-         nil)))))
+          (ignored-local-variable-values nil))
+      ;; Read and apply local variables under the restricted settings above.
+      (hack-local-variables)
+      ;; Return the parsed value of `no-byte-compile', or nil if not present.
+      (alist-get 'no-byte-compile file-local-variables-alist))))
 
 (defun compile-angel--el-file-excluded-p (el-file)
   "Check if EL-FILE matches `compile-angel-excluded-path-regexps'.
@@ -729,11 +718,6 @@ Return the byte compile result."
             (condition-case err
                 (progn
                   (byte-compile-file el-file))
-              (inhibited-interaction
-               (compile-angel--verbose-message
-                 "Byte-compilation ignored (interaction required): %s"
-                 (abbreviate-file-name el-file))
-               nil)
               (permission-denied
                (progn
                  (compile-angel--debug-message
