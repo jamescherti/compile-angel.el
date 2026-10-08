@@ -3,7 +3,7 @@
 ;; Copyright (C) 2024-2026 James Cherti | https://www.jamescherti.com/contact/
 
 ;; Author: James Cherti <https://www.jamescherti.com/contact/>
-;; Version: 1.2.2
+;; Version: 1.2.3
 ;; URL: https://github.com/jamescherti/compile-angel.el
 ;; Keywords: lisp, tools, convenience
 ;; Package-Requires: ((emacs "27.1"))
