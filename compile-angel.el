@@ -512,6 +512,7 @@ This disables file handlers temporarily for faster file operations."
   "Insert formatted MSG with ARGS into BUFFER-NAME buffer."
   (let ((inhibit-read-only t))
     (with-current-buffer (get-buffer-create buffer-name)
+      (buffer-disable-undo)
       (setq-local buffer-read-only t)
       (save-excursion
         (goto-char (point-max))
