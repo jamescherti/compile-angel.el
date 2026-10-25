@@ -6,7 +6,7 @@
 ![](https://jamescherti.com/misc/made-for-gnu-emacs.svg)
 
 - Author: James Cherti <[https://www.jamescherti.com/](https://www.jamescherti.com/)>
-- License: GPL 3.0
+- License: GPL
 
 The *[compile-angel.el @GitHub](https://github.com/jamescherti/compile-angel.el)* package **speeds up Emacs by ensuring that all Elisp libraries are both byte-compiled and native-compiled**:
 - Byte compilation speeds up loading Emacs Lisp code at runtime.
