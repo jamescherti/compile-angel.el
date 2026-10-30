@@ -78,7 +78,11 @@
 ;; `subr-x' provides utility functions such as `string-remove-suffix'. These
 ;; functions are used at runtime within `compile-angel--update-el-file-regexp',
 ;; so `subr-x' must be loaded normally rather than through `eval-when-compile'.
-(require 'subr-x)
+(eval-when-compile
+  (require 'subr-x))
+
+(when (<= emacs-major-version 28)
+  (require 'subr-x))
 
 ;;; Variables
 
