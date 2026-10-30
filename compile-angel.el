@@ -498,7 +498,7 @@ This disables file handlers temporarily for faster file operations."
             nil)
 
            ;; Do not modify `file-name-handler-alist'
-           ((eq compile-angel-optimize-file-name-handlers nil)
+           ((null compile-angel-optimize-file-name-handlers)
             file-name-handler-alist)
 
            ;; Safe: Disable all handlers except the compression handler
@@ -516,7 +516,7 @@ This disables file handlers temporarily for faster file operations."
       (setq-local buffer-read-only t)
       (save-excursion
         (goto-char (point-max))
-        (insert (apply 'format msg args) "\n")))))
+        (insert (apply #'format msg args) "\n")))))
 
 (defmacro compile-angel--debug-message (&rest args)
   "Display a debug message with the same ARGS arguments as `message'.
@@ -762,7 +762,7 @@ FEATURE is a symbol representing the feature being loaded."
                           predicate-decision)
                       t)))
       (when (and (not (eq decision t))  ; t = :continue
-                 (not (eq decision nil))  ; nil = :ignore
+                 (not (null decision))  ; nil = :ignore
                  (not (eq decision :native-comp))
                  (not (eq decision :byte-comp))
 
@@ -777,11 +777,10 @@ FEATURE is a symbol representing the feature being loaded."
 
                  ;; Do not compile the file
                  (not (eq decision :ignore)))
-        (message (format
-                  (concat "[compile-angel] WARNING: The predicate function "
-                          "`compile-angel-predicate-function' returned an "
-                          "invalid value: %s")
-                  decision))
+        (message (concat "[compile-angel] WARNING: The predicate function "
+                         "`compile-angel-predicate-function' returned an "
+                         "invalid value: %s")
+                 decision)
         (setq decision t))
       (cond
        ((or (eq decision :force-compile)
@@ -1470,7 +1469,7 @@ signaled by ORIG-FN is caught and displayed as a message."
 
     (when (featurep 'native-compile)
       ;; Funcall to silence package-lint warning
-      (funcall 'require 'comp nil t)
+      (funcall #'require 'comp nil t)
 
       (setq compile-angel--native-comp-available
             (and (fboundp 'native-comp-available-p)
