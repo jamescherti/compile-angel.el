@@ -761,8 +761,8 @@ FEATURE is a symbol representing the feature being loaded."
                             predicate-decision el-file feature)
                           predicate-decision)
                       t)))
-      (when (and (not (eq decision t))  ; t = :continue
-                 (not (null decision))  ; nil = :ignore
+      (when (and (not (eq decision t)) ; t = :continue
+                 decision ; nil = :ignore
                  (not (eq decision :native-comp))
                  (not (eq decision :byte-comp))
 
