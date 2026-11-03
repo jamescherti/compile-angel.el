@@ -118,7 +118,6 @@ Locate the `dotspacemacs-additional-packages` variable and add `compile-angel` t
      ;; ... other packages ...
      compile-angel
    )
-
 ```
 
 This ensures Spacemacs downloads and installs the package.
@@ -134,7 +133,6 @@ This function is called immediately after `dotspacemacs/init', before layer conf
 
   ;; Ensure Emacs loads the most recent byte-compiled files.
   (setq load-prefer-newer t))
-
 ```
 
 #### 3. Configure the package
@@ -165,7 +163,6 @@ This function is called at the very end of Spacemacs startup, after layer config
 
     (compile-angel-on-load-mode 1))
 )
-
 ```
 
 ## Frequently Asked Questions
