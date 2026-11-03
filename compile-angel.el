@@ -622,18 +622,42 @@ Return non-nil if the file should be ignored, nil otherwise."
     t))
 
 (defun compile-angel--elisp-native-compiled-p (el-file &optional eln-file)
-  "Return non-nil if EL-FILE is native-compiled and up to date.
-Check the optional ELN-FILE first, then search Emacs native compilation
-directories.  If neither check succeeds and ELN-FILE is nil, check
-the computed compilation output path.
-A candidate must be a regular file newer than EL-FILE."
+  "Return non-nil if EL-FILE has an up-to-date native compilation.
+EL-FILE is the path to the Emacs Lisp source file.
+ELN-FILE is the optional computed .eln file path to check first.
+Check optional ELN-FILE first, then search `native-comp-eln-load-path'
+and its `preloaded' subdirectories."
   (let ((up-to-date-p (lambda (candidate)
                         (and candidate
                              (file-regular-p candidate)
                              (file-newer-than-file-p candidate el-file)))))
     (or (funcall up-to-date-p eln-file)
-        (and (fboundp 'comp-lookup-eln)
-             (funcall up-to-date-p (comp-lookup-eln el-file)))
+        (and (fboundp 'comp-eln-load-path-eff)
+             (when-let* ((eln-basename
+                          (if eln-file
+                              (file-name-nondirectory eln-file)
+                            (and (fboundp 'comp-el-to-eln-rel-filename)
+                                 (condition-case nil
+                                     (comp-el-to-eln-rel-filename el-file)
+                                   (error nil))))))
+               (seq-some
+                (lambda (preload-dir)
+                  (or
+                   ;; It checks whether any effective native compilation
+                   ;; directory contains either:
+                   ;;
+                   ;; dir/eln-basename: a regular .eln file newer than el-file.
+                   (funcall
+                    up-to-date-p (expand-file-name eln-basename preload-dir))
+                   ;; dir/preloaded/eln-basename: a matching regular .eln
+                   ;; file, regardless of its timestamp.
+                   ;;
+                   ;; This checks whether the matching .eln file exists as a
+                   ;; regular file inside dir/preloaded/.
+                   (file-regular-p
+                    (expand-file-name eln-basename
+                                      (expand-file-name "preloaded" preload-dir)))))
+                (comp-eln-load-path-eff))))
         (and (not eln-file)
              (fboundp 'comp-el-to-eln-filename)
              (funcall up-to-date-p
