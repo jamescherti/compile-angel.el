@@ -623,23 +623,31 @@ Return non-nil if the file should be ignored, nil otherwise."
 
 (defun compile-angel--elisp-native-compiled-p (el-file &optional eln-file)
   "Return non-nil if EL-FILE is native-compiled and up to date.
-ELN-FILE is the *.eln file.
-Return nil if it is not native-compiled or if its .eln file is out of date."
-  (when-let* ((eln-file (or eln-file
-                            (and (fboundp 'comp-el-to-eln-filename)
-                                 (comp-el-to-eln-filename el-file)))))
-    (when (file-newer-than-file-p eln-file el-file)
-      t)))
+Check the optional ELN-FILE first, then search Emacs native compilation
+directories.  If neither check succeeds and ELN-FILE is nil, check
+the computed compilation output path.
+A candidate must be a regular file newer than EL-FILE."
+  (let ((up-to-date-p (lambda (candidate)
+                        (and candidate
+                             (file-regular-p candidate)
+                             (file-newer-than-file-p candidate el-file)))))
+    (or (funcall up-to-date-p eln-file)
+        (and (fboundp 'comp-lookup-eln)
+             (funcall up-to-date-p (comp-lookup-eln el-file)))
+        (and (not eln-file)
+             (fboundp 'comp-el-to-eln-filename)
+             (funcall up-to-date-p
+                      (comp-el-to-eln-filename el-file))))))
 
 (defun compile-angel--native-compile-maybe (el-file)
-  "Native-compile EL-FILE."
+  "Native-compile EL-FILE.
+EL-FILE is the path to the Emacs Lisp source file to compile."
   (if (not compile-angel--native-comp-available)
       (compile-angel--debug-message
         "Native-compilation ignored (native-comp unavailable): %s" el-file)
     (compile-angel--with-fast-file-ops
-      (let* ((eln-file
-              (and (fboundp 'comp-el-to-eln-filename)
-                   (comp-el-to-eln-filename el-file))))
+      (let* ((eln-file (and (fboundp 'comp-el-to-eln-filename)
+                            (comp-el-to-eln-filename el-file))))
         (cond
          ((compile-angel--elisp-native-compiled-p el-file eln-file)
           (compile-angel--debug-message
