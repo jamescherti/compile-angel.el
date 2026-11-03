@@ -8,7 +8,7 @@
 - Author: James Cherti <[https://www.jamescherti.com/](https://www.jamescherti.com/)>
 - License: GPL
 
-The *[compile-angel.el @GitHub](https://github.com/jamescherti/compile-angel.el)* package **speeds up Emacs by ensuring that all Elisp libraries are both byte-compiled and native-compiled**:
+The *[compile-angel.el](https://github.com/jamescherti/compile-angel.el)* package **speeds up Emacs by ensuring that all Elisp libraries are both byte-compiled and native-compiled**:
 - Byte compilation speeds up loading Emacs Lisp code at runtime.
 - Native compilation improves performance by generating machine code that runs directly on the hardware. The actual speedup varies with the characteristics of the Lisp code, but it is typically 2.5 to 5 times faster than the equivalent byte-compiled version.
 
