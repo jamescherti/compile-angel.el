@@ -1659,6 +1659,12 @@ not become stale."
   (interactive)
   (clrhash compile-angel--truename-cache)
   (clrhash compile-angel--locate-file-cache)
+  ;; Forget cached exclusions so removed declarations can be reconsidered.
+  (clrhash compile-angel--no-byte-compile-files-list)
+  ;; Processed entries are checked before exclusions and would otherwise block
+  ;; retries.
+  (clrhash compile-angel--list-processed-files)
+  (clrhash compile-angel--list-processed-features)
   (setq compile-angel--locate-file-load-path nil
         compile-angel--locate-file-load-path-len 0)
   (message "[compile-angel] Caches cleared."))
