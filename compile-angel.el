@@ -1549,12 +1549,7 @@ signaled by ORIG-FN is caught and displayed as a message."
     ;; Minimal `file-name-handler-alist'
     (compile-angel--update-file-name-handler-alist)
 
-    (setq compile-angel--init-completed t)
-
-    (when (and compile-angel-run-ignore-async-compilation-errors
-               (fboundp 'comp--run-async-workers))
-      (advice-add 'comp--run-async-workers :around
-                  #'compile-angel--advice-comp--run-async-workers))))
+    (setq compile-angel--init-completed t)))
 
 (defun compile-angel--is-el-file (file)
   "Return non-nil if FILE is an el-file."
@@ -1750,6 +1745,11 @@ DIRECTORY is the directory path to exclude from compilation."
         ;; Init
         (compile-angel--init)
 
+        (when (and compile-angel-run-ignore-async-compilation-errors
+                   (fboundp 'comp--run-async-workers))
+          (advice-add 'comp--run-async-workers :around
+                      #'compile-angel--advice-comp--run-async-workers))
+
         ;; Self optimization
         ;; (compile-angel--entry-point nil 'bytecomp)
         (compile-angel--entry-point nil 'seq)
@@ -1791,6 +1791,18 @@ DIRECTORY is the directory path to exclude from compilation."
                     -30)))
     ;; Mode Disabled Teardown
     (setq compile-angel--init-completed nil)
+
+    (when (fboundp 'comp--run-async-workers)
+      (advice-remove 'comp--run-async-workers
+                     #'compile-angel--advice-comp--run-async-workers))
+
+    ;; TODO
+    ;; (unless compile-angel-on-save-mode
+    ;;   (setq compile-angel--init-completed nil)
+    ;;   (remove-variable-watcher 'load-file-rep-suffixes
+    ;;                            #'compile-angel--update-el-file-regexp)
+    ;;   (remove-variable-watcher 'compile-angel-excluded-path-suffixes
+    ;;                            #'compile-angel--update-el-file-regexp))
 
     ;; Hooks
     (remove-hook 'after-load-functions
