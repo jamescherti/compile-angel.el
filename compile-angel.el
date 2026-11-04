@@ -1794,9 +1794,6 @@ DIRECTORY is the directory path to exclude from compilation."
           (add-hook 'native-comp-async-all-done-hook
                     #'compile-angel--native-comp-async-all-done
                     -30)))
-    ;; Mode Disabled Teardown
-    (setq compile-angel--init-completed nil)
-
     (when (fboundp 'comp--run-async-workers)
       (advice-remove 'comp--run-async-workers
                      #'compile-angel--advice-comp--run-async-workers))
@@ -1810,13 +1807,7 @@ DIRECTORY is the directory path to exclude from compilation."
                  #'compile-angel--native-comp-async-all-done)
     ;; Advices
     (advice-remove 'require #'compile-angel--advice-before-require)
-    (advice-remove 'load #'compile-angel--advice-before-load)
-
-    ;; Variable Watchers
-    (remove-variable-watcher 'load-file-rep-suffixes
-                             #'compile-angel--update-el-file-regexp)
-    (remove-variable-watcher 'compile-angel-excluded-path-suffixes
-                             #'compile-angel--update-el-file-regexp)))
+    (advice-remove 'load #'compile-angel--advice-before-load)))
 
 ;;;###autoload
 (define-minor-mode compile-angel-on-save-mode
