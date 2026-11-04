@@ -327,14 +327,6 @@ recompilation."
   :type 'boolean
   :group 'compile-angel)
 
-(defcustom compile-angel-touch-eln-files t
-  "Non-nil to allow updating the timestamp of native-compiled .eln files.
-When enabled, the package will update the modification time of an existing .eln
-file to ensure it remains newer than its .elc counterpart. This prevents
-redundant background JIT compilations."
-  :type 'boolean
-  :group 'compile-angel)
-
 (defcustom compile-angel-cache-locate-file t
   "Enable caching for `locate-file' results.
 When non-nil, `compile-angel' caches the results of `locate-file' lookups in a
@@ -431,8 +423,6 @@ don't have associated .el files and therefore don't need compilation.")
 
 (defvar compile-angel--init-completed nil)
 (defvar compile-angel--native-comp-available nil)
-
-(defvar compile-angel--quiet-byte-compile t)
 
 (defvar compile-angel--track-no-byte-compile-files t)
 (defvar compile-angel--no-byte-compile-files-list
@@ -1610,9 +1600,6 @@ be JIT compiled."
                        (compile-angel--native-compile-maybe el-file))
                      compile-angel--list-jit-native-compiled-files)
           (clrhash compile-angel--list-jit-native-compiled-files))))))
-
-(defvar compile-angel--report-native-compiled-features
-  (make-hash-table :test 'equal))
 
 (defun compile-angel--report-needs-native-compile-p (el-file)
   "Return non-nil if EL-FILE needs to be natively compiled."
