@@ -678,8 +678,8 @@ EL-FILE is the path to the Emacs Lisp source file to compile."
             "Native-compilation ignored (up-to-date): %s" el-file))
 
          (t
-          (let ((inhibit-message (not (or (not compile-angel-verbose)
-                                          (not compile-angel-debug))))
+          (let ((inhibit-message (not (or compile-angel-verbose
+                                          compile-angel-debug)))
                 ;; Let-bind `native-comp-async-report-warnings-errors' to
                 ;; 'silent inside your compilation function to force the
                 ;; compiler to log errors silently in the background without
@@ -747,8 +747,8 @@ Return the byte compile result."
            (after-change-major-mode-hook
             (and (fboundp 'global-font-lock-mode-enable-in-buffer)
                  (list 'global-font-lock-mode-enable-in-buffer)))
-           (inhibit-message (not (or (not compile-angel-verbose)
-                                     (not compile-angel-debug))))
+           (inhibit-message (not (or compile-angel-verbose
+                                     compile-angel-debug)))
            (prog-mode-hook nil)
            (emacs-lisp-mode-hook nil)
            (byte-compile-result
