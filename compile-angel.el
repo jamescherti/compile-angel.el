@@ -1449,8 +1449,8 @@ OPERATION is the operation.
 SYMBOL is the symbol.
 NEW-VALUE is the value of the variable."
   (let ((inhibit-quit t))
-    ;; Safely ignore defvaralias operations to prevent type errors
-    (unless (eq operation 'defvaralias)
+    ;; Safely ignore defvaralias and makunbound operations to prevent type errors
+    (when (memq operation '(set let unlet nil))
       (when (eq symbol 'load-file-rep-suffixes)
         (compile-angel--debug-message
           "WATCHER: Update compile-angel--el-file-regexp: %s" new-value)
@@ -1462,7 +1462,7 @@ NEW-VALUE is the value of the variable."
       (when (eq symbol 'compile-angel-excluded-path-suffixes)
         (compile-angel--debug-message
           "WATCHER: Update compile-angel-excluded-path-suffixes: %s"
-          compile-angel-excluded-path-suffixes)
+          new-value)
         (let ((path-suffixes-regexp nil))
           ;; Process `compile-angel-excluded-path-suffixes' to generate regular
           ;; expressions.
