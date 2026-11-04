@@ -645,8 +645,9 @@ and its `preloaded' subdirectories."
                    ;; This checks whether the matching .eln file exists as a
                    ;; regular file inside dir/preloaded/.
                    (file-regular-p
-                    (expand-file-name eln-basename
-                                      (expand-file-name "preloaded" preload-dir)))))
+                    (expand-file-name
+                     eln-basename
+                     (expand-file-name "preloaded" preload-dir)))))
                 (comp-eln-load-path-eff))))
         (and (not eln-file)
              (fboundp 'comp-el-to-eln-filename)
@@ -1022,10 +1023,12 @@ When DO-NATIVE is non-nil, native compile."
           ;; Properly record and report explicit skip definitions
           (if no-byte-compile-defined
               (compile-angel--debug-message
-                "Native-compilation ignored (File explicitly requests no-byte-compile): %s" el-file)
+                "Native-compilation ignored (File explicitly requests no-byte-compile): %s"
+                el-file)
             (puthash el-file t compile-angel--list-jit-native-compiled-files)
             (compile-angel--debug-message
-              "Native-compilation ignored (JIT compilation will do it): %s" el-file)))
+              "Native-compilation ignored (JIT compilation will do it): %s"
+              el-file)))
 
         (when (and compile-angel-enable-native-compile
                    decision-native-compile)
@@ -1452,7 +1455,8 @@ OPERATION is the operation.
 SYMBOL is the symbol.
 NEW-VALUE is the value of the variable."
   (let ((inhibit-quit t))
-    ;; Safely ignore defvaralias and makunbound operations to prevent type errors
+    ;; Safely ignore defvaralias and makunbound operations to prevent type
+    ;; errors
     (when (memq operation '(set let unlet nil))
       (when (eq symbol 'load-file-rep-suffixes)
         (compile-angel--debug-message
@@ -1502,7 +1506,8 @@ NEW-VALUE is the value of the variable."
                                          compile-angel--el-file-regexp)))
                 (push (concat (regexp-quote suffix-without-el)
                               el-file-regexp
-                              (unless (and el-file-regexp (string-prefix-p "\\'" el-file-regexp))
+                              (unless (and el-file-regexp
+                                           (string-prefix-p "\\'" el-file-regexp))
                                 "\\'" ))
                       path-suffixes-regexp))))
 
@@ -1585,10 +1590,10 @@ be JIT compiled."
       (let ((inhibit-quit t))
         (unwind-protect
             (maphash (lambda (eln-file el-file)
-                       ;; `file-regular-p' guarantees that the target is an actual
-                       ;; file (or a symlink pointing to a regular file). This
-                       ;; prevents native-elisp-load from failing on invalid file
-                       ;; system objects.
+                       ;; `file-regular-p' guarantees that the target is an
+                       ;; actual file (or a symlink pointing to a regular file).
+                       ;; This prevents native-elisp-load from failing on
+                       ;; invalid file system objects.
                        (when (and (file-regular-p eln-file)
                                   (file-newer-than-file-p eln-file el-file))
                          (compile-angel--debug-message
