@@ -1008,6 +1008,8 @@ When DO-NATIVE is non-nil, native compile."
                 "")
               elc-file))))
 
+        ;; Defer only approved native compilation so the completion hook cannot
+        ;; override byte-only requests or retry failed byte compilation.
         (when (and decision-native-compile
                    compile-angel-defer-native-compile-to-jit
                    (not compile-angel--native-compile-when-jit-enabled)
@@ -1457,8 +1459,25 @@ NEW-VALUE is the value of the variable."
           "WATCHER: Update compile-angel--el-file-regexp: %s" new-value)
         (setq compile-angel--el-file-extensions
               (mapcar (lambda (ext) (concat ".el" ext)) new-value))
+        ;; `compile-angel--el-file-regexp' is the internal regular expression
+        ;; used to recognize Emacs Lisp source filenames, including compressed
+        ;; variants. It is built from `load-file-rep-suffixes'. For example,
+        ;; ("" ".gz") produces a regexp matching filenames ending in .el or
+        ;; .el.gz. It also contributes to exclusion patterns and is updated by a
+        ;; variable watcher whenever load-file-rep-suffixes changes.
         (setq compile-angel--el-file-regexp
-              (format "\\.el%s\\'" (regexp-opt new-value))))
+              (format "\\.el%s\\'" (regexp-opt new-value)))
+        ;; Source suffix changes invalidate cached file lookup results.
+        ;;
+        ;; `compile-angel--locate-file-cache' is a hash table that caches file
+        ;; lookups performed by `compile-angel--locate-feature-file'.
+        (clrhash compile-angel--locate-file-cache)
+
+        ;; Rebuild exclusions with the new source regexp so compressed variants
+        ;; remain excluded when representation suffixes change.
+        (compile-angel--update-el-file-regexp
+         'compile-angel-excluded-path-suffixes
+         compile-angel-excluded-path-suffixes nil nil))
 
       (when (eq symbol 'compile-angel-excluded-path-suffixes)
         (compile-angel--debug-message
