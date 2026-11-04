@@ -1242,9 +1242,9 @@ The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
               "SKIP file - LEGACY (To prevent recursive compilation): %s | %s"
               el-file feature))
 
-           ;; Optimization: Check if we have already processed this file (compiled
-           ;; OR skipped) We treat `compile-angel--list-processed-files' as a
-           ;; "processed" cache.
+           ;; Optimization: Check if we have already processed this file
+           ;; (compiled OR skipped) We treat
+           ;; `compile-angel--list-processed-files' as a "processed" cache.
            ((and compile-angel-on-load-mode-compile-once
                  (or (gethash el-file-truename compile-angel--list-processed-files)
                      (when feature-symbol
@@ -1257,10 +1257,10 @@ The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
                  (gethash el-file-truename
                           compile-angel--no-byte-compile-files-list))
             ;; Optimization: Negative Caching
-            ;; We're recording the "Skip" decision in future requests for the same
-            ;; file will trigger the fast-path check at the top of your cond
-            ;; block. This prevents compile-angel from re-running the expensive
-            ;; checks
+            ;; We're recording the "Skip" decision in future requests for the
+            ;; same file will trigger the fast-path check at the top of your
+            ;; cond block. This prevents compile-angel from re-running the
+            ;; expensive checks
             (when compile-angel-on-load-mode-compile-once
               (puthash el-file-truename t compile-angel--list-processed-files)
               (when feature-symbol
@@ -1308,10 +1308,13 @@ The arguments EL-FILE, FEATURE, NOSUFFIX, NOERROR are the same arguments as the
                                                       do-native)
                         (setq compilation-completed t))
                     ;; Add to the processed cache
-                    (when compilation-completed
-                      (puthash el-file-truename t compile-angel--list-processed-files)
+                    (when (and compilation-completed
+                               compile-angel-on-load-mode-compile-once)
+                      (puthash el-file-truename t
+                               compile-angel--list-processed-files)
                       (when feature-symbol
-                        (puthash feature-symbol t compile-angel--list-processed-features))))))))))))))
+                        (puthash feature-symbol t
+                                 compile-angel--list-processed-features))))))))))))))
 
 (defun compile-angel--advice-before-require (feature
                                              &optional filename noerror)
