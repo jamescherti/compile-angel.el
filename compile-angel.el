@@ -1692,6 +1692,9 @@ DIRECTORY is the directory path to exclude from compilation."
 (defun compile-angel-report ()
   "Create a buffer listing all Elisp files that are not native compiled."
   (interactive)
+  ;; Reports can run before any mode initializes source suffixes and native
+  ;; helpers.
+  (compile-angel--init)
   (with-current-buffer (get-buffer-create "*compile-angel:report*")
     (let ((inhibit-read-only t))
       (read-only-mode 1)
