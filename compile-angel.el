@@ -992,15 +992,31 @@ When DO-NATIVE is non-nil, native compile."
 
          ;; .elc not writable
          (t
-          ;; Do not byte-compile
-          (setq decision-native-compile (and compile-angel-enable-native-compile
-                                             do-native))
-          (compile-angel--debug-message
-            "Byte-compilation ignored (not writable)%s: %s"
-            (if decision-native-compile
-                ". Native-compilation only"
-              "")
-            elc-file)))
+          ;; Loading an .el file with no-byte-compile: t from a read-only
+          ;; directory (such as /usr/share/emacs, a system package directory, or
+          ;; a Nix store path) when compile-angel-enable-byte-compile and
+          ;; compile-angel-enable-native-compile are non-nil.
+          (if (and compile-angel-enable-native-compile
+                   do-native
+                   (compile-angel--no-byte-compile-p el-file))
+              (progn
+                ;; Files explicitly marked no-byte-compile: t should not be
+                ;; queued for asynchronous native compilation.
+                (setq decision-native-compile nil
+                      no-byte-compile-defined t)
+                (puthash el-file-truename t
+                         compile-angel--no-byte-compile-files-list)
+                (compile-angel--debug-message
+                  "Byte/Native-compilation ignored (not writable, no-byte-compile): %s"
+                  elc-file))
+            (setq decision-native-compile
+                  (and compile-angel-enable-native-compile do-native))
+            (compile-angel--debug-message
+              "Byte-compilation ignored (not writable)%s: %s"
+              (if decision-native-compile
+                  ". Native-compilation only"
+                "")
+              elc-file))))
 
         (when (and compile-angel-defer-native-compile-to-jit
                    (not compile-angel--native-compile-when-jit-enabled)
