@@ -1066,7 +1066,8 @@ detected, it raises an error and returns nil."
             ;; rather than waiting for Emacs to do it.
             (compile-angel--native-compile-when-jit-enabled t)
             (compile-angel-on-load-mode-compile-once nil)
-            ;; Saving may remove no-byte-compile; bypass the cached skip decision.
+            ;; Saving may remove no-byte-compile. Bypass the cached skip
+            ;; decision.
             (compile-angel--track-no-byte-compile-files nil))
         (when (or (not compile-angel-on-save-check-parens)
                   (compile-angel--check-parens))
@@ -1623,10 +1624,7 @@ be JIT compiled."
     (dolist (feature features)
       (when feature
         (let* ((feature-symbol (compile-angel--normalize-feature feature)))
-          (when (and feature-symbol
-                     (not (gethash
-                           feature-symbol
-                           compile-angel--report-native-compiled-features)))
+          (when feature-symbol
             (when-let* ((feature-el-file (compile-angel--guess-el-file
                                           nil feature-symbol)))
               (compile-angel--debug-message
@@ -1640,7 +1638,6 @@ be JIT compiled."
      (lambda (el-file _value)
        (if (compile-angel--report-needs-native-compile-p el-file)
            (push el-file result)
-         (puthash el-file t compile-angel--report-native-compiled-features)
          (compile-angel--debug-message
            "compile-angel--get-list-non-native-compiled: UP TO DATE: %s (%s)"
            el-file (type-of el-file))))
