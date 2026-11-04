@@ -1646,6 +1646,20 @@ be JIT compiled."
 
     result))
 
+(defun compile-angel--teardown-maybe ()
+  "Remove variable watchers if no `compile-angel' mode remains active."
+  (unless (or (bound-and-true-p compile-angel-on-load-mode)
+              (bound-and-true-p compile-angel-on-save-mode)
+              (seq-some
+               (lambda (buf)
+                 (buffer-local-value 'compile-angel-on-save-local-mode buf))
+               (buffer-list)))
+    (setq compile-angel--init-completed nil)
+    (remove-variable-watcher 'load-file-rep-suffixes
+                             #'compile-angel--update-el-file-regexp)
+    (remove-variable-watcher 'compile-angel-excluded-path-suffixes
+                             #'compile-angel--update-el-file-regexp)))
+
 ;;; Functions
 
 ;;;###autoload
@@ -1786,13 +1800,7 @@ DIRECTORY is the directory path to exclude from compilation."
       (advice-remove 'comp--run-async-workers
                      #'compile-angel--advice-comp--run-async-workers))
 
-    ;; TODO
-    ;; (unless compile-angel-on-save-mode
-    ;;   (setq compile-angel--init-completed nil)
-    ;;   (remove-variable-watcher 'load-file-rep-suffixes
-    ;;                            #'compile-angel--update-el-file-regexp)
-    ;;   (remove-variable-watcher 'compile-angel-excluded-path-suffixes
-    ;;                            #'compile-angel--update-el-file-regexp))
+    (compile-angel--teardown-maybe)
 
     ;; Hooks
     (remove-hook 'after-load-functions
@@ -1819,6 +1827,7 @@ DIRECTORY is the directory path to exclude from compilation."
       (progn
         (compile-angel--init)
         (add-hook 'after-save-hook #'compile-angel--compile-on-save 99))
+    (compile-angel--teardown-maybe)
     (remove-hook 'after-save-hook #'compile-angel--compile-on-save)))
 
 ;;;###autoload
@@ -1831,6 +1840,7 @@ DIRECTORY is the directory path to exclude from compilation."
       (progn
         (compile-angel--init)
         (add-hook 'after-save-hook #'compile-angel--compile-on-save 99 t))
+    (compile-angel--teardown-maybe)
     (remove-hook 'after-save-hook #'compile-angel--compile-on-save t)))
 
 ;;; Provide 'compile-angel
