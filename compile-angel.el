@@ -1500,8 +1500,8 @@ NEW-VALUE is the value of the variable."
 (defun compile-angel--update-file-name-handler-alist (&rest _)
   "Update the `file-name-handler-alist' variable."
   (setq compile-angel--file-name-handler-alist
-        (list (rassq 'jka-compr-handler
-                     file-name-handler-alist))))
+        (when-let* ((compr (rassq 'jka-compr-handler file-name-handler-alist)))
+          (list compr))))
 
 (defun compile-angel--advice-comp--run-async-workers (orig-fn &rest args)
   "Wrap ORIG-FN to suppress errors.
