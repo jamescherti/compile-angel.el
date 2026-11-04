@@ -1008,7 +1008,8 @@ When DO-NATIVE is non-nil, native compile."
                 "")
               elc-file))))
 
-        (when (and compile-angel-defer-native-compile-to-jit
+        (when (and decision-native-compile
+                   compile-angel-defer-native-compile-to-jit
                    (not compile-angel--native-compile-when-jit-enabled)
                    ;; Jit is enabled
                    (or (bound-and-true-p native-comp-jit-compilation)
