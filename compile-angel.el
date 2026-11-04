@@ -1065,7 +1065,9 @@ detected, it raises an error and returns nil."
             ;; Ensure that compile-angel performs the native compilation itself,
             ;; rather than waiting for Emacs to do it.
             (compile-angel--native-compile-when-jit-enabled t)
-            (compile-angel-on-load-mode-compile-once nil))
+            (compile-angel-on-load-mode-compile-once nil)
+            ;; Saving may remove no-byte-compile; bypass the cached skip decision.
+            (compile-angel--track-no-byte-compile-files nil))
         (when (or (not compile-angel-on-save-check-parens)
                   (compile-angel--check-parens))
           (compile-angel--entry-point el-file))))))
